@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - Custom Zone</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Firebase CDN Links -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Custom Firebase Config -->
+    <script src="js/firebase-config.js"></script>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="navbar">
+        <div class="logo-container">
+            <a href="index.html">
+                <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
+            </a>
+            <h1 class="brand-name">Custom Zone</h1>
+        </div>
+        
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="about.html">About Us</a>
+            <a href="contact.html">Contact Us</a>
+            <a href="track-order.html" class="active">Track Order</a>
+        </nav>
+
+        <div class="cart-icon">
+            <a href="cart.html">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count">0</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Track Order Container -->
+    <main class="container" style="min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px;">
+        <h2 class="section-title" style="margin-bottom: 20px;">Track Your Order</h2>
+        
+        <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 500px; width: 100%; text-align: center;">
+            <i class="fas fa-truck-fast" style="font-size: 45px; color: #2c3e50; margin-bottom: 15px;"></i>
+            <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">Enter your Order ID to check the current delivery status.</p>
+            
+            <input type="text" id="track-order-id" placeholder="e.g., CZ7753" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; text-align: center; text-transform: uppercase; font-weight: bold; margin-bottom: 15px;">
+            
+            <button onclick="trackOrderCloud()" style="background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-weight: 600; cursor: pointer; transition: 0.3s;">Track Status</button>
+
+            <!-- Result Box -->
+            <div id="track-result" style="display: none; margin-top: 25px; text-align: left; padding: 15px; border-radius: 6px; background: #eafaf1; border-left: 4px solid #27ae60;">
+                <h4 style="margin: 0 0 8px 0; color: #2c3e50;">Tracking Details</h4>
+                <p style="margin: 3px 0; font-size: 14px; color: #555;">Order ID: <strong id="res-order-id" style="color: #27ae60;"></strong></p>
+                <p style="margin: 3px 0; font-size: 14px; color: #555;">Status: <strong id="res-status" style="color: #e74c3c;"></strong></p>
+                <p style="margin: 3px 0; font-size: 14px; color: #555;">Customer: <span id="res-name"></span></p>
+                <p style="margin: 3px 0; font-size: 14px; color: #555;">Order Date: <span id="res-date"></span></p>
+            </div>
+            
+            <p id="track-error" style="display: none; margin-top: 20px; color: #e74c3c; font-weight: bold; font-size: 14px;"></p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
+        <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
+    </footer>
+
+    <script>
+        // Update Cart Count
+        let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
+        document.querySelector('.cart-count').innerText = cart.length;
+
+        async function trackOrderCloud() {
+            const orderIdInput = document.getElementById('track-order-id').value.trim().toUpperCase();
+            const resultBox = document.getElementById('track-result');
+            const errorBox = document.getElementById('track-error');
+
+            if (!orderIdInput) {
+                alert("Please enter an Order ID.");
+                return;
+            }
+
+            resultBox.style.display = "none";
+            errorBox.style.display = "none";
+
+            try {
+                const docRef = await db.collection("orders").doc(orderIdInput).get();
+
+                if (docRef.exists) {
+                    const data = docRef.data();
+                    document.getElementById('res-order-id').innerText = orderIdInput;
+                    document.getElementById('res-status').innerText = data.status || "Processing";
+                    document.getElementById('res-name').innerText = data.customerName || "N/A";
+                    document.getElementById('res-date').innerText = data.date || "N/A";
+
+                    resultBox.style.display = "block";
+                } else {
+                    errorBox.innerText = `❌ No order found with ID "${orderIdInput}". Please check the ID.`;
+                    errorBox.style.display = "block";
+                }
+            } catch (error) {
+                console.error("Error tracking order:", error);
+                errorBox.innerText = "Error fetching order details. Check your internet connection.";
+                errorBox.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>

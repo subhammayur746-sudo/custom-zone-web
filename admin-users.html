@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Access - Custom Zone</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto;}
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; margin-bottom: 10px; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 24px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 15px 25px; text-decoration: none; font-size: 15px; border-left: 4px solid transparent; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .logout-btn { position: absolute; bottom: 20px; width: 100%; background: #c0392b !important; color: white !important; border-left: none !important; }
+        .logout-btn:hover { background: #e74c3c !important; }
+        .menu-item { display: none; }
+        
+        .main-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); box-sizing: border-box; }
+        .admin-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 30px;}
+        .admin-card h3 { margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        .form-group input[type="text"], .form-group input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        .btn-admin { background: #8e44ad; color: #fff; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; width: 100%; max-width: 300px;}
+        .permission-box { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;}
+        .permission-box label { font-weight: normal; font-size: 14px; cursor: pointer; background: #ecf0f1; padding: 8px 12px; border-radius: 4px;}
+        .permission-box input { margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+        </div>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" class="menu-item active" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Staff Access Management</h2>
+
+        <!-- Create New User -->
+        <div class="admin-card" style="max-width: 800px;">
+            <h3><i class="fas fa-user-plus"></i> Create New Staff Account</h3>
+            
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 250px;">
+                    <label>Username</label>
+                    <input type="text" id="new-username" placeholder="E.g., manager1">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 250px;">
+                    <label>Password</label>
+                    <input type="password" id="new-password" placeholder="Enter password">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Select Permissions (What can they manage?)</label>
+                <div class="permission-box">
+                    <label><input type="checkbox" value="orders" class="perm-check"> Manage Orders</label>
+                    <label><input type="checkbox" value="products" class="perm-check"> Manage Products</label>
+                    <label><input type="checkbox" value="ads" class="perm-check"> Store Settings</label>
+                </div>
+            </div>
+            
+            <button class="btn-admin" onclick="createNewUser()">Create Account</button>
+            <p id="user-msg" style="margin-top: 15px; color: green; font-weight: bold; display: none;"></p>
+        </div>
+
+        <!-- Users List -->
+        <div class="admin-card">
+            <h3><i class="fas fa-users-cog"></i> Active Users List</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Permissions</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-users-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInUser || !loggedInUser.permissions.includes('users')) {
+            alert("You do not have permission to view this page.");
+            window.location.href = "admin-dashboard.html";
+        } else {
+            loggedInUser.permissions.forEach(perm => {
+                let menuId = 'menu-' + perm;
+                if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
+            });
+            renderUsers();
+        }
+
+        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+
+        function createNewUser() {
+            const username = document.getElementById('new-username').value.trim();
+            const pass = document.getElementById('new-password').value.trim();
+            const msgBox = document.getElementById('user-msg');
+            
+            if(!username || !pass) {
+                alert("Please enter username and password.");
+                return;
+            }
+
+            let permissions = [];
+            document.querySelectorAll('.perm-check:checked').forEach(cb => {
+                permissions.push(cb.value);
+            });
+
+            if(permissions.length === 0) {
+                alert("Please select at least one permission.");
+                return;
+            }
+
+            let usersDB = JSON.parse(localStorage.getItem('cz_users_db')) || {};
+            
+            if(usersDB[username]) {
+                alert("Username already exists!");
+                return;
+            }
+
+            usersDB[username] = { password: pass, permissions: permissions };
+            localStorage.setItem('cz_users_db', JSON.stringify(usersDB));
+
+            msgBox.style.display = "block";
+            msgBox.innerText = `User '${username}' created successfully!`;
+            
+            document.getElementById('new-username').value = "";
+            document.getElementById('new-password').value = "";
+            document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
+            
+            setTimeout(() => { msgBox.style.display = "none"; }, 3000);
+            renderUsers();
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('admin-users-list');
+            let usersDB = JSON.parse(localStorage.getItem('cz_users_db')) || {};
+            tbody.innerHTML = "";
+
+            for (let user in usersDB) {
+                let isMaster = user === 'admin';
+                let perms = usersDB[user].permissions.join(", ") || "None";
+                
+                let actionBtn = isMaster ? 
+                    `<span style="color: #7f8c8d; font-size: 12px;">Master (Cannot Delete)</span>` : 
+                    `<button class="btn-sm" style="background:#e74c3c;" onclick="deleteUser('${user}')"><i class="fas fa-trash"></i></button>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${user}</strong></td>
+                        <td style="text-transform: capitalize;">${perms}</td>
+                        <td>${actionBtn}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        function deleteUser(username) {
+            if(username === 'admin') {
+                alert("You cannot delete the Master Admin!");
+                return;
+            }
+            if(confirm(`Are you sure you want to delete user: ${username}?`)) {
+                let usersDB = JSON.parse(localStorage.getItem('cz_users_db')) || {};
+                delete usersDB[username];
+                localStorage.setItem('cz_users_db', JSON.stringify(usersDB));
+                renderUsers();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store Settings - Custom Zone</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; margin-bottom: 10px; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 24px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 15px 25px; text-decoration: none; font-size: 15px; border-left: 4px solid transparent; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .logout-btn { position: absolute; bottom: 20px; width: 100%; background: #c0392b !important; color: white !important; border-left: none !important; }
+        
+        .main-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); box-sizing: border-box; }
+        .admin-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); margin-bottom: 30px; }
+        .admin-card h3 { margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        
+        .btn-custom-save {
+            background: #27ae60 !important;
+            color: #ffffff !important;
+            border: none !important;
+            padding: 12px 28px !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            border-radius: 5px !important;
+            cursor: pointer !important;
+            display: inline-block !important;
+            transition: 0.2s;
+        }
+        .btn-custom-save:hover { background: #219150 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>CZ Admin</h2></div>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-ads.html" class="active" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Store & Promotion Settings</h2>
+
+        <!-- Promo Pop-up Settings -->
+        <div class="admin-card">
+            <h3><i class="fas fa-bullhorn"></i> Promo Pop-up Banner</h3>
+            <div class="form-group">
+                <label>Offer Title</label>
+                <input type="text" id="promo-title" placeholder="e.g., 🔥 Special Summer Offer!">
+            </div>
+            <div class="form-group">
+                <label>Offer Description</label>
+                <textarea id="promo-desc" rows="3" placeholder="e.g., Get flat ₹50 OFF on all personalized gifts."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Banner Photo (Optional)</label>
+                <input type="file" id="promo-image-file" accept="image/*">
+                <div style="margin-top: 10px;">
+                    <img id="promo-current-img" src="" style="max-width: 150px; border-radius: 6px; display: none; border: 1px solid #ddd; padding: 4px;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="promo-enable" style="width: 20px; height: 20px;">
+                    <span style="font-weight: 600; color: #2c3e50;">Enable Promo Pop-up on Homepage</span>
+                </label>
+            </div>
+            <button type="button" class="btn-custom-save" id="btn-save-promo" onclick="handlePromoSave()">Save Promo Banner</button>
+        </div>
+
+        <!-- Delivery Fee Settings -->
+        <div class="admin-card">
+            <h3><i class="fas fa-truck"></i> Delivery Charge Settings</h3>
+            <div class="form-group">
+                <label>Standard Delivery Fee (₹)</label>
+                <input type="number" id="delivery-fee" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Free Delivery on Orders Above (₹)</label>
+                <input type="number" id="free-delivery-above" placeholder="0">
+            </div>
+            <button type="button" class="btn-custom-save" id="btn-save-delivery" onclick="handleDeliverySave()">Save Delivery Settings</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPromoImgUrl = "";
+
+        function logout() { 
+            localStorage.removeItem('cz_logged_in_user'); 
+            window.location.href = "admin-login.html"; 
+        }
+
+        function initPage() {
+            // Local fallback read
+            const localPromo = JSON.parse(localStorage.getItem('cz_promo_settings'));
+            if (localPromo) {
+                document.getElementById('promo-title').value = localPromo.title || "";
+                document.getElementById('promo-desc').value = localPromo.description || "";
+                document.getElementById('promo-enable').checked = localPromo.enabled || false;
+                if (localPromo.imageUrl) {
+                    currentPromoImgUrl = localPromo.imageUrl;
+                    const img = document.getElementById('promo-current-img');
+                    img.src = localPromo.imageUrl;
+                    img.style.display = "block";
+                }
+            }
+
+            const localDel = JSON.parse(localStorage.getItem('cz_delivery_settings'));
+            if (localDel) {
+                document.getElementById('delivery-fee').value = localDel.fee || 0;
+                document.getElementById('free-delivery-above').value = localDel.freeAbove || 0;
+            }
+
+            // Cloud Fetch
+            try {
+                if (typeof db !== 'undefined') {
+                    db.collection("settings").doc("promo").get().then(doc => {
+                        if (doc.exists) {
+                            const d = doc.data();
+                            document.getElementById('promo-title').value = d.title || "";
+                            document.getElementById('promo-desc').value = d.description || "";
+                            document.getElementById('promo-enable').checked = d.enabled || false;
+                            if (d.imageUrl) {
+                                currentPromoImgUrl = d.imageUrl;
+                                const img = document.getElementById('promo-current-img');
+                                img.src = d.imageUrl;
+                                img.style.display = "block";
+                            }
+                        }
+                    });
+
+                    db.collection("settings").doc("delivery").get().then(doc => {
+                        if (doc.exists) {
+                            const dData = doc.data();
+                            document.getElementById('delivery-fee').value = dData.fee || 0;
+                            document.getElementById('free-delivery-above').value = dData.freeAbove || 0;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log("Firebase sync fallback activated.");
+            }
+        }
+
+        async function uploadImg(file) {
+            const apiKey = typeof IMGBB_API_KEY !== 'undefined' ? IMGBB_API_KEY : "fac19ae5956e46b656a6004b390875e2";
+            const formData = new FormData();
+            formData.append("image", file);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            return data.success ? data.data.url : "";
+        }
+
+        async function handlePromoSave() {
+            const btn = document.getElementById('btn-save-promo');
+            const title = document.getElementById('promo-title').value.trim();
+            const desc = document.getElementById('promo-desc').value.trim();
+            const enabled = document.getElementById('promo-enable').checked;
+            const fileInput = document.getElementById('promo-image-file');
+
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                let imgUrl = currentPromoImgUrl;
+                if (fileInput.files.length > 0) {
+                    btn.innerText = "Uploading Image...";
+                    imgUrl = await uploadImg(fileInput.files[0]);
+                    currentPromoImgUrl = imgUrl;
+                }
+
+                const promoData = {
+                    title: title,
+                    description: desc,
+                    imageUrl: imgUrl,
+                    enabled: enabled
+                };
+
+                localStorage.setItem('cz_promo_settings', JSON.stringify(promoData));
+
+                if (typeof db !== 'undefined') {
+                    await db.collection("settings").doc("promo").set(promoData);
+                }
+
+                alert("✅ Promo Banner settings saved successfully!");
+                initPage();
+            } catch (err) {
+                console.error(err);
+                alert("✅ Settings saved locally!");
+            } finally {
+                btn.innerText = "Save Promo Banner";
+                btn.disabled = false;
+            }
+        }
+
+        async function handleDeliverySave() {
+            const fee = parseInt(document.getElementById('delivery-fee').value) || 0;
+            const freeAbove = parseInt(document.getElementById('free-delivery-above').value) || 0;
+            const delData = { fee: fee, freeAbove: freeAbove };
+
+            localStorage.setItem('cz_delivery_settings', JSON.stringify(delData));
+            localStorage.setItem('cz_delivery_db', JSON.stringify(delData));
+
+            if (typeof db !== 'undefined') {
+                try {
+                    await db.collection("settings").doc("delivery").set(delData);
+                } catch(e) {
+                    console.log("Delivery cloud fallback");
+                }
+            }
+            alert("✅ Delivery settings saved successfully!");
+        }
+
+        window.onload = initPage;
+    </script>
+</body>
+</html>

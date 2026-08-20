@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Custom Zone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN Links -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Custom Firebase Config -->
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; margin-bottom: 10px; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 24px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 15px 25px; text-decoration: none; font-size: 15px; border-left: 4px solid transparent; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .logout-btn { position: absolute; bottom: 20px; width: 100%; background: #c0392b !important; color: white !important; border-left: none !important; }
+        .menu-item { display: none; }
+
+        .main-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); box-sizing: border-box; }
+        .stat-card { background: #fff; padding: 25px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .stat-card h3 { color: #7f8c8d; font-size: 14px; margin-top: 0;}
+        .stat-card h2 { font-size: 32px; color: #2c3e50; margin: 10px 0 0 0; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <p style="font-size: 12px; margin-top: 5px; color: #95a5a6;">Cloud Management</p>
+        </div>
+        <a href="admin-dashboard.html" class="active"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1 style="color: #2c3e50; margin-bottom: 5px;">Welcome, <span id="admin-name">Admin</span>! 👋</h1>
+        <p style="color: #7f8c8d; margin-bottom: 30px;">Live overview of your Custom Zone store from Cloud.</p>
+        
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="stat-card" style="border-top: 4px solid #3498db;">
+                <h3><i class="fas fa-box"></i> Active Products</h3>
+                <h2 id="stat-products">...</h2>
+            </div>
+            <div class="stat-card" style="border-top: 4px solid #9b59b6;">
+                <h3><i class="fas fa-shopping-bag"></i> Total Orders</h3>
+                <h2 id="stat-orders">...</h2>
+            </div>
+            <div class="stat-card" style="border-top: 4px solid #e67e22;">
+                <h3><i class="fas fa-calendar-alt"></i> Orders This Month</h3>
+                <h2 id="stat-month-orders">...</h2>
+            </div>
+            <div class="stat-card" style="border-top: 4px solid #2ecc71;">
+                <h3><i class="fas fa-rupee-sign"></i> Total Revenue</h3>
+                <h2 id="stat-revenue" style="color: #27ae60;">...</h2>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInUser) {
+            window.location.href = "admin-login.html";
+        } else {
+            document.getElementById('admin-name').innerText = loggedInUser.username.toUpperCase();
+            loggedInUser.permissions.forEach(perm => {
+                let menuId = 'menu-' + perm;
+                if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
+            });
+            fetchCloudDashboardStats();
+        }
+
+        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+
+        async function fetchCloudDashboardStats() {
+            try {
+                // Fetch Products
+                const prodSnapshot = await db.collection("products").get();
+                document.getElementById('stat-products').innerText = prodSnapshot.size;
+
+                // Fetch Orders
+                const ordSnapshot = await db.collection("orders").get();
+                let totalRevenue = 0;
+                let currentMonthOrders = 0;
+                
+                const today = new Date();
+                const currentMonth = today.getMonth() + 1; 
+                const currentYear = today.getFullYear();
+
+                document.getElementById('stat-orders').innerText = ordSnapshot.size;
+
+                ordSnapshot.forEach(doc => {
+                    let order = doc.data();
+                    if(order.totalAmount) totalRevenue += parseInt(order.totalAmount);
+                    
+                    if(order.date) {
+                        let dateParts = order.date.split('/'); // DD/MM/YYYY
+                        if(dateParts.length === 3 && parseInt(dateParts[1]) === currentMonth && parseInt(dateParts[2]) === currentYear) {
+                            currentMonthOrders++;
+                        }
+                    }
+                });
+
+                document.getElementById('stat-month-orders').innerText = currentMonthOrders;
+                document.getElementById('stat-revenue').innerText = "₹" + totalRevenue.toLocaleString('en-IN');
+                
+            } catch (error) {
+                console.error("Error fetching stats:", error);
+            }
+        }
+    </script>
+</body>
+</html>

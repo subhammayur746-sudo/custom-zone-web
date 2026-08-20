@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products - Custom Zone</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN Links (Very Important) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Your Custom Config -->
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto;}
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; margin-bottom: 10px; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 24px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 15px 25px; text-decoration: none; font-size: 15px; border-left: 4px solid transparent; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
+        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
+        .logout-btn { position: absolute; bottom: 20px; width: 100%; background: #c0392b !important; color: white !important; border-left: none !important; }
+        .menu-item { display: none; }
+        
+        .main-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); box-sizing: border-box; }
+        .admin-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 30px;}
+        .admin-card h3 { margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        .btn-admin { background: #27ae60; color: #fff; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; }
+        .btn-admin:disabled { background: #95a5a6; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>CZ Admin</h2></div>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" class="menu-item active" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Products (Cloud)</h2>
+
+        <!-- Add New Product -->
+        <div class="admin-card" style="max-width: 800px;">
+            <h3><i class="fas fa-cloud-upload-alt"></i> Add New Product to Cloud</h3>
+            <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" id="prod-name" placeholder="E.g., Custom Photo Keychain">
+            </div>
+            <div class="form-group">
+                <label>Price (₹)</label>
+                <input type="number" id="prod-price" placeholder="E.g., 299">
+            </div>
+            <div class="form-group">
+                <label>Customization Type</label>
+                <select id="prod-custom-type">
+                    <option value="none">No Customization (Normal Product)</option>
+                    <option value="name">Custom Name / Text</option>
+                    <option value="pic">Custom Picture Upload</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Product Image (Select 1 image for now)</label>
+                <input type="file" id="prod-img-file" accept="image/*">
+            </div>
+            <button class="btn-admin" id="btn-upload" onclick="uploadProductToCloud()">Upload Product</button>
+            <p id="prod-msg" style="margin-top: 15px; font-weight: bold; display: none;"></p>
+        </div>
+
+        <!-- Product List Table -->
+        <div class="admin-card">
+            <h3><i class="fas fa-list"></i> Live Product List</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Price (₹)</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-product-list">
+                    <tr><td colspan="5" style="text-align:center;">Loading products from cloud...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Security Check
+        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInUser || !loggedInUser.permissions.includes('products')) {
+            window.location.href = "admin-dashboard.html";
+        } else {
+            loggedInUser.permissions.forEach(perm => {
+                let menuId = 'menu-' + perm;
+                if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
+            });
+            fetchProductsFromCloud(); // Load from Firestore
+        }
+
+        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+
+        // --- UPLOAD TO IMGBB AND FIREBASE ---
+        async function uploadProductToCloud() {
+            const name = document.getElementById('prod-name').value;
+            const price = document.getElementById('prod-price').value;
+            const customType = document.getElementById('prod-custom-type').value;
+            const fileInput = document.getElementById('prod-img-file');
+            const msgBox = document.getElementById('prod-msg');
+            const btnUpload = document.getElementById('btn-upload');
+
+            if (!name || !price || fileInput.files.length === 0) { 
+                alert("Please fill all fields and select an image."); return; 
+            }
+
+            // Start Uploading Process
+            btnUpload.disabled = true;
+            btnUpload.innerText = "Uploading Image to ImgBB...";
+            msgBox.style.display = "block";
+            msgBox.style.color = "#f39c12";
+            msgBox.innerText = "Please wait, uploading to cloud...";
+
+            try {
+                // 1. Upload to ImgBB
+                const imageFile = fileInput.files[0];
+                const formData = new FormData();
+                formData.append("image", imageFile);
+
+                const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: "POST",
+                    body: formData
+                });
+                const imgData = await imgResponse.json();
+                
+                if(!imgData.success) { throw new Error("Image Upload Failed"); }
+                
+                const liveImageUrl = imgData.data.display_url;
+
+                // 2. Save Data to Firebase Firestore
+                btnUpload.innerText = "Saving to Database...";
+                
+                await db.collection("products").add({
+                    name: name,
+                    price: parseInt(price),
+                    images: [liveImageUrl], // Array format like before
+                    customType: customType,
+                    isActive: true,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Success
+                msgBox.style.color = "green";
+                msgBox.innerText = "Product successfully listed on Cloud!";
+                
+                // Clear Form
+                document.getElementById('prod-name').value = ""; 
+                document.getElementById('prod-price').value = ""; 
+                fileInput.value = "";
+                
+                fetchProductsFromCloud(); // Refresh list
+                
+            } catch (error) {
+                console.error("Error:", error);
+                msgBox.style.color = "red";
+                msgBox.innerText = "Error uploading product. Check console.";
+            } finally {
+                btnUpload.disabled = false;
+                btnUpload.innerText = "Upload Product";
+                setTimeout(() => { msgBox.style.display = "none"; }, 4000);
+            }
+        }
+
+        // --- FETCH FROM FIREBASE ---
+        function fetchProductsFromCloud() {
+            const tbody = document.getElementById('admin-product-list');
+            
+            db.collection("products").orderBy("timestamp", "desc").get().then((querySnapshot) => {
+                tbody.innerHTML = "";
+                
+                if (querySnapshot.empty) {
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No products found in Cloud.</td></tr>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    let prod = doc.data();
+                    let docId = doc.id; // Firebase unique ID
+                    
+                    let imgTag = prod.images && prod.images.length > 0 ? `<img src="${prod.images[0]}" style="width: 50px; border-radius: 4px;">` : "No Image";
+                    let typeLabel = prod.customType === "name" ? "Name" : (prod.customType === "pic" ? "Picture" : "None");
+                    let statusText = prod.isActive !== false ? "Active" : "Disabled";
+                    let btnClass = prod.isActive !== false ? "btn-toggle" : "btn-toggle active";
+                    let btnText = prod.isActive !== false ? "Disable" : "Enable";
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${imgTag}</td>
+                            <td>${prod.name} <br><small style="color:red;">[Custom: ${typeLabel}]</small></td>
+                            <td>
+                                <input type="number" id="price-${docId}" value="${prod.price}" style="width:70px; padding: 5px;">
+                                <button class="btn-sm btn-edit" onclick="updatePriceCloud('${docId}')">Save</button>
+                            </td>
+                            <td>${statusText}</td>
+                            <td>
+                                <button class="btn-sm ${btnClass}" onclick="toggleProductCloud('${docId}', ${prod.isActive})">${btnText}</button>
+                                <button class="btn-sm" style="background:#e74c3c; margin-left: 5px;" onclick="deleteProductCloud('${docId}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }).catch((error) => {
+                console.error("Error getting documents: ", error);
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:red;'>Failed to load products. Check connection.</td></tr>";
+            });
+        }
+
+        // --- ACTION BUTTONS ---
+        function updatePriceCloud(docId) {
+            let newPrice = parseInt(document.getElementById(`price-${docId}`).value);
+            db.collection("products").doc(docId).update({ price: newPrice })
+            .then(() => { alert("Price updated in Cloud!"); fetchProductsFromCloud(); })
+            .catch((error) => console.error("Error:", error));
+        }
+
+        function toggleProductCloud(docId, currentStatus) {
+            db.collection("products").doc(docId).update({ isActive: !currentStatus })
+            .then(() => fetchProductsFromCloud())
+            .catch((error) => console.error("Error:", error));
+        }
+
+        function deleteProductCloud(docId) {
+            if(confirm("Delete this product permanently from Cloud?")) {
+                db.collection("products").doc(docId).delete()
+                .then(() => fetchProductsFromCloud())
+                .catch((error) => console.error("Error:", error));
+            }
+        }
+    </script>
+</body>
+</html>
