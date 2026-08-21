@@ -49,6 +49,9 @@
                 // ডিফল্ট আইডি ও পাসওয়ার্ড (admin / 1234)
                 usersDB['admin'] = { password: '1234', permissions: ['products', 'orders', 'ads', 'users'] };
                 localStorage.setItem('cz_users_db', JSON.stringify(usersDB));
+
+                 usersDB['sayan'] = { password: 'sayan', permissions: ['products', 'orders', 'ads'] };
+                localStorage.setItem('cz_users_db', JSON.stringify(usersDB));
             }
 
             if (usersDB[user] && usersDB[user].password === pass) {
