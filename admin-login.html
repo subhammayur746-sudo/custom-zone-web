@@ -4,62 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
     <style>
-        body { background: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Poppins', sans-serif; }
-        .login-box { background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 100%; max-width: 350px; text-align: center; }
-        .login-box h2 { color: #2c3e50; margin-bottom: 25px; }
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #2c3e50; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .login-box { background: #fff; padding: 35px 25px; border-radius: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.25); width: 100%; max-width: 380px; text-align: center; }
+        .login-box h2 { color: #2c3e50; margin-bottom: 25px; font-size: 22px; }
         .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 14px; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 15px; box-sizing: border-box; }
-        .login-btn { background: #e74c3c; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .input-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; font-size: 13px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; outline: none; }
+        .input-group input:focus { border-color: #e74c3c; }
+        .login-btn { background: #e74c3c; color: #fff; border: none; padding: 13px; width: 100%; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .login-btn:hover { background: #c0392b; }
-        #error-msg { color: #e74c3c; margin-top: 15px; display: none; font-weight: bold; font-size: 14px; }
+        #error-msg { color: #e74c3c; margin-top: 15px; display: none; font-weight: bold; font-size: 13px; }
     </style>
 </head>
 <body>
 
     <div class="login-box">
-        <i class="fas fa-user-shield" style="font-size: 40px; color: #2c3e50; margin-bottom: 10px;"></i>
+        <i class="fas fa-user-shield" style="font-size: 45px; color: #2c3e50; margin-bottom: 12px;"></i>
         <h2>CZ Admin Panel</h2>
         
         <div class="input-group">
             <label>Username</label>
-            <input type="text" id="username" placeholder="Enter username">
+            <input type="text" id="username" placeholder="Enter username" autocomplete="off">
         </div>
         <div class="input-group">
             <label>Password</label>
             <input type="password" id="password" placeholder="Enter password">
         </div>
         
-        <button class="login-btn" onclick="checkLogin()">Login</button>
-        <p id="error-msg">Invalid Username or Password!</p>
+        <button class="login-btn" id="btn-login" onclick="checkLogin()">Login</button>
+        <p id="error-msg"></p>
     </div>
 
     <script>
-        function checkLogin() {
-            const user = document.getElementById('username').value.trim();
+        async function checkLogin() {
+            const user = document.getElementById('username').value.trim().toLowerCase();
             const pass = document.getElementById('password').value.trim();
             const errorMsg = document.getElementById('error-msg');
+            const btn = document.getElementById('btn-login');
 
-            // Database fetch or create Default Master Admin
-            let usersDB = JSON.parse(localStorage.getItem('cz_users_db')) || {};
-            
-            if (Object.keys(usersDB).length === 0) {
-                // ডিফল্ট আইডি ও পাসওয়ার্ড (admin / 1234)
-                usersDB['admin'] = { password: '1234', permissions: ['products', 'orders', 'ads', 'users'] };
-                localStorage.setItem('cz_users_db', JSON.stringify(usersDB));
-
-                 usersDB['sayan'] = { password: 'sayan', permissions: ['products', 'orders', 'ads'] };
-                localStorage.setItem('cz_users_db', JSON.stringify(usersDB));
+            if(!user || !pass) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerText = "Please enter username and password!";
+                return;
             }
 
-            if (usersDB[user] && usersDB[user].password === pass) {
-                // সেশন সেভ করা হচ্ছে
-                localStorage.setItem('cz_logged_in_user', JSON.stringify({ username: user, permissions: usersDB[user].permissions }));
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            // Master Default Fallback
+            if (user === "admin" && pass === "1234") {
+                const masterUser = { username: "admin", permissions: ['products', 'orders', 'ads', 'users', 'reviews'] };
+                localStorage.setItem('cz_logged_in_user', JSON.stringify(masterUser));
                 window.location.href = "admin-dashboard.html";
-            } else {
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection("users").doc(user).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData.password === pass) {
+                        localStorage.setItem('cz_logged_in_user', JSON.stringify({
+                            username: user,
+                            permissions: userData.permissions || []
+                        }));
+                        window.location.href = "admin-dashboard.html";
+                        return;
+                    }
+                }
                 errorMsg.style.display = 'block';
+                errorMsg.innerText = "Invalid Username or Password!";
+            } catch (err) {
+                console.error(err);
+                errorMsg.style.display = 'block';
+                errorMsg.innerText = "Connection error. Please try again.";
+            } finally {
+                btn.innerText = "Login";
+                btn.disabled = false;
             }
         }
     </script>

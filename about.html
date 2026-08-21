@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Zone - About Us</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
 </head>
 <body>
 
-    <!-- Header / Navbar -->
     <header class="navbar">
         <div class="logo-container">
             <a href="index.html">
@@ -31,50 +36,74 @@
         </div>
     </header>
 
-    <!-- About Content -->
     <main class="container">
         <h2 class="section-title">About Custom Zone</h2>
         
-        <div class="about-layout" style="background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); line-height: 1.8; color: #444;">
-            
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h3 style="font-size: 24px; color: #2c3e50; margin-bottom: 10px;">Welcome to Custom Zone!</h3>
-                <p style="font-size: 16px;">Your ultimate destination for trending, high-quality, and customized products.</p>
+        <div class="about-layout" style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); line-height: 1.8; color: #444;">
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h3 style="font-size: 22px; color: #2c3e50; margin-bottom: 8px;">Welcome to Custom Zone!</h3>
+                <p style="font-size: 15px;">Your ultimate destination for trending, high-quality, and customized personalized products.</p>
             </div>
 
-            <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-top: 20px;">
-                <div style="flex: 1; min-width: 250px;">
-                    <h4 style="color: #e74c3c; margin-bottom: 10px;"><i class="fas fa-bullseye"></i> Our Mission</h4>
-                    <p>At Custom Zone, our goal is to provide our customers with top-notch products at the best possible prices without compromising on quality. We believe in customer satisfaction and a seamless shopping experience.</p>
+            <!-- Live Review Counter -->
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 30px 0; text-align: center;">
+                <div style="background: #fdf2e9; padding: 20px 30px; border-radius: 8px; border: 1px solid #f8c471;">
+                    <h2 id="total-reviews-count" style="font-size: 32px; color: #e67e22; margin: 0;">0+</h2>
+                    <p style="margin: 5px 0 0 0; font-weight: 600;">Authentic Customer Reviews</p>
                 </div>
-                
-                <div style="flex: 1; min-width: 250px;">
-                    <h4 style="color: #e74c3c; margin-bottom: 10px;"><i class="fas fa-gem"></i> Why Choose Us?</h4>
-                    <ul style="list-style-type: square; margin-left: 20px;">
-                        <li>Premium Quality Products</li>
-                        <li>100% Secure UPI Payment</li>
-                        <li>Real-time Order Tracking</li>
-                        <li>24/7 Customer Support</li>
-                    </ul>
+                <div style="background: #eafaf1; padding: 20px 30px; border-radius: 8px; border: 1px solid #a9dfbf;">
+                    <h2 style="font-size: 32px; color: #27ae60; margin: 0;">4.9 / 5 ⭐</h2>
+                    <p style="margin: 5px 0 0 0; font-weight: 600;">Overall Happiness Rating</p>
                 </div>
             </div>
 
-            <div style="margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
-                <p>We are constantly expanding our catalog and bringing new innovations to make your shopping experience even better.</p>
-                <p style="margin-top: 10px; font-weight: 600; color: #2c3e50;">Thank you for trusting Custom Zone!</p>
+            <!-- Customer Reviews Section -->
+            <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 35px;"><i class="fas fa-comments" style="color:#e74c3c;"></i> Customer Testimonials</h3>
+            <div id="reviews-display-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px;">
+                <p style="color:#7f8c8d;">Loading live reviews from customers...</p>
             </div>
-
         </div>
     </main>
 
-    <!-- Main JS for Cart Count update -->
-    <script src="js/main.js"></script>
-    
-   
-<footer class="footer">
-    <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
-    <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
-</footer>
+    <footer class="footer">
+        <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
+        <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
+    </footer>
 
+    <script src="js/main.js"></script>
+    <script>
+        async function loadLiveReviews() {
+            const container = document.getElementById('reviews-display-grid');
+            const countEl = document.getElementById('total-reviews-count');
+            try {
+                const snapshot = await db.collection("reviews").orderBy("timestamp", "desc").get();
+                if(snapshot.empty) {
+                    container.innerHTML = "<p style='color:#7f8c8d;'>No reviews yet. Be the first to order and review!</p>";
+                    return;
+                }
+
+                countEl.innerText = `${snapshot.size}+`;
+                container.innerHTML = "";
+
+                snapshot.forEach(doc => {
+                    let rev = doc.data();
+                    let stars = "⭐".repeat(rev.rating || 5);
+                    container.innerHTML += `
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong>${rev.customerName || 'Happy Customer'}</strong>
+                                <span style="font-size:12px; color:#7f8c8d;">${rev.date || ''}</span>
+                            </div>
+                            <div style="margin-bottom:6px; font-size:14px;">${stars}</div>
+                            <p style="margin:0; font-size:13px; color:#555; line-height:1.5;">"${rev.comment || 'Great product and quick delivery!'}"</p>
+                        </div>
+                    `;
+                });
+            } catch(e) {
+                console.error(e);
+            }
+        }
+        window.addEventListener('DOMContentLoaded', loadLiveReviews);
+    </script>
 </body>
 </html>
