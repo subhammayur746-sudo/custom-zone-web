@@ -4,33 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase CDN Links -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- Custom Firebase Config -->
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; margin-bottom: 10px; }
-        .sidebar-header h2 { color: #e74c3c; font-size: 24px; margin: 0; }
-        .sidebar a { display: block; color: #bdc3c7; padding: 15px 25px; text-decoration: none; font-size: 15px; border-left: 4px solid transparent; transition: 0.3s; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.3s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
-        .sidebar a i { margin-right: 15px; width: 20px; text-align: center; }
-        .logout-btn { position: absolute; bottom: 20px; width: 100%; background: #c0392b !important; color: white !important; border-left: none !important; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
+        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; border-left: none !important; }
         .menu-item { display: none; }
 
         .main-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); box-sizing: border-box; }
         .stat-card { background: #fff; padding: 25px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
         .stat-card h3 { color: #7f8c8d; font-size: 14px; margin-top: 0;}
         .stat-card h2 { font-size: 32px; color: #2c3e50; margin: 10px 0 0 0; }
+        
+        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
+        
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.active { left: 0; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .mobile-admin-header { display: flex; }
+        }
     </style>
-    <link rel="icon" type="image/png" href="assets/images/logo.png">
 </head>
 <body>
+
+    <div class="mobile-admin-header">
+        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
+        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
+    </div>
 
     <div class="sidebar">
         <div class="sidebar-header">
@@ -40,6 +53,7 @@
         <a href="admin-dashboard.html" class="active"><i class="fas fa-home"></i> Home Dashboard</a>
         <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" class="menu-item" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -75,10 +89,16 @@
             window.location.href = "admin-login.html";
         } else {
             document.getElementById('admin-name').innerText = loggedInUser.username.toUpperCase();
-            loggedInUser.permissions.forEach(perm => {
-                let menuId = 'menu-' + perm;
-                if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
-            });
+            
+            // পারমিশন হ্যান্ডলার
+            if (loggedInUser.username === 'admin' || (loggedInUser.permissions && loggedInUser.permissions.includes('all'))) {
+                document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'block');
+            } else if (loggedInUser.permissions) {
+                loggedInUser.permissions.forEach(perm => {
+                    let menuId = 'menu-' + perm;
+                    if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
+                });
+            }
             fetchCloudDashboardStats();
         }
 
@@ -86,11 +106,9 @@
 
         async function fetchCloudDashboardStats() {
             try {
-                // Fetch Products
                 const prodSnapshot = await db.collection("products").get();
                 document.getElementById('stat-products').innerText = prodSnapshot.size;
 
-                // Fetch Orders
                 const ordSnapshot = await db.collection("orders").get();
                 let totalRevenue = 0;
                 let currentMonthOrders = 0;
@@ -106,7 +124,7 @@
                     if(order.totalAmount) totalRevenue += parseInt(order.totalAmount);
                     
                     if(order.date) {
-                        let dateParts = order.date.split('/'); // DD/MM/YYYY
+                        let dateParts = order.date.split('/');
                         if(dateParts.length === 3 && parseInt(dateParts[1]) === currentMonth && parseInt(dateParts[2]) === currentYear) {
                             currentMonthOrders++;
                         }
@@ -115,7 +133,6 @@
 
                 document.getElementById('stat-month-orders').innerText = currentMonthOrders;
                 document.getElementById('stat-revenue').innerText = "₹" + totalRevenue.toLocaleString('en-IN');
-                
             } catch (error) {
                 console.error("Error fetching stats:", error);
             }
