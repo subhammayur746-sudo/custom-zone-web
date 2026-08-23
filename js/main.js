@@ -22,11 +22,24 @@ async function fetchLiveProducts() {
             prod.id = doc.id;
             liveProducts.push(prod);
             
-            let imgSrc = prod.images && prod.images.length > 0 ? prod.images[0] : 'https://via.placeholder.com/300';
+            let images = prod.images && prod.images.length > 0 ? prod.images : ['https://via.placeholder.com/300'];
+            let mainImg = images[0];
+
+            let thumbnailsHTML = "";
+            if (images.length > 1) {
+                thumbnailsHTML = `<div class="product-thumb-gallery" style="display:flex; gap:6px; justify-content:center; margin-bottom:10px; overflow-x:auto;">`;
+                images.forEach((img) => {
+                    thumbnailsHTML += `<img src="${img}" onclick="changeCardMainImg('${prod.id}', '${img}')" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:pointer;">`;
+                });
+                thumbnailsHTML += `</div>`;
+            }
             
             container.innerHTML += `
                 <div class="product-card">
-                    <img src="${imgSrc}" alt="${prod.name}">
+                    <div style="position:relative; cursor:zoom-in;" onclick="openImageZoom('${mainImg}')">
+                        <img id="main-img-${prod.id}" src="${mainImg}" alt="${prod.name}">
+                    </div>
+                    ${thumbnailsHTML}
                     <h3>${prod.name}</h3>
                     <p>₹${prod.price}</p>
                     <button onclick="addToCart('${prod.id}')">
@@ -37,8 +50,35 @@ async function fetchLiveProducts() {
         });
     } catch (error) {
         console.error("Error fetching products:", error);
-        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products. Check your internet connection.</p>";
+        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products.</p>";
     }
+}
+
+// থাম্বনেইল ক্লিক করে কার্ডের মেইন ছবি পরিবর্তন
+function changeCardMainImg(prodId, imgSrc) {
+    const mainImgEl = document.getElementById(`main-img-${prodId}`);
+    if(mainImgEl) {
+        mainImgEl.src = imgSrc;
+        mainImgEl.parentElement.setAttribute('onclick', `openImageZoom('${imgSrc}')`);
+    }
+}
+
+// জুম লাইটবক্স ওপেন
+function openImageZoom(imgSrc) {
+    let modal = document.getElementById('cz-zoom-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'cz-zoom-modal';
+        modal.style.cssText = "display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:999999; justify-content:center; align-items:center; cursor:zoom-out;";
+        modal.innerHTML = `
+            <span style="position:absolute; top:15px; right:25px; color:#fff; font-size:35px; font-weight:bold; cursor:pointer;">&times;</span>
+            <img id="cz-zoom-img" src="" style="max-width:90%; max-height:85vh; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain;">
+        `;
+        modal.onclick = () => modal.style.display = "none";
+        document.body.appendChild(modal);
+    }
+    document.getElementById('cz-zoom-img').src = imgSrc;
+    modal.style.display = "flex";
 }
 
 // কার্ট হ্যান্ডলার
@@ -66,10 +106,9 @@ function updateCartCount() {
     countEls.forEach(el => el.innerText = cart.length);
 }
 
-// হোমপেজে পপ-আপ দেখানোর লজিক
+// হোমপেজে প্রমো পপ-আপ
 function displayPopup(data) {
     if (!data || !data.enabled) return;
-    
     const popup = document.getElementById('promo-popup');
     if (!popup) return;
 
@@ -95,14 +134,12 @@ function displayPopup(data) {
 }
 
 function checkPromoPopup() {
-    // ১. লোকাল স্টোরেজ থেকে পড়া (ইনস্ট্যান্ট ব্যাকআপ)
     const local = JSON.parse(localStorage.getItem('cz_promo_settings'));
     if (local && local.enabled) {
         displayPopup(local);
         return;
     }
 
-    // ২. ফায়ারবেস ক্লাউড থেকে পড়া
     try {
         if (typeof db !== 'undefined') {
             db.collection("settings").doc("promo").get().then(doc => {
@@ -112,7 +149,7 @@ function checkPromoPopup() {
             });
         }
     } catch (e) {
-        console.log("Promo cloud fetch error", e);
+        console.log("Promo cloud error", e);
     }
 }
 
@@ -123,7 +160,6 @@ function closePopup() {
     }
 }
 
-// উইন্ডো লোড
 window.addEventListener('DOMContentLoaded', () => {
     updateCartCount();
     fetchLiveProducts();

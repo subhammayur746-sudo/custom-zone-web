@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Coupons - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
+        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
+        .menu-item { display: none; }
+        
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
+        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        .btn-admin { background: #27ae60; color: #fff; padding: 11px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; }
+        
+        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.active { left: 0; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .mobile-admin-header { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-admin-header">
+        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
+        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>CZ Admin</h2></div>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" class="menu-item" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" class="menu-item active" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Store Discount Coupons</h2>
+
+        <!-- Create Coupon Card -->
+        <div class="admin-card" style="max-width: 600px;">
+            <h3><i class="fas fa-plus-circle"></i> Create New Coupon</h3>
+            <div class="form-group">
+                <label>Coupon Code (e.g., FLAT50, FESTIVE100)</label>
+                <input type="text" id="coupon-code" placeholder="Enter coupon text" style="text-transform:uppercase; font-weight:bold;">
+            </div>
+            <div class="form-group">
+                <label>Discount Amount (₹)</label>
+                <input type="number" id="coupon-discount" placeholder="e.g., 50">
+            </div>
+            <div class="form-group">
+                <label>Minimum Order Value to Apply (₹)</label>
+                <input type="number" id="coupon-min-order" placeholder="e.g., 299">
+            </div>
+            <button class="btn-admin" id="btn-save-coupon" onclick="createCouponCloud()">Create Coupon</button>
+        </div>
+
+        <!-- Coupon List -->
+        <div class="admin-card" style="overflow-x: auto;">
+            <h3><i class="fas fa-ticket-alt"></i> Active Store Coupons</h3>
+            <table style="width:100%; border-collapse: collapse; min-width: 500px;">
+                <thead>
+                    <tr style="background:#f8f9fa; text-align:left;">
+                        <th style="padding:10px;">Coupon Code</th>
+                        <th style="padding:10px;">Discount</th>
+                        <th style="padding:10px;">Min Order</th>
+                        <th style="padding:10px;">Status</th>
+                        <th style="padding:10px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-coupon-list">
+                    <tr><td colspan="5" style="text-align:center; padding:15px;">Loading coupons...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInUser) {
+            window.location.href = "admin-login.html";
+        } else {
+            if (loggedInUser.username === 'admin') {
+                document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'block');
+            } else if (loggedInUser.permissions) {
+                loggedInUser.permissions.forEach(perm => {
+                    let menuId = 'menu-' + perm;
+                    if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
+                });
+            }
+            fetchCloudCoupons();
+        }
+
+        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+
+        async function createCouponCloud() {
+            const code = document.getElementById('coupon-code').value.trim().toUpperCase();
+            const discount = parseInt(document.getElementById('coupon-discount').value);
+            const minOrder = parseInt(document.getElementById('coupon-min-order').value) || 0;
+            const btn = document.getElementById('btn-save-coupon');
+
+            if(!code || isNaN(discount)) {
+                alert("Please provide a valid code and discount amount."); return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Creating...";
+
+            try {
+                await db.collection("coupons").doc(code).set({
+                    code: code,
+                    discount: discount,
+                    minOrder: minOrder,
+                    isActive: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert(`✅ Coupon ${code} created successfully!`);
+                document.getElementById('coupon-code').value = "";
+                document.getElementById('coupon-discount').value = "";
+                document.getElementById('coupon-min-order').value = "";
+                fetchCloudCoupons();
+            } catch(e) {
+                console.error(e);
+                alert("Error saving coupon.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Create Coupon";
+            }
+        }
+
+        async function fetchCloudCoupons() {
+            const tbody = document.getElementById('admin-coupon-list');
+            try {
+                const snapshot = await db.collection("coupons").get();
+                tbody.innerHTML = "";
+
+                if(snapshot.empty) {
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:15px;'>No coupons created yet.</td></tr>";
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    let c = doc.data();
+                    let statusText = c.isActive ? "Active" : "Disabled";
+                    let btnColor = c.isActive ? "#7f8c8d" : "#27ae60";
+                    let btnText = c.isActive ? "Disable" : "Enable";
+
+                    tbody.innerHTML += `
+                        <tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:10px;"><strong style="color:#e74c3c; font-size:15px;">${c.code}</strong></td>
+                            <td style="padding:10px; font-weight:bold; color:#27ae60;">₹${c.discount} OFF</td>
+                            <td style="padding:10px;">₹${c.minOrder || 0}</td>
+                            <td style="padding:10px; font-weight:600;">${statusText}</td>
+                            <td style="padding:10px;">
+                                <button onclick="toggleCouponStatus('${c.code}', ${c.isActive})" style="background:${btnColor}; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">${btnText}</button>
+                                <button onclick="deleteCouponCloud('${c.code}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch(e) {
+                console.error(e);
+                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center; padding:15px;'>Error loading coupons.</td></tr>";
+            }
+        }
+
+        async function toggleCouponStatus(code, currentStatus) {
+            try {
+                await db.collection("coupons").doc(code).update({ isActive: !currentStatus });
+                fetchCloudCoupons();
+            } catch(e) { alert("Error updating status."); }
+        }
+
+        async function deleteCouponCloud(code) {
+            if(confirm(`Delete coupon ${code} permanently?`)) {
+                try {
+                    await db.collection("coupons").doc(code).delete();
+                    fetchCloudCoupons();
+                } catch(e) { alert("Error deleting coupon."); }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -22,7 +22,6 @@
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; border-left: none !important; }
-        .menu-item { display: none; }
         
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); margin-bottom: 25px;}
@@ -56,19 +55,36 @@
     <div class="sidebar">
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
         <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" class="menu-item active" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" class="menu-item" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-orders.html" class="active" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Orders (Cloud)</h2>
         <div class="admin-card" style="overflow-x: auto;">
-            <h3><i class="fas fa-shopping-bag"></i> Live Customer Orders</h3>
-            <table style="width:100%; border-collapse: collapse; min-width: 600px;">
+            
+            <!-- Filters -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:12px;">
+                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-shopping-bag"></i> Live Customer Orders</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="text" id="order-search-input" onkeyup="filterOrders()" placeholder="🔍 Search Order ID / Name..." style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px; min-width:200px;">
+                    <select id="order-status-filter" onchange="filterOrders()" style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
+                        <option value="all">All Status</option>
+                        <option value="Payment Verified - Processing">Processing</option>
+                        <option value="Packed & Ready to Ship">Packed</option>
+                        <option value="Shipped & On the Way">Shipped</option>
+                        <option value="Delivered Successfully">Delivered</option>
+                        <option value="Order Cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+
+            <table style="width:100%; border-collapse: collapse; min-width: 650px;">
                 <thead>
                     <tr style="background:#f8f9fa; text-align:left;">
                         <th style="padding:10px;">Order ID & Date</th>
@@ -89,19 +105,16 @@
     <div id="invoice-print-area"></div>
 
     <script>
+        let allOrdersCache = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-        let cloudOrders = {};
 
-        if (!loggedInUser || (!loggedInUser.permissions.includes('orders') && loggedInUser.username !== 'admin')) {
-            window.location.href = "admin-dashboard.html";
+        if (!loggedInUser) {
+            window.location.href = "admin-login.html";
         } else {
-            if (loggedInUser.username === 'admin') {
-                document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'block');
-            } else if (loggedInUser.permissions) {
-                loggedInUser.permissions.forEach(perm => {
-                    let menuId = 'menu-' + perm;
-                    if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
-                });
+            // স্টাফ পারমিশন চেক (Master admin হলে সব মেনু ওপেন থাকবে)
+            if (loggedInUser.username !== 'admin' && loggedInUser.permissions && !loggedInUser.permissions.includes('orders')) {
+                alert("Permission denied!");
+                window.location.href = "admin-dashboard.html";
             }
             fetchCloudOrders();
         }
@@ -111,8 +124,8 @@
         function fetchCloudOrders() {
             const tbody = document.getElementById('admin-order-list');
             db.collection("orders").orderBy("timestamp", "desc").get().then((snapshot) => {
+                allOrdersCache = [];
                 tbody.innerHTML = "";
-                cloudOrders = {}; 
 
                 if (snapshot.empty) {
                     tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px;'>No orders found.</td></tr>";
@@ -121,42 +134,70 @@
 
                 snapshot.forEach(doc => {
                     let order = doc.data();
-                    let orderId = doc.id;
-                    cloudOrders[orderId] = order;
-                    
-                    let statusOptions = `
-                        <select id="status-${orderId}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 5px;">
-                            <option value="Payment Verified - Processing" ${order.status === 'Payment Verified - Processing' ? 'selected' : ''}>Processing</option>
-                            <option value="Packed & Ready to Ship" ${order.status === 'Packed & Ready to Ship' ? 'selected' : ''}>Packed</option>
-                            <option value="Shipped & On the Way" ${order.status === 'Shipped & On the Way' ? 'selected' : ''}>Shipped</option>
-                            <option value="Delivered Successfully" ${order.status === 'Delivered Successfully' ? 'selected' : ''}>Delivered</option>
-                            <option value="Order Cancelled" ${order.status === 'Order Cancelled' ? 'selected' : ''}>Cancelled</option>
-                        </select>
-                        <button onclick="updateOrderStatusCloud('${orderId}')" style="background:#2c3e50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; width:100%;">Update</button>
-                    `;
-
-                    tbody.innerHTML += `
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding:10px;"><strong>${orderId}</strong><br><small>${order.date || 'N/A'}</small></td>
-                            <td style="padding:10px;">
-                                <strong>${order.customerName || '-'}</strong><br>
-                                <small><i class="fas fa-phone-alt"></i> ${order.phone || '-'}</small><br>
-                                <small style="display:block; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${order.address || '-'}</small>
-                            </td>
-                            <td style="padding:10px;"><pre style="font-family: inherit; font-size: 12px; margin: 0; white-space: pre-wrap;">${order.items || '-'}</pre></td>
-                            <td style="padding:10px;"><strong style="color:#27ae60;">₹${order.totalAmount || '0'}</strong></td>
-                            <td style="padding:10px; min-width: 140px;">${statusOptions}</td>
-                            <td style="padding:10px; min-width: 80px;">
-                                <button style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Print Invoice" onclick="printOrderInvoiceCloud('${orderId}')"><i class="fas fa-print"></i></button>
-                                <button style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Order" onclick="deleteOrderCloud('${orderId}')"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    order.id = doc.id;
+                    allOrdersCache.push(order);
                 });
+
+                renderOrdersTable(allOrdersCache);
             }).catch(error => {
                 console.error(error);
                 tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:red; padding:15px;'>Error connecting to Cloud.</td></tr>";
             });
+        }
+
+        function renderOrdersTable(orders) {
+            const tbody = document.getElementById('admin-order-list');
+            tbody.innerHTML = "";
+
+            if (orders.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px;'>No matching orders found.</td></tr>";
+                return;
+            }
+
+            orders.forEach(order => {
+                let orderId = order.id;
+                let statusOptions = `
+                    <select id="status-${orderId}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 5px;">
+                        <option value="Payment Verified - Processing" ${order.status === 'Payment Verified - Processing' ? 'selected' : ''}>Processing</option>
+                        <option value="Packed & Ready to Ship" ${order.status === 'Packed & Ready to Ship' ? 'selected' : ''}>Packed</option>
+                        <option value="Shipped & On the Way" ${order.status === 'Shipped & On the Way' ? 'selected' : ''}>Shipped</option>
+                        <option value="Delivered Successfully" ${order.status === 'Delivered Successfully' ? 'selected' : ''}>Delivered</option>
+                        <option value="Order Cancelled" ${order.status === 'Order Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                    <button onclick="updateOrderStatusCloud('${orderId}')" style="background:#2c3e50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; width:100%;">Update</button>
+                `;
+
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding:10px;"><strong>${orderId}</strong><br><small>${order.date || 'N/A'}</small></td>
+                        <td style="padding:10px;">
+                            <strong>${order.customerName || '-'}</strong><br>
+                            <small><i class="fas fa-phone-alt"></i> ${order.phone || '-'}</small><br>
+                            <small style="display:block; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${order.address || '-'}</small>
+                        </td>
+                        <td style="padding:10px;"><pre style="font-family: inherit; font-size: 12px; margin: 0; white-space: pre-wrap;">${order.items || '-'}</pre></td>
+                        <td style="padding:10px;"><strong style="color:#27ae60;">₹${order.totalAmount || '0'}</strong></td>
+                        <td style="padding:10px; min-width: 140px;">${statusOptions}</td>
+                        <td style="padding:10px; min-width: 80px;">
+                            <button style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Print Invoice" onclick="printOrderInvoiceCloud('${orderId}')"><i class="fas fa-print"></i></button>
+                            <button style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Order" onclick="deleteOrderCloud('${orderId}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterOrders() {
+            let searchTerm = document.getElementById('order-search-input').value.toLowerCase().trim();
+            let statusTerm = document.getElementById('order-status-filter').value;
+
+            let filtered = allOrdersCache.filter(ord => {
+                let matchSearch = ord.id.toLowerCase().includes(searchTerm) || (ord.customerName && ord.customerName.toLowerCase().includes(searchTerm));
+                let matchStatus = statusTerm === 'all' || ord.status === statusTerm;
+                return matchSearch && matchStatus;
+            });
+
+            renderOrdersTable(filtered);
         }
 
         function updateOrderStatusCloud(orderId) {
@@ -172,6 +213,61 @@
                 .then(() => fetchCloudOrders())
                 .catch(error => console.error(error));
             }
+        }
+
+        function printOrderInvoiceCloud(orderId) {
+            let order = allOrdersCache.find(o => o.id === orderId);
+            if(!order) return;
+
+            let printArea = document.getElementById('invoice-print-area');
+            let statusColor = "#3498db"; 
+            if(order.status.includes("Delivered")) statusColor = "#27ae60";
+            if(order.status.includes("Cancelled")) statusColor = "#e74c3c";
+
+            printArea.innerHTML = `
+                <div style="border: 2px solid #2c3e50; padding: 30px; border-radius: 8px; background: #fff; max-width: 800px; margin: 20px auto; font-family: 'Poppins', sans-serif;">
+                    <div style="text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px;">
+                        <h1 style="color: #2c3e50; margin: 0; font-size: 32px; font-weight: 900;">CUSTOM ZONE</h1>
+                        <p style="color: #e74c3c; margin: 5px 0; font-weight: bold;">CUSTOMIZE WITH LOVE & CARE</p>
+                        <p style="color: #555; margin: 0; font-size: 14px;">+91 7439958857 | support@customzone.com</p>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="color: #2c3e50; margin-bottom: 10px;">INVOICE TO:</h3>
+                            <p style="margin: 2px 0; font-size: 16px;"><strong>${order.customerName}</strong></p>
+                            <p style="margin: 2px 0; color: #555; font-size: 14px;">${order.phone || 'N/A'}</p>
+                            <p style="margin: 4px 0 0 0; color: #555; max-width: 250px; font-size: 14px;">${order.address || 'N/A'}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="color: #2c3e50; margin-bottom: 10px;">ORDER DETAILS:</h3>
+                            <p style="margin: 4px 0;"><strong>Order ID:</strong> <span style="color: #e74c3c; font-weight: bold;">${orderId}</span></p>
+                            <p style="margin: 4px 0;"><strong>Date:</strong> ${order.date}</p>
+                            <div style="margin-top: 10px; padding: 5px 10px; border: 1px solid ${statusColor}; background: #f8f9fa; border-radius: 4px; display: inline-block;">
+                                <strong>Status:</strong> <span style="color: ${statusColor};">${order.status}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr style="border: 1px dashed #ddd; margin: 20px 0;">
+                    <h4 style="margin-bottom: 10px; color: #2c3e50; font-size: 16px;">Items Ordered:</h4>
+                    <pre style="font-family: inherit; font-size: 14px; white-space: pre-wrap; color: #333; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee;">${order.items}</pre>
+                    <hr style="border: 1px dashed #ddd; margin: 20px 0;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px;">
+                        <div>
+                            <h3 style="color: #27ae60; font-size: 24px; margin: 0;">Total Amount: ₹${order.totalAmount}</h3>
+                            <p style="color: #7f8c8d; font-size: 12px; margin-top: 5px;">*Thank you for shopping with Custom Zone.</p>
+                        </div>
+                        <div style="text-align: center; width: 150px;">
+                            <div style="height: 50px;"></div> 
+                            <hr style="border: 1px solid #2c3e50; margin-bottom: 5px;">
+                            <p style="margin: 0; font-weight: bold; font-size: 14px; color: #2c3e50;">Authorized Signature</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            window.print();
         }
     </script>
 </body>

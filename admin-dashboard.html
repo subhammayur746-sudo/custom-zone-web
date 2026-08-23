@@ -21,7 +21,6 @@
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; border-left: none !important; }
-        .menu-item { display: none; }
 
         .main-content { margin-left: 250px; padding: 30px; width: calc(100% - 250px); box-sizing: border-box; }
         .stat-card { background: #fff; padding: 25px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
@@ -51,11 +50,12 @@
             <p style="font-size: 12px; margin-top: 5px; color: #95a5a6;">Cloud Management</p>
         </div>
         <a href="admin-dashboard.html" class="active"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" class="menu-item" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -89,16 +89,6 @@
             window.location.href = "admin-login.html";
         } else {
             document.getElementById('admin-name').innerText = loggedInUser.username.toUpperCase();
-            
-            // পারমিশন হ্যান্ডলার
-            if (loggedInUser.username === 'admin' || (loggedInUser.permissions && loggedInUser.permissions.includes('all'))) {
-                document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'block');
-            } else if (loggedInUser.permissions) {
-                loggedInUser.permissions.forEach(perm => {
-                    let menuId = 'menu-' + perm;
-                    if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
-                });
-            }
             fetchCloudDashboardStats();
         }
 

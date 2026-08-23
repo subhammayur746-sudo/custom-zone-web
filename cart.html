@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Zone - Cart</title>
-    
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- QR Code Library -->
@@ -13,9 +13,7 @@
     <!-- Firebase CDN Links -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- Custom Firebase Config -->
     <script src="js/firebase-config.js"></script>
-    <link rel="icon" type="image/png" href="assets/images/logo.png">
 </head>
 <body>
 
@@ -55,10 +53,26 @@
 
             <!-- Checkout Box -->
             <div class="checkout-box">
+                <!-- Available Offers Hint -->
+                <div id="available-coupons-badge" style="background: #eafaf1; border-left: 4px solid #27ae60; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #2c3e50;">
+                    <i class="fas fa-tags" style="color: #27ae60;"></i> Loading store offers...
+                </div>
+
+                <!-- Coupon Input Box -->
+                <div style="background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 8px;"><i class="fas fa-percentage"></i> Apply Coupon Code</h4>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="coupon-input" placeholder="e.g., FLAT50" style="flex: 1; padding: 9px; border: 1px solid #ccc; border-radius: 4px; text-transform: uppercase; font-weight: bold;">
+                        <button onclick="applyCoupon()" id="btn-apply-coupon" style="background: #2c3e50; color: white; border: none; padding: 9px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">Apply</button>
+                    </div>
+                    <p id="coupon-msg" style="font-size: 12px; margin-top: 6px; font-weight: bold; display: none;"></p>
+                </div>
+
                 <!-- Order Summary Display -->
                 <div style="background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
                     <h3 style="color: #2c3e50; margin-bottom: 10px;"><i class="fas fa-receipt"></i> Order Summary</h3>
                     <p style="margin: 5px 0; color: #555;">Total Items: <strong id="total-items">0</strong></p>
+                    <p id="discount-row" style="margin: 5px 0; color: #27ae60; display: none;">Coupon Discount: <strong>-₹<span id="discount-price">0</span></strong></p>
                     <p style="margin: 5px 0; color: #555;">Payable Total: <strong style="color: #e74c3c; font-size: 18px;">₹<span id="total-price">0</span></strong></p>
                 </div>
 
@@ -87,7 +101,7 @@
 
                 <button class="checkout-btn" onclick="generateInvoiceAndQR()">Generate Invoice & Pay</button>
 
-                <!-- Payment Section (Hidden initially) -->
+                <!-- Payment Section -->
                 <div id="payment-section" style="display: none; margin-top: 20px; text-align: center;">
                     <div class="invoice-box">
                         <p>Order ID: <strong id="order-id-display"></strong></p>
@@ -103,7 +117,6 @@
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
         <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>

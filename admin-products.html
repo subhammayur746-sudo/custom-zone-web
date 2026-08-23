@@ -34,8 +34,11 @@
         .btn-admin:disabled { background: #95a5a6; cursor: not-allowed; }
         
         .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
-        
         .sticky-note-input { background: #fffde7; border: 1px dashed #fbc02d !important; font-size: 12px; padding: 6px; border-radius: 4px; width: 100%; margin-top: 5px; }
+
+        /* Edit Modal */
+        #edit-modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:99999; justify-content:center; align-items:center; padding:15px; }
+        .modal-body { background:#fff; padding:25px; border-radius:8px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; position:relative; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -88,7 +91,6 @@
             <div class="form-group">
                 <label>Select Product Images (Select 1 to 4 Images Together)</label>
                 <input type="file" id="prod-img-files" accept="image/*" multiple>
-                <small style="color:#7f8c8d;">Hold Ctrl / Shift to select multiple images.</small>
             </div>
             <button class="btn-admin" id="btn-upload" onclick="uploadProductToCloud()">Upload Product</button>
             <p id="prod-msg" style="margin-top: 12px; font-weight: bold; display: none;"></p>
@@ -96,11 +98,15 @@
 
         <!-- Product List Table -->
         <div class="admin-card" style="overflow-x: auto;">
-            <h3><i class="fas fa-list"></i> Live Product List & Sticky Notes</h3>
-            <table style="width:100%; border-collapse: collapse; min-width: 600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-list"></i> Live Product List</h3>
+                <input type="text" id="product-search-input" onkeyup="filterProducts()" placeholder="🔍 Search product name..." style="max-width:280px; padding:8px 12px; border:1px solid #ccc; border-radius:4px;">
+            </div>
+
+            <table style="width:100%; border-collapse: collapse; min-width: 650px;">
                 <thead>
                     <tr style="background:#f8f9fa; text-align:left;">
-                        <th style="padding:10px;">Image</th>
+                        <th style="padding:10px;">Images</th>
                         <th style="padding:10px;">Name & Admin Note</th>
                         <th style="padding:10px;">Price (₹)</th>
                         <th style="padding:10px;">Status</th>
@@ -114,15 +120,51 @@
         </div>
     </div>
 
+    <!-- Edit Product Modal -->
+    <div id="edit-modal">
+        <div class="modal-body">
+            <span onclick="closeEditModal()" style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer; font-weight:bold;">&times;</span>
+            <h3 style="color:#2c3e50; margin-bottom:15px;">Edit Product</h3>
+            <input type="hidden" id="edit-prod-id">
+            <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" id="edit-prod-name">
+            </div>
+            <div class="form-group">
+                <label>Price (₹)</label>
+                <input type="number" id="edit-prod-price">
+            </div>
+            <div class="form-group">
+                <label>Customization Type</label>
+                <select id="edit-prod-type">
+                    <option value="none">No Customization</option>
+                    <option value="name">Custom Name / Text</option>
+                    <option value="pic">Custom Picture Upload</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Replace Images (Optional: 1 to 4 Images)</label>
+                <input type="file" id="edit-prod-files" accept="image/*" multiple>
+            </div>
+            <button class="btn-admin" id="btn-save-edit" onclick="saveProductEditCloud()">Update Product</button>
+        </div>
+    </div>
+
     <script>
+        let allProductsCache = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-        if (!loggedInUser || !loggedInUser.permissions.includes('products')) {
+
+        if (!loggedInUser || (!loggedInUser.permissions.includes('products') && loggedInUser.username !== 'admin')) {
             window.location.href = "admin-dashboard.html";
         } else {
-            loggedInUser.permissions.forEach(perm => {
-                let menuId = 'menu-' + perm;
-                if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
-            });
+            if (loggedInUser.username === 'admin') {
+                document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'block');
+            } else if (loggedInUser.permissions) {
+                loggedInUser.permissions.forEach(perm => {
+                    let menuId = 'menu-' + perm;
+                    if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
+                });
+            }
             fetchProductsFromCloud();
         }
 
@@ -167,7 +209,7 @@
                     imagesArray.push(imgUrl);
                 }
 
-                btnUpload.innerText = "Saving Product Data...";
+                btnUpload.innerText = "Saving Product...";
                 await db.collection("products").add({
                     name: name,
                     price: parseInt(price),
@@ -179,7 +221,7 @@
                 });
 
                 msgBox.style.color = "green";
-                msgBox.innerText = "Product uploaded successfully with all images!";
+                msgBox.innerText = "Product uploaded successfully!";
                 document.getElementById('prod-name').value = ""; 
                 document.getElementById('prod-price').value = ""; 
                 fileInput.value = "";
@@ -187,11 +229,11 @@
             } catch (error) {
                 console.error(error);
                 msgBox.style.color = "red";
-                msgBox.innerText = "Error uploading. Please check connection.";
+                msgBox.innerText = "Error uploading product.";
             } finally {
                 btnUpload.disabled = false;
                 btnUpload.innerText = "Upload Product";
-                setTimeout(() => { msgBox.style.display = "none"; }, 4000);
+                setTimeout(() => { msgBox.style.display = "none"; }, 3500);
             }
         }
 
@@ -199,6 +241,7 @@
             const tbody = document.getElementById('admin-product-list');
             try {
                 const snapshot = await db.collection("products").orderBy("timestamp", "desc").get();
+                allProductsCache = [];
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
@@ -208,36 +251,118 @@
 
                 snapshot.forEach((doc) => {
                     let prod = doc.data();
-                    let docId = doc.id;
-                    let imgTag = prod.images && prod.images.length > 0 ? `<img src="${prod.images[0]}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">` : "No Image";
-                    let typeLabel = prod.customType === "name" ? "Name" : (prod.customType === "pic" ? "Picture" : "None");
-                    let statusText = prod.isActive !== false ? "Active" : "Disabled";
-                    let btnClass = prod.isActive !== false ? "background:#7f8c8d;" : "background:#27ae60;";
-                    let btnText = prod.isActive !== false ? "Disable" : "Enable";
-
-                    tbody.innerHTML += `
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding:10px;">${imgTag}</td>
-                            <td style="padding:10px;">
-                                <strong>${prod.name}</strong> <small style="color:#e74c3c;">[${typeLabel}]</small>
-                                <textarea class="sticky-note-input" id="note-${docId}" placeholder="📝 Admin note (Private)..." rows="1">${prod.adminNote || ""}</textarea>
-                                <button onclick="saveAdminNote('${docId}')" style="background:#f39c12; color:white; border:none; padding:3px 8px; font-size:11px; border-radius:3px; cursor:pointer; margin-top:3px;">Save Note</button>
-                            </td>
-                            <td style="padding:10px;">
-                                <input type="number" id="price-${docId}" value="${prod.price}" style="width:70px; padding:6px;">
-                                <button onclick="updatePriceCloud('${docId}')" style="background:#2c3e50; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;">Save</button>
-                            </td>
-                            <td style="padding:10px; font-weight:600;">${statusText}</td>
-                            <td style="padding:10px;">
-                                <button onclick="toggleProductCloud('${docId}', ${prod.isActive})" style="${btnClass} color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;">${btnText}</button>
-                                <button onclick="deleteProductCloud('${docId}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:4px;"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    prod.id = doc.id;
+                    allProductsCache.push(prod);
                 });
+
+                renderProductTable(allProductsCache);
             } catch (err) {
                 console.error(err);
                 tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:red; padding:15px;'>Failed to load products.</td></tr>";
+            }
+        }
+
+        function renderProductTable(products) {
+            const tbody = document.getElementById('admin-product-list');
+            tbody.innerHTML = "";
+
+            products.forEach(prod => {
+                let docId = prod.id;
+                let imagesHTML = "";
+                if(prod.images && prod.images.length > 0) {
+                    prod.images.forEach(img => {
+                        imagesHTML += `<img src="${img}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; margin-right:4px; border:1px solid #ddd;">`;
+                    });
+                } else {
+                    imagesHTML = "No Image";
+                }
+
+                let typeLabel = prod.customType === "name" ? "Name" : (prod.customType === "pic" ? "Picture" : "None");
+                let statusText = prod.isActive !== false ? "Active" : "Disabled";
+                let btnClass = prod.isActive !== false ? "background:#7f8c8d;" : "background:#27ae60;";
+                let btnText = prod.isActive !== false ? "Disable" : "Enable";
+
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding:10px; min-width:140px;">${imagesHTML}</td>
+                        <td style="padding:10px;">
+                            <strong>${prod.name}</strong> <small style="color:#e74c3c;">[${typeLabel}]</small>
+                            <textarea class="sticky-note-input" id="note-${docId}" placeholder="📝 Admin note (Private)..." rows="1">${prod.adminNote || ""}</textarea>
+                            <button onclick="saveAdminNote('${docId}')" style="background:#f39c12; color:white; border:none; padding:3px 8px; font-size:11px; border-radius:3px; cursor:pointer; margin-top:3px;">Save Note</button>
+                        </td>
+                        <td style="padding:10px;">
+                            <input type="number" id="price-${docId}" value="${prod.price}" style="width:70px; padding:6px;">
+                            <button onclick="updatePriceCloud('${docId}')" style="background:#2c3e50; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;">Save</button>
+                        </td>
+                        <td style="padding:10px; font-weight:600;">${statusText}</td>
+                        <td style="padding:10px; min-width:130px;">
+                            <button onclick="openEditModal('${docId}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
+                            <button onclick="toggleProductCloud('${docId}', ${prod.isActive})" style="${btnClass} color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;">${btnText}</button>
+                            <button onclick="deleteProductCloud('${docId}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterProducts() {
+            let term = document.getElementById('product-search-input').value.toLowerCase().trim();
+            let filtered = allProductsCache.filter(p => p.name.toLowerCase().includes(term));
+            renderProductTable(filtered);
+        }
+
+        function openEditModal(docId) {
+            let prod = allProductsCache.find(p => p.id === docId);
+            if(!prod) return;
+            document.getElementById('edit-prod-id').value = docId;
+            document.getElementById('edit-prod-name').value = prod.name;
+            document.getElementById('edit-prod-price').value = prod.price;
+            document.getElementById('edit-prod-type').value = prod.customType || 'none';
+            document.getElementById('edit-prod-files').value = "";
+            document.getElementById('edit-modal').style.display = "flex";
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = "none";
+        }
+
+        async function saveProductEditCloud() {
+            const docId = document.getElementById('edit-prod-id').value;
+            const name = document.getElementById('edit-prod-name').value.trim();
+            const price = parseInt(document.getElementById('edit-prod-price').value);
+            const customType = document.getElementById('edit-prod-type').value;
+            const fileInput = document.getElementById('edit-prod-files');
+            const btn = document.getElementById('btn-save-edit');
+
+            if(!name || isNaN(price)) { alert("Enter valid name and price."); return; }
+
+            btn.disabled = true;
+            btn.innerText = "Updating...";
+
+            try {
+                let updateData = { name: name, price: price, customType: customType };
+                
+                if(fileInput.files.length > 0) {
+                    if(fileInput.files.length > 4) { alert("Max 4 images allowed."); btn.disabled = false; return; }
+                    let imagesArray = [];
+                    for(let i = 0; i < fileInput.files.length; i++) {
+                        btn.innerText = `Uploading Image (${i+1}/${fileInput.files.length})...`;
+                        let url = await uploadSingleImage(fileInput.files[i]);
+                        imagesArray.push(url);
+                    }
+                    updateData.images = imagesArray;
+                }
+
+                await db.collection("products").doc(docId).update(updateData);
+                alert("✅ Product updated successfully!");
+                closeEditModal();
+                fetchProductsFromCloud();
+            } catch(e) {
+                console.error(e);
+                alert("Failed to update product.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Update Product";
             }
         }
 
@@ -253,7 +378,7 @@
             let newPrice = parseInt(document.getElementById(`price-${docId}`).value);
             try {
                 await db.collection("products").doc(docId).update({ price: newPrice });
-                alert("Price updated in Cloud!");
+                alert("Price updated!");
                 fetchProductsFromCloud();
             } catch(e) { alert("Error updating price."); }
         }
