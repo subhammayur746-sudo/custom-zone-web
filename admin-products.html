@@ -22,7 +22,6 @@
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
-        .menu-item { display: none; }
         
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
@@ -58,11 +57,12 @@
     <div class="sidebar">
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
         <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" class="menu-item active" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" class="menu-item" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" class="menu-item" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" class="active" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -91,6 +91,7 @@
             <div class="form-group">
                 <label>Select Product Images (Select 1 to 4 Images Together)</label>
                 <input type="file" id="prod-img-files" accept="image/*" multiple>
+                <small style="color:#7f8c8d;">Hold Ctrl / Shift to select multiple images.</small>
             </div>
             <button class="btn-admin" id="btn-upload" onclick="uploadProductToCloud()">Upload Product</button>
             <p id="prod-msg" style="margin-top: 12px; font-weight: bold; display: none;"></p>
@@ -154,32 +155,35 @@
         let allProductsCache = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
-        if (!loggedInUser || (!loggedInUser.permissions.includes('products') && loggedInUser.username !== 'admin')) {
-            window.location.href = "admin-dashboard.html";
+        if (!loggedInUser) {
+            window.location.href = "admin-login.html";
         } else {
-            if (loggedInUser.username === 'admin') {
-                document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'block');
-            } else if (loggedInUser.permissions) {
-                loggedInUser.permissions.forEach(perm => {
-                    let menuId = 'menu-' + perm;
-                    if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
-                });
+            if (loggedInUser.username !== 'admin' && loggedInUser.permissions && !loggedInUser.permissions.includes('products')) {
+                alert("Permission denied!");
+                window.location.href = "admin-dashboard.html";
             }
             fetchProductsFromCloud();
         }
 
         function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
 
+        // পার্মানেন্ট ডিরেক্ট ইমেজ আপলোড ফাংশন
         async function uploadSingleImage(file) {
+            const apiKey = typeof IMGBB_API_KEY !== 'undefined' ? IMGBB_API_KEY : "fac19ae5956e46b656a6004b390875e2";
             const formData = new FormData();
             formData.append("image", file);
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
                 method: "POST",
                 body: formData
             });
+            
             const data = await res.json();
-            if(data.success) return data.data.display_url;
-            throw new Error("Image Upload Failed");
+            if(data.success) {
+                // ডিরেক্ট পার্মানেন্ট ইমেজ লিংক
+                return data.data.display_url || data.data.url;
+            }
+            throw new Error(data.error ? data.error.message : "Image Upload Failed");
         }
 
         async function uploadProductToCloud() {
@@ -271,7 +275,7 @@
                 let imagesHTML = "";
                 if(prod.images && prod.images.length > 0) {
                     prod.images.forEach(img => {
-                        imagesHTML += `<img src="${img}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; margin-right:4px; border:1px solid #ddd;">`;
+                        imagesHTML += `<img src="${img}" onerror="this.src='assets/images/logo.png'" style="width:40px; height:40px; object-fit:cover; border-radius:4px; margin-right:4px; border:1px solid #ddd;">`;
                     });
                 } else {
                     imagesHTML = "No Image";

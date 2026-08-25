@@ -17,19 +17,21 @@ async function fetchLiveProducts() {
             return;
         }
 
+        const fallbackImg = "assets/images/logo.png";
+
         snapshot.forEach(doc => {
             let prod = doc.data();
             prod.id = doc.id;
             liveProducts.push(prod);
             
-            let images = prod.images && prod.images.length > 0 ? prod.images : ['https://via.placeholder.com/300'];
+            let images = prod.images && prod.images.length > 0 ? prod.images : [fallbackImg];
             let mainImg = images[0];
 
             let thumbnailsHTML = "";
             if (images.length > 1) {
                 thumbnailsHTML = `<div class="product-thumb-gallery" style="display:flex; gap:6px; justify-content:center; margin-bottom:10px; overflow-x:auto;">`;
                 images.forEach((img) => {
-                    thumbnailsHTML += `<img src="${img}" onclick="changeCardMainImg('${prod.id}', '${img}')" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:pointer;">`;
+                    thumbnailsHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" onclick="changeCardMainImg('${prod.id}', '${img}')" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:pointer;">`;
                 });
                 thumbnailsHTML += `</div>`;
             }
@@ -37,7 +39,7 @@ async function fetchLiveProducts() {
             container.innerHTML += `
                 <div class="product-card">
                     <div style="position:relative; cursor:zoom-in;" onclick="openImageZoom('${mainImg}')">
-                        <img id="main-img-${prod.id}" src="${mainImg}" alt="${prod.name}">
+                        <img id="main-img-${prod.id}" src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
                     </div>
                     ${thumbnailsHTML}
                     <h3>${prod.name}</h3>
@@ -120,8 +122,9 @@ function displayPopup(data) {
     if (descEl) descEl.innerText = data.description || "";
     
     if (imgEl) {
-        if (data.imageUrl) {
+        if (data.imageUrl && data.imageUrl.trim() !== "") {
             imgEl.src = data.imageUrl;
+            imgEl.onerror = function() { this.style.display = 'none'; }; // ব্রোকেন হলে ছবি হাইড থাকবে
             imgEl.style.display = "block";
         } else {
             imgEl.style.display = "none";
@@ -134,17 +137,14 @@ function displayPopup(data) {
 }
 
 function checkPromoPopup() {
-    const local = JSON.parse(localStorage.getItem('cz_promo_settings'));
-    if (local && local.enabled) {
-        displayPopup(local);
-        return;
-    }
-
     try {
         if (typeof db !== 'undefined') {
             db.collection("settings").doc("promo").get().then(doc => {
                 if (doc.exists) {
                     displayPopup(doc.data());
+                } else {
+                    const local = JSON.parse(localStorage.getItem('cz_promo_settings'));
+                    if (local && local.enabled) displayPopup(local);
                 }
             });
         }
