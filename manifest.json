@@ -1,0 +1,28 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "customzone.app",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "customzone",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "https://customzone.netlify.app/assets/images/logo.png",
+      "type": "image/png",
+      "sizes": "2000x2000",
+      "isSquare": true,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 2000,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    }
+  ],
+  "description": "customize your product with us",
+  "id": "customzone"
+}
