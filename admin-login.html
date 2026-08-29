@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase CDN -->
@@ -13,85 +14,155 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: #2c3e50; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
-        .login-box { background: #fff; padding: 35px 25px; border-radius: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.25); width: 100%; max-width: 380px; text-align: center; }
-        .login-box h2 { color: #2c3e50; margin-bottom: 25px; font-size: 22px; }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; font-size: 13px; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; outline: none; }
-        .input-group input:focus { border-color: #e74c3c; }
-        .login-btn { background: #e74c3c; color: #fff; border: none; padding: 13px; width: 100%; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .login-btn:hover { background: #c0392b; }
-        #error-msg { color: #e74c3c; margin-top: 15px; display: none; font-weight: bold; font-size: 13px; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .login-card {
+            background: #fff;
+            padding: 35px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .login-card img {
+            width: 70px;
+            margin-bottom: 15px;
+        }
+        .login-card h2 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        .login-card p {
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+        .form-group input:focus {
+            border-color: #e74c3c;
+        }
+        .btn-login {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-login:hover {
+            background: #c0392b;
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-box">
-        <i class="fas fa-user-shield" style="font-size: 45px; color: #2c3e50; margin-bottom: 12px;"></i>
-        <h2>CZ Admin Panel</h2>
-        
-        <div class="input-group">
-            <label>Username</label>
-            <input type="text" id="username" placeholder="Enter username" autocomplete="off">
-        </div>
-        <div class="input-group">
-            <label>Password</label>
-            <input type="password" id="password" placeholder="Enter password">
-        </div>
-        
-        <button class="login-btn" id="btn-login" onclick="checkLogin()">Login</button>
-        <p id="error-msg"></p>
+    <div class="login-card">
+        <img src="assets/images/logo.png" alt="Custom Zone Logo">
+        <h2>Admin Access</h2>
+        <p>Enter your credentials to manage Custom Zone</p>
+
+        <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+            <div class="form-group">
+                <label>Admin Username / Email</label>
+                <input type="text" id="login-email" placeholder="admin" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-login" id="btn-login-submit">Login to Dashboard</button>
+            <p id="login-error-msg" style="color:red; font-size:13px; margin-top:12px; font-weight:bold; display:none;"></p>
+        </form>
     </div>
 
     <script>
-        async function checkLogin() {
-            const user = document.getElementById('username').value.trim().toLowerCase();
-            const pass = document.getElementById('password').value.trim();
-            const errorMsg = document.getElementById('error-msg');
-            const btn = document.getElementById('btn-login');
+        // Check if already logged in
+        if (localStorage.getItem('cz_logged_in_user')) {
+            window.location.href = "admin-dashboard.html";
+        }
 
-            if(!user || !pass) {
-                errorMsg.style.display = 'block';
-                errorMsg.innerText = "Please enter username and password!";
-                return;
-            }
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('login-email').value.trim();
+            const passwordInput = document.getElementById('login-password').value.trim();
+            const errorMsg = document.getElementById('login-error-msg');
+            const submitBtn = document.getElementById('btn-login-submit');
 
-            btn.innerText = "Verifying...";
-            btn.disabled = true;
-            errorMsg.style.display = 'none';
+            errorMsg.style.display = "none";
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Verifying...";
 
-            // Master Default Fallback
-            if (user === "admin" && pass === "1234") {
-                const masterUser = { username: "admin", permissions: ['products', 'orders', 'ads', 'users', 'reviews'] };
-                localStorage.setItem('cz_logged_in_user', JSON.stringify(masterUser));
+            // নতুন মাস্টার পাসওয়ার্ড চেক
+            if ((emailInput.toLowerCase() === "admin" || emailInput.toLowerCase() === "admin@customzone.com") && passwordInput === "admin@2005") {
+                const sessionUser = {
+                    name: "Master Admin",
+                    username: "admin",
+                    role: "Master Admin",
+                    permissions: ["all"]
+                };
+                localStorage.setItem('cz_logged_in_user', JSON.stringify(sessionUser));
                 window.location.href = "admin-dashboard.html";
                 return;
             }
 
+            // ক্লাউড স্টাফ ইউজার চেক
             try {
-                const userDoc = await db.collection("users").doc(user).get();
-                if (userDoc.exists) {
+                const userDoc = await db.collection("staff").doc(emailInput.toLowerCase()).get();
+                if (userDoc.exists && userDoc.data().password === passwordInput) {
                     const userData = userDoc.data();
-                    if (userData.password === pass) {
-                        localStorage.setItem('cz_logged_in_user', JSON.stringify({
-                            username: user,
-                            permissions: userData.permissions || []
-                        }));
-                        window.location.href = "admin-dashboard.html";
-                        return;
-                    }
+                    localStorage.setItem('cz_logged_in_user', JSON.stringify({
+                        name: userData.name || emailInput,
+                        username: emailInput,
+                        role: userData.role || "Staff",
+                        permissions: userData.permissions || []
+                    }));
+                    window.location.href = "admin-dashboard.html";
+                } else {
+                    errorMsg.style.display = "block";
+                    errorMsg.innerText = "❌ Invalid username or password.";
                 }
-                errorMsg.style.display = 'block';
-                errorMsg.innerText = "Invalid Username or Password!";
             } catch (err) {
                 console.error(err);
-                errorMsg.style.display = 'block';
-                errorMsg.innerText = "Connection error. Please try again.";
+                errorMsg.style.display = "block";
+                errorMsg.innerText = "❌ Invalid username or password.";
             } finally {
-                btn.innerText = "Login";
-                btn.disabled = false;
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Login to Dashboard";
             }
         }
     </script>

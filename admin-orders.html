@@ -267,7 +267,6 @@
             try {
                 await db.collection("orders").doc(orderId).update({ status: newStatus });
                 
-                // ডেলিভারি হলে অটোমেটিক রেফারেল কুপন ক্লাউডে রেজিস্টার করা
                 if (newStatus === "Delivered Successfully") {
                     let refCode = "REF-" + orderId;
                     await db.collection("coupons").doc(refCode).set({
@@ -311,7 +310,7 @@
                       `Your Order *#${orderId}* has been successfully delivered! 📦✨\n\n` +
                       `We hope you loved your handcrafted customized product. Your feedback means everything to us! ❤️\n\n` +
                       `⭐ *Please take 10 seconds to leave us a 5-Star Review here:*\n` +
-                      `👉 https://customzone.netlify.app/about.html\n\n` +
+                      `👉 https://custom-zone-web.vercel.app/about.html\n\n` +
                       `-------------------------------\n` +
                       `🎁 *REFER & EARN ₹50 DISCOUNT!*\n` +
                       `Share your unique referral code with your friends:\n` +
@@ -333,7 +332,7 @@
                       `*Order Details:*\n` +
                       `${order.items}\n` +
                       `*Total Amount:* ₹${order.totalAmount}\n\n` +
-                      `Track live on our website: https://customzone.netlify.app/track-order.html\n\n` +
+                      `Track live on our website: https://custom-zone-web.vercel.app/track-order.html\n\n` +
                       `Thank you for shopping with Custom Zone! ❤️\n` +
                       `📞 Support: +91 6290407730`;
             }
@@ -378,7 +377,7 @@
                             `👉 Use Code: *${coupon.code}*\n` +
                             `👉 Min Order Value: ₹${coupon.minOrder || 0}\n\n` +
                             `🛍️ Explore new arrivals & order now:\n` +
-                            `https://customzone.netlify.app\n\n` +
+                            `https://custom-zone-web.vercel.app\n\n` +
                             `Happy Gifting! | WhatsApp Support: +91 6290407730`;
         }
 

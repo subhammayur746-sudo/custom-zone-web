@@ -66,7 +66,6 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px;">Welcome, <span id="admin-user-display">Admin</span>! 👋</h2>
 
-        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <i class="fas fa-shopping-cart" style="color: #3498db;"></i>
@@ -98,7 +97,6 @@
             </div>
         </div>
 
-        <!-- Smart Occasion / Birthday Reminder Alert Card -->
         <div class="admin-card" style="border: 2px solid #f39c12; background: #fffdf9;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom: 15px; border-bottom: 2px solid #ffeaa7; padding-bottom: 10px;">
                 <h3 style="margin:0; border:none; padding:0; color:#d35400;">
@@ -112,7 +110,6 @@
             </div>
         </div>
 
-        <!-- Recent Orders Summary -->
         <div class="admin-card" style="overflow-x: auto;">
             <h3><i class="fas fa-clock"></i> Recent Orders Activity</h3>
             <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
@@ -147,7 +144,6 @@
 
         async function loadDashboardStats() {
             try {
-                // 1. Orders & Revenue
                 const orderSnap = await db.collection("orders").get();
                 let totalOrders = orderSnap.size;
                 let revenue = 0;
@@ -165,11 +161,9 @@
                 document.getElementById('stat-total-orders').innerText = totalOrders;
                 document.getElementById('stat-total-revenue').innerText = "₹" + revenue;
 
-                // 2. Active Products
                 const prodSnap = await db.collection("products").where("isActive", "==", true).get();
                 document.getElementById('stat-total-products').innerText = prodSnap.size;
 
-                // 3. Average Rating
                 const revSnap = await db.collection("reviews").get();
                 if(!revSnap.empty) {
                     let totalRating = 0;
@@ -178,7 +172,6 @@
                     document.getElementById('stat-avg-rating').innerText = avg + " ★";
                 }
 
-                // Render Recent 5 Orders
                 const recentTbody = document.getElementById('dashboard-recent-orders');
                 recentTbody.innerHTML = "";
                 recentOrders.slice(0, 5).forEach(ord => {
@@ -198,7 +191,6 @@
             }
         }
 
-        // স্মার্ট রিমাইন্ডার ইঞ্জিন (৭-১০ দিনের মধ্যে জন্মদিন/অ্যানিভার্সারি বের করার অ্যালগরিদম)
         async function loadOccasionReminders() {
             const container = document.getElementById('occasion-reminder-container');
             try {
@@ -214,7 +206,6 @@
                         if(!isNaN(occDate.getTime())) {
                             let thisYearOcc = new Date(currentYear, occDate.getMonth(), occDate.getDate());
                             
-                            // যদি এই বছরের তারিখ পার হয়ে যায়, তবে পরের বছরের তারিখ নেবে
                             if(thisYearOcc < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
                                 thisYearOcc.setFullYear(currentYear + 1);
                             }
@@ -279,7 +270,6 @@
             }
         }
 
-        // WhatsApp-এ শুভেচ্ছা ও পার্সোনালাইজড ডিসকাউন্ট বার্তা পাঠানো
         function sendOccasionOfferWhatsApp(name, phone, occasion, dateText) {
             let cleanPhone = phone.replace(/[^0-9]/g, '');
             if(!cleanPhone || cleanPhone.length < 10) { alert("Invalid phone number."); return; }
@@ -292,7 +282,7 @@
                       `🎁 *Get FLAT ₹50 OFF on any customized gift!*\n` +
                       `👉 Use Coupon Code: *LOVE50*\n\n` +
                       `🛍️ Order your personalized keepsake before time:\n` +
-                      `https://customzone.netlify.app\n\n` +
+                      `https://custom-zone-web.vercel.app\n\n` +
                       `Warm wishes from the Custom Zone Family! ❤️\n` +
                       `📞 WhatsApp Support: +91 6290407730`;
 

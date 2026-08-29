@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Coupons & Broadcast - Custom Zone</title>
+    <title>Manage Coupons & Gift Cards - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -55,82 +55,94 @@
         <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
         <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" class="active" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-coupons.html" class="active" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Coupons & Festive Broadcast</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Coupons, Gift Vouchers & Referrals</h2>
 
         <div style="display:flex; gap:20px; flex-wrap:wrap;">
             
-            <!-- Create Coupon Card -->
             <div class="admin-card" style="flex: 1; min-width: 320px;">
-                <h3><i class="fas fa-plus-circle"></i> Create New Coupon</h3>
-                <div class="form-group">
-                    <label>Coupon Code (e.g., PUJA50, FESTIVE100)</label>
-                    <input type="text" id="coupon-code" placeholder="Enter coupon code" style="text-transform:uppercase; font-weight:bold;">
-                </div>
-                <div class="form-group">
-                    <label>Discount Amount (₹)</label>
-                    <input type="number" id="coupon-discount" placeholder="e.g., 50">
-                </div>
-                <div class="form-group">
-                    <label>Minimum Order Value (₹)</label>
-                    <input type="number" id="coupon-min-order" placeholder="e.g., 299">
-                </div>
-                <button class="btn-admin" id="btn-save-coupon" onclick="createCouponCloud()">Create Coupon</button>
-            </div>
-
-            <!-- Festive WhatsApp Broadcast Card -->
-            <div class="admin-card" style="flex: 1.2; min-width: 320px; background: #fdfefe; border: 1px solid #d4edda;">
-                <h3 style="color: #155724;"><i class="fas fa-bullhorn"></i> Festive WhatsApp Broadcast</h3>
-                <p style="font-size: 13px; color: #555; margin-bottom: 12px;">
-                    Download all customer contacts in 1-click & send festive promo offers easily.
-                </p>
+                <h3><i class="fas fa-plus-circle"></i> Create Coupon or Gift Voucher</h3>
                 
                 <div class="form-group">
-                    <label>Select Active Coupon to Broadcast</label>
-                    <select id="broadcast-coupon-select" onchange="updateBroadcastPreview()">
-                        <option value="">-- Choose Coupon --</option>
+                    <label>Discount Type</label>
+                    <select id="coupon-type" onchange="toggleVoucherFields()">
+                        <option value="coupon">Standard Store Coupon</option>
+                        <option value="voucher">🎁 Digital Gift Voucher / Card (₹0 Min Order)</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>Broadcast Message Preview</label>
-                    <textarea id="broadcast-msg-preview" rows="4" style="font-size: 12px; font-family: inherit;"></textarea>
+                    <label>Code (e.g., FESTIVE50 or GIFT-CZ500)</label>
+                    <div style="display:flex; gap:6px;">
+                        <input type="text" id="coupon-code" placeholder="Enter code" style="text-transform:uppercase; font-weight:bold; flex:1;">
+                        <button type="button" onclick="generateRandomVoucherCode()" id="btn-gen-code" style="display:none; background:#3498db; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">Auto Code</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Value / Discount Amount (₹)</label>
+                    <input type="number" id="coupon-discount" placeholder="e.g., 50 or 500">
+                </div>
+                
+                <div class="form-group" id="min-order-group">
+                    <label>Minimum Order Value (₹)</label>
+                    <input type="number" id="coupon-min-order" placeholder="e.g., 299">
+                </div>
+                
+                <button class="btn-admin" id="btn-save-coupon" onclick="createCouponCloud()">Create Code</button>
+            </div>
+
+            <div class="admin-card" style="flex: 1.2; min-width: 320px; background: #fdfefe; border: 1px solid #d4edda;">
+                <h3 style="color: #155724;"><i class="fas fa-gift"></i> Digital Gift Voucher Sender</h3>
+                <p style="font-size: 13px; color: #555; margin-bottom: 12px;">
+                    Send personalized digital gift voucher cards directly to buyers via WhatsApp.
+                </p>
+                
+                <div class="form-group">
+                    <label>Select Active Gift Voucher</label>
+                    <select id="voucher-select" onchange="updateVoucherPreview()">
+                        <option value="">-- Choose Gift Voucher --</option>
+                    </select>
                 </div>
 
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="downloadContactsVCF()" style="flex:1; background: #3498db; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                        <i class="fas fa-file-download"></i> Save Contacts (.vcf)
-                    </button>
-                    <button onclick="copyBroadcastMessage()" style="flex:1; background: #25d366; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                        <i class="fab fa-whatsapp"></i> Copy Promo Text
-                    </button>
+                <div class="form-group">
+                    <label>Customer / Friend WhatsApp Number</label>
+                    <input type="tel" id="voucher-target-phone" placeholder="e.g., 9876543210">
                 </div>
-                <p id="broadcast-status" style="font-size: 12px; color: green; margin-top: 8px; font-weight: bold; display:none;"></p>
+
+                <div class="form-group">
+                    <label>Voucher Message Preview</label>
+                    <textarea id="voucher-msg-preview" rows="4" style="font-size: 12px; font-family: inherit;"></textarea>
+                </div>
+
+                <button onclick="sendVoucherWhatsApp()" style="background: #25d366; color:white; border:none; padding:11px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%;">
+                    <i class="fab fa-whatsapp"></i> Send Gift Voucher on WhatsApp
+                </button>
             </div>
 
         </div>
 
-        <!-- Coupon List -->
         <div class="admin-card" style="overflow-x: auto;">
-            <h3><i class="fas fa-ticket-alt"></i> Active Store Coupons</h3>
-            <table style="width:100%; border-collapse: collapse; min-width: 500px;">
+            <h3><i class="fas fa-ticket-alt"></i> Active Coupons, Referrals & Gift Cards</h3>
+            <table style="width:100%; border-collapse: collapse; min-width: 550px;">
                 <thead>
                     <tr style="background:#f8f9fa; text-align:left;">
-                        <th style="padding:10px;">Coupon Code</th>
-                        <th style="padding:10px;">Discount</th>
+                        <th style="padding:10px;">Code</th>
+                        <th style="padding:10px;">Type</th>
+                        <th style="padding:10px;">Value</th>
                         <th style="padding:10px;">Min Order</th>
                         <th style="padding:10px;">Status</th>
                         <th style="padding:10px;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="admin-coupon-list">
-                    <tr><td colspan="5" style="text-align:center; padding:15px;">Loading coupons...</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding:15px;">Loading codes...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -138,26 +150,46 @@
 
     <script>
         let allCouponsCache = [];
-        let allCustomerData = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
         if (!loggedInUser) {
             window.location.href = "admin-login.html";
         } else {
             fetchCloudCoupons();
-            fetchCustomerContacts();
         }
 
         function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
 
+        function toggleVoucherFields() {
+            const type = document.getElementById('coupon-type').value;
+            const minOrderGrp = document.getElementById('min-order-group');
+            const genBtn = document.getElementById('btn-gen-code');
+            
+            if(type === 'voucher') {
+                minOrderGrp.style.display = 'none';
+                genBtn.style.display = 'block';
+                generateRandomVoucherCode();
+            } else {
+                minOrderGrp.style.display = 'block';
+                genBtn.style.display = 'none';
+                document.getElementById('coupon-code').value = "";
+            }
+        }
+
+        function generateRandomVoucherCode() {
+            const randomCode = "GIFT-CZ" + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('coupon-code').value = randomCode;
+        }
+
         async function createCouponCloud() {
+            const type = document.getElementById('coupon-type').value;
             const code = document.getElementById('coupon-code').value.trim().toUpperCase();
             const discount = parseInt(document.getElementById('coupon-discount').value);
-            const minOrder = parseInt(document.getElementById('coupon-min-order').value) || 0;
+            const minOrder = type === 'voucher' ? 0 : (parseInt(document.getElementById('coupon-min-order').value) || 0);
             const btn = document.getElementById('btn-save-coupon');
 
             if(!code || isNaN(discount)) {
-                alert("Please provide a valid code and discount amount."); return;
+                alert("Please provide a valid code and value amount."); return;
             }
 
             btn.disabled = true;
@@ -168,36 +200,37 @@
                     code: code,
                     discount: discount,
                     minOrder: minOrder,
+                    type: type,
                     isActive: true,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                alert(`✅ Coupon ${code} created successfully!`);
+                alert(`✅ Code ${code} created successfully!`);
                 document.getElementById('coupon-code').value = "";
                 document.getElementById('coupon-discount').value = "";
                 document.getElementById('coupon-min-order').value = "";
                 fetchCloudCoupons();
             } catch(e) {
                 console.error(e);
-                alert("Error saving coupon.");
+                alert("Error saving code.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Create Coupon";
+                btn.innerText = "Create Code";
             }
         }
 
         async function fetchCloudCoupons() {
             const tbody = document.getElementById('admin-coupon-list');
-            const selectEl = document.getElementById('broadcast-coupon-select');
+            const voucherSelect = document.getElementById('voucher-select');
 
             try {
-                const snapshot = await db.collection("coupons").get();
+                const snapshot = await db.collection("coupons").orderBy("createdAt", "desc").get();
                 tbody.innerHTML = "";
-                selectEl.innerHTML = '<option value="">-- Choose Coupon --</option>';
+                voucherSelect.innerHTML = '<option value="">-- Choose Gift Voucher --</option>';
                 allCouponsCache = [];
 
                 if(snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:15px;'>No coupons created yet.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px;'>No coupons or vouchers found.</td></tr>";
                     return;
                 }
 
@@ -209,13 +242,19 @@
                     let btnColor = c.isActive ? "#7f8c8d" : "#27ae60";
                     let btnText = c.isActive ? "Disable" : "Enable";
 
-                    if(c.isActive) {
-                        selectEl.innerHTML += `<option value="${c.code}">${c.code} (₹${c.discount} OFF on min ₹${c.minOrder || 0})</option>`;
+                    let typeLabel = "Coupon";
+                    let typeBadge = "#3498db";
+                    if(c.type === 'voucher') { typeLabel = "Gift Card"; typeBadge = "#9b59b6"; }
+                    if(c.type === 'referral') { typeLabel = "Referral"; typeBadge = "#e67e22"; }
+
+                    if(c.isActive && c.type === 'voucher') {
+                        voucherSelect.innerHTML += `<option value="${c.code}">${c.code} (Worth ₹${c.discount})</option>`;
                     }
 
                     tbody.innerHTML += `
                         <tr style="border-bottom:1px solid #eee;">
-                            <td style="padding:10px;"><strong style="color:#e74c3c; font-size:15px;">${c.code}</strong></td>
+                            <td style="padding:10px;"><strong style="color:#e74c3c; font-size:14px;">${c.code}</strong></td>
+                            <td style="padding:10px;"><span style="background:${typeBadge}; color:white; padding:3px 7px; border-radius:3px; font-size:11px; font-weight:600;">${typeLabel}</span></td>
                             <td style="padding:10px; font-weight:bold; color:#27ae60;">₹${c.discount} OFF</td>
                             <td style="padding:10px;">₹${c.minOrder || 0}</td>
                             <td style="padding:10px; font-weight:600;">${statusText}</td>
@@ -228,95 +267,38 @@
                 });
             } catch(e) {
                 console.error(e);
-                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center; padding:15px;'>Error loading coupons.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center; padding:15px;'>Error loading codes.</td></tr>";
             }
         }
 
-        async function fetchCustomerContacts() {
-            try {
-                const snapshot = await db.collection("orders").get();
-                let phoneMap = new Map();
-                snapshot.forEach(doc => {
-                    let ord = doc.data();
-                    if(ord.phone) {
-                        let clean = ord.phone.replace(/[^0-9]/g, '');
-                        if(clean.length >= 10) {
-                            let pureNum = clean.slice(-10);
-                            let name = ord.customerName ? ord.customerName.trim() : "Customer";
-                            if(!phoneMap.has(pureNum)) {
-                                phoneMap.set(pureNum, name);
-                            }
-                        }
-                    }
-                });
-                allCustomerData = Array.from(phoneMap, ([phone, name]) => ({ phone, name }));
-            } catch(e) {
-                console.error("Error loading contacts", e);
-            }
-        }
-
-        function updateBroadcastPreview() {
-            const code = document.getElementById('broadcast-coupon-select').value;
-            const preview = document.getElementById('broadcast-msg-preview');
-            if(!code) {
-                preview.value = "";
-                return;
-            }
+        function updateVoucherPreview() {
+            const code = document.getElementById('voucher-select').value;
+            const preview = document.getElementById('voucher-msg-preview');
+            if(!code) { preview.value = ""; return; }
 
             const coupon = allCouponsCache.find(c => c.code === code);
             if(!coupon) return;
 
-            preview.value = `✨ FESTIVE SPECIAL OFFER FROM CUSTOM ZONE! ✨\n\n` +
-                            `Hello! Celebrate this festive season with unique personalized & handmade gifts. 🎁❤️\n\n` +
-                            `Get FLAT ₹${coupon.discount} OFF on your next order!\n` +
-                            `👉 Use Coupon Code: *${coupon.code}*\n` +
-                            `👉 Applicable on Minimum Order: ₹${coupon.minOrder || 0}\n\n` +
-                            `🛍️ Explore trending gifts & order now:\n` +
-                            `https://customzone.netlify.app\n\n` +
-                            `Hurry, limited-time festive offer! | WhatsApp Support: +91 6290407730`;
+            preview.value = `🎁 YOU HAVE RECEIVED A DIGITAL GIFT VOUCHER! 🎁\n\n` +
+                            `Hello! Someone special has gifted you a Custom Zone Digital Gift Card worth *₹${coupon.discount}*! ❤️✨\n\n` +
+                            `👉 Your Voucher Code: *${coupon.code}*\n` +
+                            `👉 Redeem Value: *FLAT ₹${coupon.discount} OFF*\n\n` +
+                            `🛍️ Visit our online store, customize any product, and apply this voucher code during checkout to redeem:\n` +
+                            `https://custom-zone-web.vercel.app\n\n` +
+                            `Enjoy customized shopping! | WhatsApp Support: +91 6290407730`;
         }
 
-        // ১-ক্লিকে ফোনবুক কন্টাক্ট (.vcf) ফাইল তৈরি ও ডাউনলোড
-        function downloadContactsVCF() {
-            if(allCustomerData.length === 0) {
-                alert("No customer contacts found in database yet."); 
-                return;
-            }
+        function sendVoucherWhatsApp() {
+            let phone = document.getElementById('voucher-target-phone').value.replace(/[^0-9]/g, '');
+            let msg = document.getElementById('voucher-msg-preview').value;
+            let code = document.getElementById('voucher-select').value;
 
-            let vcfContent = "";
-            allCustomerData.forEach((cust, index) => {
-                let displayName = `CZ ${cust.name} ${index + 1}`;
-                vcfContent += "BEGIN:VCARD\n";
-                vcfContent += "VERSION:3.0\n";
-                vcfContent += `FN:${displayName}\n`;
-                vcfContent += `TEL;TYPE=CELL:+91${cust.phone}\n`;
-                vcfContent += "END:VCARD\n";
-            });
+            if(!code) { alert("Please select a gift voucher code."); return; }
+            if(!phone || phone.length < 10) { alert("Please enter a valid phone number."); return; }
 
-            const blob = new Blob([vcfContent], { type: "text/vcard;charset=utf-8;" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", "CustomZone_Customers.vcf");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            const status = document.getElementById('broadcast-status');
-            status.style.display = "block";
-            status.innerText = `✓ Downloaded ${allCustomerData.length} contacts! Open the file on your phone to save all contacts automatically.`;
-            setTimeout(() => { status.style.display = "none"; }, 6000);
-        }
-
-        function copyBroadcastMessage() {
-            const msg = document.getElementById('broadcast-msg-preview').value;
-            if(!msg) {
-                alert("Please select a coupon first."); return;
-            }
-            navigator.clipboard.writeText(msg);
-            const status = document.getElementById('broadcast-status');
-            status.style.display = "block";
-            status.innerText = "✓ Festive promo message copied to clipboard! Paste and send to your broadcast list.";
-            setTimeout(() => { status.style.display = "none"; }, 5000);
+            let targetNumber = phone.length === 10 ? "91" + phone : phone;
+            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, "_blank");
         }
 
         async function toggleCouponStatus(code, currentStatus) {
@@ -327,11 +309,11 @@
         }
 
         async function deleteCouponCloud(code) {
-            if(confirm(`Delete coupon ${code} permanently?`)) {
+            if(confirm(`Delete code ${code} permanently?`)) {
                 try {
                     await db.collection("coupons").doc(code).delete();
                     fetchCloudCoupons();
-                } catch(e) { alert("Error deleting coupon."); }
+                } catch(e) { alert("Error deleting code."); }
             }
         }
     </script>
