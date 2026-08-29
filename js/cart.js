@@ -1,9 +1,74 @@
-let currentOrderId = "";
 let currentSubTotal = 0;
 let currentDeliveryCharge = 0;
 let appliedDiscount = 0;
 let appliedCouponCode = "";
 let currentTotal = 0;
+let isGiftWrappingClaimed = false;
+let fomoTimerInterval = null;
+let flashBenefitName = "FREE Premium Gift Wrapping";
+
+// ক্লাউড ডেটাবেস থেকে Flash Offer সেটিংস যাচাই ও টাইমার চালনা
+async function initDynamicFomoTimer() {
+    const fomoContainer = document.getElementById('fomo-timer-container');
+    const countdownEl = document.getElementById('fomo-countdown');
+    const descEl = document.getElementById('fomo-desc');
+
+    if (!fomoContainer) return;
+
+    try {
+        const doc = await db.collection("settings").doc("flash_offer").get();
+        let flashData = { enabled: true, benefit: "FREE Premium Gift Wrapping!", duration: 5 };
+        
+        if (doc.exists) {
+            flashData = doc.data();
+        }
+
+        // অ্যাডমিন থেকে বন্ধ থাকলে ব্যানার পুরো হাইড থাকবে
+        if (flashData.enabled === false) {
+            fomoContainer.style.display = "none";
+            isGiftWrappingClaimed = false;
+            return;
+        }
+
+        // চালু থাকলে ক্লাউড ডেটা অনুযায়ী শো হবে
+        fomoContainer.style.display = "flex";
+        flashBenefitName = flashData.benefit || "FREE Premium Gift Wrapping!";
+        let durationMinutes = flashData.duration || 5;
+        let durationSeconds = durationMinutes * 60;
+
+        if (descEl) {
+            descEl.innerHTML = `Order within ${durationMinutes} mins & get <strong>${flashBenefitName}!</strong> 🎁`;
+        }
+
+        isGiftWrappingClaimed = true;
+
+        function updateTimer() {
+            let minutes = parseInt(durationSeconds / 60, 10);
+            let seconds = parseInt(durationSeconds % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            if (countdownEl) countdownEl.textContent = minutes + ":" + seconds;
+
+            if (--durationSeconds < 0) {
+                clearInterval(fomoTimerInterval);
+                if (countdownEl) {
+                    countdownEl.textContent = "EXPIRED";
+                    countdownEl.style.background = "#7f8c8d";
+                }
+                if (descEl) descEl.innerHTML = "Flash offer ended. Standard packaging applies.";
+                isGiftWrappingClaimed = false;
+            }
+        }
+
+        updateTimer();
+        fomoTimerInterval = setInterval(updateTimer, 1000);
+
+    } catch (e) {
+        console.log("Flash offer sync error, fallback to default", e);
+    }
+}
 
 function renderCart() {
     const container = document.getElementById('cart-items-container');
@@ -29,7 +94,7 @@ function renderCart() {
         if(item.customType === "name") {
             customHTML = `<input type="text" placeholder="Enter Name/Text to print" onchange="saveCustomData(${index}, 'text', this.value)" style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #e74c3c; border-radius: 4px;">`;
         } else if(item.customType === "pic") {
-            customHTML = `<p style="font-size:12px; color:#e74c3c; margin-top:5px;">*Please send your photo on WhatsApp along with your Order ID.</p>`;
+            customHTML = `<p style="font-size:12px; color:#e74c3c; margin-top:5px;">*Please send your photo on WhatsApp along with your order message.</p>`;
         }
 
         container.innerHTML += `
@@ -78,7 +143,43 @@ function renderCart() {
     if(totalPriceEl) totalPriceEl.innerText = currentTotal;
 }
 
-// কার্ট লোড হলে সক্রিয় কুপন লিস্ট চেক করা
+// অটো পিন কোড লুকআপ
+async function lookupPincode(pin) {
+    const pinStr = pin.trim();
+    const statusEl = document.getElementById('pin-status');
+    const distInput = document.getElementById('cust-district');
+    const poInput = document.getElementById('cust-postoffice');
+
+    if (pinStr.length === 6) {
+        statusEl.style.color = "#3498db";
+        statusEl.innerText = "Finding District & Post Office...";
+
+        try {
+            const res = await fetch(`https://api.postalpincode.in/pincode/${pinStr}`);
+            const data = await res.json();
+
+            if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+                const poList = data[0].PostOffice;
+                const district = poList[0].District;
+                
+                distInput.value = district;
+                poInput.value = poList[0].Name;
+                statusEl.style.color = "green";
+                statusEl.innerText = `✓ ${district}`;
+            } else {
+                statusEl.style.color = "#e67e22";
+                statusEl.innerText = "Please enter District & P.O. manually.";
+            }
+        } catch (err) {
+            console.error("PIN lookup error", err);
+            statusEl.innerText = "";
+        }
+    } else {
+        statusEl.innerText = "";
+    }
+}
+
+// কুপন লোড
 async function loadAvailableCoupons() {
     const badge = document.getElementById('available-coupons-badge');
     if(!badge) return;
@@ -91,67 +192,107 @@ async function loadAvailableCoupons() {
         let offers = [];
         snapshot.forEach(doc => {
             let c = doc.data();
-            offers.push(`Use <strong>${c.code}</strong> (₹${c.discount} OFF on min ₹${c.minOrder || 0})`);
+            if(c.type !== 'referral') {
+                offers.push(`Use <strong>${c.code}</strong> (₹${c.discount} OFF on min ₹${c.minOrder || 0})`);
+            }
         });
-        badge.innerHTML = `<i class="fas fa-gift" style="color: #27ae60;"></i> Offers: ` + offers.join(" | ");
-        badge.style.display = "block";
+        if(offers.length > 0) {
+            badge.innerHTML = `<i class="fas fa-gift" style="color: #27ae60;"></i> Offers: ` + offers.join(" | ");
+            badge.style.display = "block";
+        } else {
+            badge.style.display = "none";
+        }
     } catch(e) {
         badge.style.display = "none";
     }
 }
 
-// কুপন অ্যাপ্লাই করা
+// ইউনিভার্সাল কুপন ও ডাইরেক্ট রেফারেল ভ্যালিডেশন
 async function applyCoupon() {
-    const code = document.getElementById('coupon-input').value.trim().toUpperCase();
-    const phone = document.getElementById('cust-phone') ? document.getElementById('cust-phone').value.trim() : "";
+    let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
 
-    if(!code) { alert("Please enter a coupon code."); return; }
+    if(!rawCode) { alert("Please enter a coupon / referral code."); return; }
     if(currentSubTotal === 0) { alert("Cart is empty."); return; }
 
     msg.style.display = "block";
     msg.style.color = "#7f8c8d";
-    msg.innerText = "Verifying coupon...";
+    msg.innerText = "Verifying code...";
 
     try {
-        const doc = await db.collection("coupons").doc(code).get();
-        if(!doc.exists || !doc.data().isActive) {
-            msg.style.color = "red";
-            msg.innerText = "❌ Invalid or expired coupon code.";
-            appliedDiscount = 0;
-            appliedCouponCode = "";
+        let doc = await db.collection("coupons").doc(rawCode).get();
+        let targetCode = rawCode;
+
+        if (!doc.exists && rawCode.startsWith("CZ")) {
+            targetCode = "REF-" + rawCode;
+            doc = await db.collection("coupons").doc(targetCode).get();
+        }
+
+        if (doc.exists && doc.data().isActive) {
+            const coupon = doc.data();
+
+            if(currentSubTotal < (coupon.minOrder || 0)) {
+                msg.style.color = "red";
+                msg.innerText = `❌ Requires a minimum order of ₹${coupon.minOrder}.`;
+                appliedDiscount = 0;
+                appliedCouponCode = "";
+                renderCart();
+                return;
+            }
+
+            if(localStorage.getItem('cz_used_' + targetCode)) {
+                msg.style.color = "red";
+                msg.innerText = `❌ You have already used "${targetCode}" from this device.`;
+                return;
+            }
+
+            appliedDiscount = coupon.discount;
+            appliedCouponCode = targetCode;
+            msg.style.color = "green";
+            msg.innerText = `✅ Code "${targetCode}" applied! You saved ₹${appliedDiscount}.`;
             renderCart();
             return;
         }
 
-        const coupon = doc.data();
+        let cleanOrderId = rawCode.replace("REF-", "");
+        let orderDoc = await db.collection("orders").doc(cleanOrderId).get();
 
-        // মিনিমাম অর্ডার চেক
-        if(currentSubTotal < (coupon.minOrder || 0)) {
-            msg.style.color = "red";
-            msg.innerText = `❌ This coupon requires a minimum order of ₹${coupon.minOrder}.`;
-            appliedDiscount = 0;
-            appliedCouponCode = "";
+        if (orderDoc.exists) {
+            let refCodeName = "REF-" + cleanOrderId;
+
+            if(currentSubTotal < 199) {
+                msg.style.color = "red";
+                msg.innerText = `❌ Referral code requires a minimum order of ₹199.`;
+                appliedDiscount = 0;
+                appliedCouponCode = "";
+                renderCart();
+                return;
+            }
+
+            if(localStorage.getItem('cz_used_' + refCodeName)) {
+                msg.style.color = "red";
+                msg.innerText = `❌ You have already used "${refCodeName}" from this device.`;
+                return;
+            }
+
+            appliedDiscount = 50;
+            appliedCouponCode = refCodeName;
+            msg.style.color = "green";
+            msg.innerText = `✅ Referral Code "${refCodeName}" applied! You saved ₹50.`;
             renderCart();
             return;
         }
 
-        // ওয়ান-টাইম চেক (লোকাল ও ক্লাউড)
-        if(localStorage.getItem('cz_used_' + code)) {
-            msg.style.color = "red";
-            msg.innerText = `❌ You have already used coupon "${code}" from this device.`;
-            return;
-        }
-
-        appliedDiscount = coupon.discount;
-        appliedCouponCode = code;
-        msg.style.color = "green";
-        msg.innerText = `✅ Coupon "${code}" applied! You saved ₹${appliedDiscount}.`;
+        msg.style.color = "red";
+        msg.innerText = "❌ Invalid or expired code.";
+        appliedDiscount = 0;
+        appliedCouponCode = "";
         renderCart();
+
     } catch(e) {
         console.error(e);
         msg.style.color = "red";
-        msg.innerText = "Error applying coupon.";
+        msg.innerText = "Error applying code.";
     }
 }
 
@@ -170,73 +311,85 @@ function removeFromCart(index) {
     if(countEl) countEl.innerText = cartItems.length;
 }
 
-function generateInvoiceAndQR() {
-    let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
-    const name = document.getElementById('cust-name').value.trim();
-    const phone = document.getElementById('cust-phone').value.trim();
-    const address = document.getElementById('cust-address').value.trim();
-    const district = document.getElementById('cust-district').value.trim();
-    const pin = document.getElementById('cust-pin').value.trim();
-
-    if (!name || !phone || !address || !district || !pin) { 
-        alert("Please fill all required fields (*)."); 
-        return; 
-    }
-    if (cartItems.length === 0) { alert("Cart is empty."); return; }
-
-    document.getElementById('order-id-display').innerText = "Generated after Payment";
-
-    const upiId = "7439958857@kotakbank"; 
-    const payeeName = "Custom Zone";
-    const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${currentTotal}&cu=INR`;
-
-    document.getElementById("qrcode-display").innerHTML = "";
-    new QRCode(document.getElementById("qrcode-display"), { text: upiUrl, width: 170, height: 170 });
-    document.getElementById('payment-section').style.display = "block";
-}
-
-async function sendToWhatsApp() {
+// WhatsApp অর্ডার সাবমিশন
+async function submitOrderViaWhatsApp() {
     let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
     const name = document.getElementById('cust-name').value.trim();
     const phone = document.getElementById('cust-phone').value.trim();
     const email = document.getElementById('cust-email').value.trim() || "N/A";
-    const address = document.getElementById('cust-address').value.trim();
-    const district = document.getElementById('cust-district').value.trim();
     const pin = document.getElementById('cust-pin').value.trim();
-    const myWhatsAppNumber = "917439958857"; 
+    const district = document.getElementById('cust-district').value.trim();
+    const postOffice = document.getElementById('cust-postoffice').value.trim();
+    const address = document.getElementById('cust-address').value.trim();
     
-    currentOrderId = "CZ" + Math.floor(1000 + Math.random() * 9000);
+    // Greeting Note & Occasion
+    const greetingNote = document.getElementById('cust-greeting-note') ? document.getElementById('cust-greeting-note').value.trim() : "";
+    const occasionType = document.getElementById('cust-occasion-type') ? document.getElementById('cust-occasion-type').value : "";
+    const occasionDate = document.getElementById('cust-occasion-date') ? document.getElementById('cust-occasion-date').value : "";
+
+    const myWhatsAppNumber = "916290407730"; 
+
+    if (!name || !phone || !pin || !district || !postOffice || !address) { 
+        alert("Please fill all required delivery details (*)."); 
+        return; 
+    }
+    if (cartItems.length === 0) { alert("Cart is empty."); return; }
+
+    const internalOrderId = "CZ" + Math.floor(1000 + Math.random() * 9000);
 
     let productDetails = "";
     cartItems.forEach(item => {
-        let customData = item.customType === "name" ? ` (Name: ${item.userText})` : (item.customType === "pic" ? " (Pic sent separately)" : "");
+        let customData = item.customType === "name" ? ` (Name: ${item.userText || 'N/A'})` : (item.customType === "pic" ? " (Photo on WhatsApp)" : "");
         productDetails += `- ${item.name}${customData} (₹${item.price})\n`;
     });
 
     let deliveryTextMsg = currentDeliveryCharge === 0 ? "FREE" : `₹${currentDeliveryCharge}`;
-    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
-    let fullAddress = `${address}, ${district} - ${pin}`;
+    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon/Referral Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
+    let giftWrapTag = isGiftWrappingClaimed ? `\n🎁 Special Perk: ${flashBenefitName} (Claimed via Flash Timer)` : "";
+    let greetingCardTag = greetingNote ? `\n💌 Handwritten Greeting Note: "${greetingNote}"` : "";
+    let occasionMsg = (occasionType && occasionDate) ? `\n🎉 Special Occasion: ${occasionType} (${occasionDate})` : "";
+    let fullDeliveryAddress = `${address}, P.O: ${postOffice}, District: ${district} - ${pin}`;
 
-    let msg = `*New Order - Custom Zone*\nOrder ID: *${currentOrderId}*\nName: ${name}\nPhone: ${phone}\nAddress: ${fullAddress}\n\n*Items:*\n${productDetails}\nSubtotal: ₹${currentSubTotal}\nDelivery: ${deliveryTextMsg}${couponTextMsg}\n*Total Paid:* ₹${currentTotal}\n\nI have made the payment. Sending screenshot now.`;
+    let msg = `*#CZ_ORDER_REQUEST#*\n\n` +
+              `Hello Custom Zone, I would like to place an order:\n\n` +
+              `*Customer Details:*\n` +
+              `Name: ${name}\n` +
+              `Phone: ${phone}\n` +
+              `Address: ${fullDeliveryAddress}\n\n` +
+              `*Ordered Items:*\n` +
+              `${productDetails}\n` +
+              `Subtotal: ₹${currentSubTotal}\n` +
+              `Delivery: ${deliveryTextMsg}${couponTextMsg}${giftWrapTag}${greetingCardTag}${occasionMsg}\n` +
+              `*Total Payable: ₹${currentTotal}*\n\n` +
+              `Please share your payment QR code to complete the order.`;
 
     const orderDate = new Date().toLocaleDateString('en-GB'); 
     
     const orderData = {
-        status: "Payment Verified - Processing",
+        status: "Payment Pending",
         customerName: name,
         phone: phone,
         email: email,
-        address: fullAddress,
-        totalAmount: currentTotal,
-        couponUsed: appliedCouponCode,
+        postOffice: postOffice,
+        district: district,
+        pincode: pin,
+        address: fullDeliveryAddress,
+        subTotal: currentSubTotal,
+        deliveryFee: currentDeliveryCharge,
         discountGiven: appliedDiscount,
+        couponUsed: appliedCouponCode,
+        freeGiftWrapping: isGiftWrappingClaimed,
+        greetingNote: greetingNote || "",
+        occasionType: occasionType || "",
+        occasionDate: occasionDate || "",
+        totalAmount: currentTotal,
         date: orderDate,
-        items: productDetails + `\n[Delivery: ${deliveryTextMsg}]${couponTextMsg}`,
+        items: productDetails + `\n[Delivery: ${deliveryTextMsg}]${couponTextMsg}${giftWrapTag}${greetingCardTag}${occasionMsg}`,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
     
     try {
-        await db.collection("orders").doc(currentOrderId).set(orderData);
+        await db.collection("orders").doc(internalOrderId).set(orderData);
         if(appliedCouponCode) {
             localStorage.setItem('cz_used_' + appliedCouponCode, 'true');
         }
@@ -251,96 +404,28 @@ async function sendToWhatsApp() {
     const countEl = document.querySelector('.cart-count');
     if(countEl) countEl.innerText = "0";
 
-    if (!document.getElementById('print-style')) {
-        const style = document.createElement('style');
-        style.id = 'print-style';
-        style.innerHTML = `
-            @media print {
-                body * { visibility: hidden; }
-                #printable-letterhead, #printable-letterhead * { visibility: visible; }
-                #printable-letterhead { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; border: none !important; }
-                .no-print { display: none !important; }
-                @page { margin: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    let deliveryHTMLText = currentDeliveryCharge === 0 ? '<span style="color:#27ae60;">FREE</span>' : `₹${currentDeliveryCharge}`;
-    let couponHTMLText = appliedDiscount > 0 ? `<p style="margin: 4px 0; color:#27ae60;">Coupon Discount (${appliedCouponCode}): <strong>-₹${appliedDiscount}</strong></p>` : '';
-
     const cartLayout = document.querySelector('.cart-layout');
     cartLayout.innerHTML = `
-        <div style="background: #fff; padding: 30px; border-radius: 8px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: left;">
-            <div class="no-print" style="text-align: center; margin-bottom: 25px;">
-                <i class="fas fa-check-circle" style="font-size: 45px; color: #27ae60;"></i>
-                <h2 style="color: #2c3e50; margin-top: 10px;">Order Placed Successfully!</h2>
-                <p style="color: #7f8c8d;">Please send your payment screenshot on WhatsApp to complete verification.</p>
-            </div>
+        <div style="background: #fff; padding: 35px 25px; border-radius: 8px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.06); text-align: center;">
+            <i class="fab fa-whatsapp" style="font-size: 55px; color: #25d366;"></i>
+            <h2 style="color: #2c3e50; margin-top: 15px;">Order Request Sent to WhatsApp!</h2>
+            <p style="color: #555; font-size: 15px; margin-bottom: 25px; line-height: 1.6;">
+                We have received your order details on WhatsApp.<br>
+                Please complete the payment on WhatsApp. Once verified, our team will generate and send your <strong>Official Tax Invoice</strong> directly to you!
+            </p>
 
-            <div id="printable-letterhead" style="border: 2px solid #2c3e50; padding: 30px; border-radius: 8px; background: #fff; margin-bottom: 30px;">
-                <div style="text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px;">
-                    <h1 style="color: #2c3e50; margin: 0; font-size: 30px; font-weight: 900;">CUSTOM ZONE</h1>
-                    <p style="color: #e74c3c; margin: 4px 0; font-weight: bold;">CUSTOMIZE WITH LOVE & CARE</p>
-                    <p style="color: #555; margin: 0; font-size: 13px;">+91 7439958857 | support@customzone.com</p>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap;">
-                    <div>
-                        <h4 style="color: #2c3e50; margin-bottom: 5px;">INVOICE TO:</h4>
-                        <p style="margin: 2px 0;"><strong>${name}</strong></p>
-                        <p style="margin: 2px 0; color: #555; font-size: 14px;">${phone}</p>
-                        <p style="margin: 2px 0; color: #555; max-width: 280px; font-size: 14px;">${fullAddress}</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <h4 style="color: #2c3e50; margin-bottom: 5px;">ORDER DETAILS:</h4>
-                        <p style="margin: 2px 0;"><strong>Order ID:</strong> <span style="color: #e74c3c;">${currentOrderId}</span></p>
-                        <p style="margin: 2px 0;"><strong>Date:</strong> ${orderDate}</p>
-                    </div>
-                </div>
-                
-                <hr style="border: 1px dashed #ddd; margin: 15px 0;">
-                <h4 style="margin-bottom: 8px; color: #2c3e50;">Items Ordered:</h4>
-                <pre style="font-family: inherit; font-size: 14px; white-space: pre-wrap; color: #333; line-height: 1.5; background: #fdfefe; padding: 10px; border-radius: 4px; border: 1px solid #eee;">${productDetails}</pre>
-                <hr style="border: 1px dashed #ddd; margin: 15px 0;">
-                
-                <div style="text-align: right; margin-bottom: 15px; font-size: 14px; color: #555;">
-                    <p style="margin: 4px 0;">Subtotal: <strong>₹${currentSubTotal}</strong></p>
-                    <p style="margin: 4px 0;">Delivery Charge: <strong>${deliveryHTMLText}</strong></p>
-                    ${couponHTMLText}
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 2px solid #2c3e50; padding-top: 15px;">
-                    <div>
-                        <h3 style="color: #27ae60; font-size: 20px; margin: 0;">Total Paid: ₹${currentTotal}</h3>
-                        <p style="color: #7f8c8d; font-size: 12px; margin: 4px 0 0 0;">*Thank you for shopping with Custom Zone.</p>
-                    </div>
-                    <div style="text-align: center; width: 140px;">
-                        <div style="height: 40px;"></div>
-                        <hr style="border: 1px solid #2c3e50; margin-bottom: 4px;">
-                        <p style="margin: 0; font-weight: bold; font-size: 13px;">Authorized Signature</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="no-print" style="text-align: center; margin-bottom: 30px;">
-                <button onclick="window.print()" style="background: #2c3e50; color: #fff; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;"><i class="fas fa-print"></i> Print Invoice</button>
-            </div>
-
-            <!-- Review Form -->
-            <div class="no-print" style="background: #f8f9fa; border: 1px solid #e2e8f0; padding: 25px; border-radius: 8px; text-align: center;">
-                <h3 style="color: #2c3e50; margin-bottom: 6px;">Rate Your Experience ⭐</h3>
-                <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 12px;">Leave an authentic review for our website!</p>
-                <div style="font-size: 28px; cursor: pointer; color: #f1c40f; margin-bottom: 12px;" id="star-rating-box">
+            <div style="background: #f8f9fa; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto 25px auto;">
+                <h3 style="color: #2c3e50; margin-bottom: 5px;">Rate Your Experience ⭐</h3>
+                <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 10px;">Leave a feedback for Custom Zone!</p>
+                <div style="font-size: 26px; cursor: pointer; color: #f1c40f; margin-bottom: 10px;" id="star-rating-box">
                     <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
                 </div>
-                <textarea id="review-comment" placeholder="Write your review here..." style="width: 100%; max-width: 500px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; margin-bottom: 12px;"></textarea><br>
-                <button onclick="submitReviewCloud('${name}')" id="btn-review" style="background: #27ae60; color: white; border: none; padding: 11px 28px; border-radius: 4px; font-weight: bold; cursor: pointer;">Submit Review</button>
-                <p id="review-status" style="margin-top: 10px; font-weight: bold; display: none;"></p>
-                <div style="margin-top: 20px;">
-                    <a href="index.html" style="color: #e74c3c; text-decoration: none; font-weight: 600;">Back to Home</a>
-                </div>
+                <textarea id="review-comment" placeholder="Write your feedback..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;"></textarea><br>
+                <button onclick="submitReviewCloud('${name}')" id="btn-review" style="background: #27ae60; color: white; border: none; padding: 9px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 8px;">Submit Review</button>
+                <p id="review-status" style="margin-top: 8px; font-weight: bold; display: none;"></p>
             </div>
+
+            <a href="index.html" style="background: #2c3e50; color: #fff; padding: 12px 25px; border-radius: 4px; text-decoration: none; font-weight: 600;">Continue Shopping</a>
         </div>
     `;
 }
@@ -380,7 +465,7 @@ async function submitReviewCloud(customerName) {
 
         status.style.display = "block";
         status.style.color = "green";
-        status.innerText = "🎉 Thank you! Your review is now live on our About page.";
+        status.innerText = "🎉 Review submitted successfully!";
         document.getElementById('review-comment').value = "";
     } catch(e) {
         console.error(e);
@@ -396,4 +481,5 @@ async function submitReviewCloud(customerName) {
 window.onload = () => {
     renderCart();
     loadAvailableCoupons();
+    initDynamicFomoTimer();
 };

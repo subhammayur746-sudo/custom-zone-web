@@ -7,17 +7,43 @@
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- QR Code Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- Firebase CDN Links -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
+
+    <style>
+        .fomo-timer-box {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px dashed #f39c12;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            animation: pulse-glow 2s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            from { box-shadow: 0 0 5px rgba(243, 156, 18, 0.2); }
+            to { box-shadow: 0 0 14px rgba(243, 156, 18, 0.5); }
+        }
+        .timer-badge {
+            background: #e74c3c;
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Header / Navbar -->
     <header class="navbar">
         <div class="logo-container">
             <a href="index.html">
@@ -41,78 +67,106 @@
         </div>
     </header>
 
-    <!-- Cart Container -->
     <main class="container">
         <h2 class="section-title">Your Shopping Cart</h2>
         
         <div class="cart-layout">
-            <!-- Cart Items List -->
-            <div class="cart-items" id="cart-items-container">
-                <!-- Products loaded via JS -->
-            </div>
+            <div class="cart-items" id="cart-items-container"></div>
 
-            <!-- Checkout Box -->
             <div class="checkout-box">
-                <!-- Available Offers Hint -->
-                <div id="available-coupons-badge" style="background: #eafaf1; border-left: 4px solid #27ae60; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #2c3e50;">
+                <!-- 5-Minute FOMO Timer Box -->
+                <div class="fomo-timer-box" id="fomo-timer-container">
+                    <div>
+                        <strong style="color:#d35400; font-size:14px; display:block;"><i class="fas fa-bolt"></i> FLASH OFFER!</strong>
+                        <span style="font-size:12px; color:#2c3e50;" id="fomo-desc">Order within 5 mins & get <strong>FREE Premium Gift Wrapping!</strong> 🎁</span>
+                    </div>
+                    <div class="timer-badge" id="fomo-countdown">05:00</div>
+                </div>
+
+                <div id="available-coupons-badge" style="background: #eafaf1; border-left: 4px solid #27ae60; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #2c3e50; display:none;">
                     <i class="fas fa-tags" style="color: #27ae60;"></i> Loading store offers...
                 </div>
 
-                <!-- Coupon Input Box -->
+                <!-- Coupon Box -->
                 <div style="background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                    <h4 style="color: #2c3e50; margin-bottom: 8px;"><i class="fas fa-percentage"></i> Apply Coupon Code</h4>
+                    <h4 style="color: #2c3e50; margin-bottom: 8px;"><i class="fas fa-percentage"></i> Apply Coupon / Referral Code</h4>
                     <div style="display: flex; gap: 8px;">
-                        <input type="text" id="coupon-input" placeholder="e.g., FLAT50" style="flex: 1; padding: 9px; border: 1px solid #ccc; border-radius: 4px; text-transform: uppercase; font-weight: bold;">
+                        <input type="text" id="coupon-input" placeholder="e.g., FLAT50 / REF-CZ1024" style="flex: 1; padding: 9px; border: 1px solid #ccc; border-radius: 4px; text-transform: uppercase; font-weight: bold;">
                         <button onclick="applyCoupon()" id="btn-apply-coupon" style="background: #2c3e50; color: white; border: none; padding: 9px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">Apply</button>
                     </div>
                     <p id="coupon-msg" style="font-size: 12px; margin-top: 6px; font-weight: bold; display: none;"></p>
                 </div>
 
-                <!-- Order Summary Display -->
+                <!-- Summary Box -->
                 <div style="background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
                     <h3 style="color: #2c3e50; margin-bottom: 10px;"><i class="fas fa-receipt"></i> Order Summary</h3>
                     <p style="margin: 5px 0; color: #555;">Total Items: <strong id="total-items">0</strong></p>
-                    <p id="discount-row" style="margin: 5px 0; color: #27ae60; display: none;">Coupon Discount: <strong>-₹<span id="discount-price">0</span></strong></p>
+                    <p id="discount-row" style="margin: 5px 0; color: #27ae60; display: none;">Coupon / Referral Discount: <strong>-₹<span id="discount-price">0</span></strong></p>
                     <p style="margin: 5px 0; color: #555;">Payable Total: <strong style="color: #e74c3c; font-size: 18px;">₹<span id="total-price">0</span></strong></p>
                 </div>
 
-                <!-- Customer Details Form -->
+                <!-- Delivery Details Form -->
                 <div class="checkout-form" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                    <h3 style="margin-bottom: 15px; color: #2c3e50;"><i class="fas fa-user-edit"></i> Customer Details</h3>
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;"><i class="fas fa-user-edit"></i> Delivery Details</h3>
                     
                     <div style="margin-bottom: 15px;">
                         <input type="text" id="cust-name" placeholder="Full Name *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
                     </div>
                     
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <input type="tel" id="cust-phone" placeholder="Phone Number *" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
+                        <input type="tel" id="cust-phone" placeholder="WhatsApp Phone Number *" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
                         <input type="email" id="cust-email" placeholder="Email Address (Optional)" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
                     </div>
                     
-                    <div style="margin-bottom: 15px;">
-                        <textarea id="cust-address" placeholder="Full Address (e.g., Liluah Chakpara) *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 80px;" required></textarea>
-                    </div>
-                    
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <input type="text" id="cust-district" placeholder="District (e.g., Howrah) *" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
-                        <input type="number" id="cust-pin" placeholder="PIN Code *" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
+                        <div style="flex: 1; min-width: 150px; position: relative;">
+                            <input type="number" id="cust-pin" oninput="lookupPincode(this.value)" placeholder="6-digit PIN Code *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
+                            <small id="pin-status" style="font-size: 11px; display: block; margin-top: 3px; font-weight: bold;"></small>
+                        </div>
+                        <div style="flex: 1; min-width: 150px;">
+                            <input type="text" id="cust-district" placeholder="District (Auto-filled)" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fdfefe;" required>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="cust-postoffice" placeholder="Post Office (P.O.) *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <textarea id="cust-address" placeholder="House No, Street, Landmark / Full Address *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 70px;" required></textarea>
+                    </div>
+
+                    <!-- Free Personalized Handwritten Greeting Card Box (New Feature 💌) -->
+                    <div style="background: #fff8f8; border: 1px dashed #e74c3c; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <label style="font-size: 13px; font-weight: bold; color: #c0392b; display: block; margin-bottom: 4px;">
+                            <i class="fas fa-envelope-open-text"></i> Free Handwritten Gift Greeting Card Note (Optional)
+                        </label>
+                        <textarea id="cust-greeting-note" maxlength="150" placeholder="E.g., Happy Birthday Rahul! Wish you endless love and happiness ❤️" style="width: 100%; padding: 8px; border: 1px solid #fab1a0; border-radius: 4px; font-size: 12px; font-family: inherit; box-sizing: border-box; height: 55px;"></textarea>
+                        <small style="color: #7f8c8d; font-size: 11px;">Our team will handwrite this message on a mini gift card and put it inside your parcel for free!</small>
+                    </div>
+
+                    <!-- Special Occasion / Birthday Reminder Box (Optional) -->
+                    <div style="background: #f8f9fa; border: 1px dashed #3498db; padding: 12px 15px; border-radius: 6px;">
+                        <label style="font-size: 13px; font-weight: bold; color: #2c3e50; display: block; margin-bottom: 6px;">
+                            <i class="fas fa-birthday-cake" style="color:#e74c3c;"></i> Occasion Date for Surprise Offers (Optional)
+                        </label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <select id="cust-occasion-type" style="flex: 1; min-width: 140px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                                <option value="">-- Occasion Type --</option>
+                                <option value="Birthday">Birthday</option>
+                                <option value="Anniversary">Anniversary</option>
+                                <option value="Valentine's Day">Valentine's Day</option>
+                                <option value="Friendship Day">Friendship Day</option>
+                                <option value="Special Day">Other Special Day</option>
+                            </select>
+                            <input type="date" id="cust-occasion-date" style="flex: 1; min-width: 140px; padding: 7px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;">
+                        </div>
                     </div>
                 </div>
 
-                <button class="checkout-btn" onclick="generateInvoiceAndQR()">Generate Invoice & Pay</button>
-
-                <!-- Payment Section -->
-                <div id="payment-section" style="display: none; margin-top: 20px; text-align: center;">
-                    <div class="invoice-box">
-                        <p>Order ID: <strong id="order-id-display"></strong></p>
-                    </div>
-                    <p style="margin-bottom: 10px; font-size: 14px;">Scan below QR to pay exact amount</p>
-                    <div id="qrcode-display" style="display: flex; justify-content: center; margin-bottom: 15px;"></div>
-                    
-                    <button class="whatsapp-btn" onclick="sendToWhatsApp()">
-                        <i class="fab fa-whatsapp"></i> Send Screenshot to WhatsApp
-                    </button>
-                </div>
+                <button class="checkout-btn" onclick="submitOrderViaWhatsApp()" style="background: #25d366; font-size: 16px; width: 100%;">
+                    <i class="fab fa-whatsapp"></i> Send Order Request on WhatsApp
+                </button>
             </div>
         </div>
     </main>

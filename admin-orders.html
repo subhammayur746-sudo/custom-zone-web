@@ -29,10 +29,13 @@
         
         .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
         
+        #offer-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .offer-modal-content { background: #fff; padding: 25px; border-radius: 8px; width: 100%; max-width: 480px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
         #invoice-print-area { display: none; }
         @media print {
             body { background: #fff; }
-            .sidebar, .main-content, .mobile-admin-header { display: none !important; }
+            .sidebar, .main-content, .mobile-admin-header, #offer-modal { display: none !important; }
             #invoice-print-area { display: block !important; position: static; width: 100%; padding: 0; margin: 0; border: none; }
             @page { margin: 0; }
         }
@@ -56,35 +59,36 @@
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
         <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
         <a href="admin-orders.html" class="active" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
         <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Orders (Cloud)</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Orders & Referral Tracking</h2>
         <div class="admin-card" style="overflow-x: auto;">
             
-            <!-- Filters -->
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:12px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-shopping-bag"></i> Live Customer Orders</h3>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <input type="text" id="order-search-input" onkeyup="filterOrders()" placeholder="🔍 Search Order ID / Name..." style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px; min-width:200px;">
-                    <select id="order-status-filter" onchange="filterOrders()" style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px;">
-                        <option value="all">All Status</option>
+                    <select id="order-status-filter" onchange="filterOrders()" style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px; font-weight:600;">
+                        <option value="all">All Orders Status</option>
+                        <option value="Payment Pending">Payment Pending</option>
                         <option value="Payment Verified - Processing">Processing</option>
                         <option value="Packed & Ready to Ship">Packed</option>
                         <option value="Shipped & On the Way">Shipped</option>
-                        <option value="Delivered Successfully">Delivered</option>
+                        <option value="Delivered Successfully">Delivered Successfully (Auto-Referral)</option>
                         <option value="Order Cancelled">Cancelled</option>
                     </select>
                 </div>
             </div>
 
-            <table style="width:100%; border-collapse: collapse; min-width: 650px;">
+            <table style="width:100%; border-collapse: collapse; min-width: 720px;">
                 <thead>
                     <tr style="background:#f8f9fa; text-align:left;">
                         <th style="padding:10px;">Order ID & Date</th>
@@ -92,7 +96,7 @@
                         <th style="padding:10px;">Items Ordered</th>
                         <th style="padding:10px;">Amount</th>
                         <th style="padding:10px;">Status Update</th>
-                        <th style="padding:10px;">Action</th>
+                        <th style="padding:10px;">Actions & Promo</th>
                     </tr>
                 </thead>
                 <tbody id="admin-order-list">
@@ -102,24 +106,66 @@
         </div>
     </div>
 
+    <!-- Send Offer Modal -->
+    <div id="offer-modal">
+        <div class="offer-modal-content">
+            <span onclick="closeOfferModal()" style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer; font-weight:bold;">&times;</span>
+            <h3 style="color:#2c3e50; margin-top:0; margin-bottom:12px;"><i class="fas fa-gift" style="color:#e74c3c;"></i> Send Promo Offer via WhatsApp</h3>
+            
+            <p style="font-size:13px; color:#555; margin-bottom:15px;">Customer: <strong id="modal-cust-name">-</strong> (<span id="modal-cust-phone">-</span>)</p>
+            <input type="hidden" id="modal-target-phone">
+            <input type="hidden" id="modal-target-name">
+
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Select Active Coupon / Voucher Code:</label>
+                <select id="modal-coupon-select" onchange="generateOfferMessagePreview()" style="width:100%; padding:9px; border-radius:4px; border:1px solid #ccc; font-weight:600;">
+                    <option value="">-- Choose Coupon --</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:13px;">Message Preview:</label>
+                <textarea id="modal-offer-preview" rows="5" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit; font-size:12px; box-sizing:border-box;"></textarea>
+            </div>
+
+            <button onclick="sendDirectOfferWhatsApp()" style="background:#25d366; color:white; border:none; padding:12px; border-radius:4px; font-weight:bold; cursor:pointer; width:100%; font-size:14px;">
+                <i class="fab fa-whatsapp"></i> Send Direct Offer on WhatsApp
+            </button>
+        </div>
+    </div>
+
     <div id="invoice-print-area"></div>
 
     <script>
         let allOrdersCache = [];
+        let allCouponsCache = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
         if (!loggedInUser) {
             window.location.href = "admin-login.html";
         } else {
-            // স্টাফ পারমিশন চেক (Master admin হলে সব মেনু ওপেন থাকবে)
-            if (loggedInUser.username !== 'admin' && loggedInUser.permissions && !loggedInUser.permissions.includes('orders')) {
-                alert("Permission denied!");
-                window.location.href = "admin-dashboard.html";
-            }
             fetchCloudOrders();
+            fetchCloudCoupons();
         }
 
         function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+
+        async function fetchCloudCoupons() {
+            try {
+                const snap = await db.collection("coupons").where("isActive", "==", true).get();
+                allCouponsCache = [];
+                const selectEl = document.getElementById('modal-coupon-select');
+                selectEl.innerHTML = '<option value="">-- Choose Coupon --</option>';
+
+                snap.forEach(doc => {
+                    let c = doc.data();
+                    allCouponsCache.push(c);
+                    selectEl.innerHTML += `<option value="${c.code}">${c.code} (₹${c.discount} OFF on min ₹${c.minOrder || 0})</option>`;
+                });
+            } catch(e) {
+                console.error("Error loading coupons for modal", e);
+            }
+        }
 
         function fetchCloudOrders() {
             const tbody = document.getElementById('admin-order-list');
@@ -158,13 +204,14 @@
                 let orderId = order.id;
                 let statusOptions = `
                     <select id="status-${orderId}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 5px;">
+                        <option value="Payment Pending" ${order.status === 'Payment Pending' ? 'selected' : ''}>Payment Pending</option>
                         <option value="Payment Verified - Processing" ${order.status === 'Payment Verified - Processing' ? 'selected' : ''}>Processing</option>
                         <option value="Packed & Ready to Ship" ${order.status === 'Packed & Ready to Ship' ? 'selected' : ''}>Packed</option>
                         <option value="Shipped & On the Way" ${order.status === 'Shipped & On the Way' ? 'selected' : ''}>Shipped</option>
                         <option value="Delivered Successfully" ${order.status === 'Delivered Successfully' ? 'selected' : ''}>Delivered</option>
                         <option value="Order Cancelled" ${order.status === 'Order Cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
-                    <button onclick="updateOrderStatusCloud('${orderId}')" style="background:#2c3e50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; width:100%;">Update</button>
+                    <button onclick="updateOrderStatusCloud('${orderId}')" style="background:#2c3e50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; width:100%;">Save Status</button>
                 `;
 
                 tbody.innerHTML += `
@@ -173,14 +220,28 @@
                         <td style="padding:10px;">
                             <strong>${order.customerName || '-'}</strong><br>
                             <small><i class="fas fa-phone-alt"></i> ${order.phone || '-'}</small><br>
-                            <small style="display:block; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${order.address || '-'}</small>
+                            <small style="display:block; max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${order.address || '-'}</small>
                         </td>
                         <td style="padding:10px;"><pre style="font-family: inherit; font-size: 12px; margin: 0; white-space: pre-wrap;">${order.items || '-'}</pre></td>
                         <td style="padding:10px;"><strong style="color:#27ae60;">₹${order.totalAmount || '0'}</strong></td>
                         <td style="padding:10px; min-width: 140px;">${statusOptions}</td>
-                        <td style="padding:10px; min-width: 80px;">
-                            <button style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Print Invoice" onclick="printOrderInvoiceCloud('${orderId}')"><i class="fas fa-print"></i></button>
-                            <button style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Order" onclick="deleteOrderCloud('${orderId}')"><i class="fas fa-trash"></i></button>
+                        <td style="padding:10px; min-width: 140px;">
+                            <div style="display:flex; gap:4px; margin-bottom:4px;">
+                                <button style="background:#25d366; color:white; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Send Status Update / Review & Referral Code" onclick="sendOrderStatusWhatsApp('${orderId}')">
+                                    <i class="fab fa-whatsapp"></i> Notify
+                                </button>
+                                <button style="background:#e67e22; color:white; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Send Exclusive Discount Offer" onclick="openOfferModal('${order.customerName}', '${order.phone}')">
+                                    <i class="fas fa-gift"></i> Offer
+                                </button>
+                            </div>
+                            <div style="display:flex; gap:4px;">
+                                <button style="background:#3498db; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Print Invoice" onclick="printOrderInvoiceCloud('${orderId}')">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                                <button style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Delete Order" onclick="deleteOrderCloud('${orderId}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -200,11 +261,143 @@
             renderOrdersTable(filtered);
         }
 
-        function updateOrderStatusCloud(orderId) {
+        async function updateOrderStatusCloud(orderId) {
             let newStatus = document.getElementById(`status-${orderId}`).value;
-            db.collection("orders").doc(orderId).update({ status: newStatus })
-            .then(() => { alert(`Status for ${orderId} updated!`); fetchCloudOrders(); })
-            .catch(error => console.error(error));
+            
+            try {
+                await db.collection("orders").doc(orderId).update({ status: newStatus });
+                
+                // ডেলিভারি হলে অটোমেটিক রেফারেল কুপন ক্লাউডে রেজিস্টার করা
+                if (newStatus === "Delivered Successfully") {
+                    let refCode = "REF-" + orderId;
+                    await db.collection("coupons").doc(refCode).set({
+                        code: refCode,
+                        discount: 50,
+                        minOrder: 199,
+                        type: "referral",
+                        referrerOrderId: orderId,
+                        isActive: true,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                alert(`✅ Status for ${orderId} updated to: ${newStatus}`); 
+                fetchCloudOrders(); 
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // WhatsApp স্ট্যাটাস এবং ডেলিভারির পর অটো রিভিউ ও রেফারেল কোড সেন্ডার
+        function sendOrderStatusWhatsApp(orderId) {
+            let order = allOrdersCache.find(o => o.id === orderId);
+            if(!order) return;
+
+            let statusSelect = document.getElementById(`status-${orderId}`);
+            let currentStatus = statusSelect ? statusSelect.value : (order.status || 'Updated');
+            let phone = (order.phone || '').replace(/[^0-9]/g, '');
+
+            if(!phone || phone.length < 10) {
+                alert("Customer phone number is invalid."); return;
+            }
+
+            let targetNumber = phone.length === 10 ? "91" + phone : phone;
+            let msg = "";
+
+            if (currentStatus === "Delivered Successfully") {
+                let refCode = "REF-" + orderId;
+                msg = `*🎉 ORDER DELIVERED - CUSTOM ZONE*\n\n` +
+                      `Hello *${order.customerName}*,\n\n` +
+                      `Your Order *#${orderId}* has been successfully delivered! 📦✨\n\n` +
+                      `We hope you loved your handcrafted customized product. Your feedback means everything to us! ❤️\n\n` +
+                      `⭐ *Please take 10 seconds to leave us a 5-Star Review here:*\n` +
+                      `👉 https://customzone.netlify.app/about.html\n\n` +
+                      `-------------------------------\n` +
+                      `🎁 *REFER & EARN ₹50 DISCOUNT!*\n` +
+                      `Share your unique referral code with your friends:\n` +
+                      `👉 *${refCode}*\n\n` +
+                      `When your friend places their first order using this code, they will get *₹50 OFF*, and you will also receive *₹50 DISCOUNT* on your next purchase! ❤️\n` +
+                      `-------------------------------\n\n` +
+                      `Thank you for choosing Custom Zone!\n` +
+                      `📞 Support: +91 6290407730`;
+            } else {
+                let statusEmoji = "📦";
+                if(currentStatus.includes("Packed")) statusEmoji = "🎁";
+                if(currentStatus.includes("Shipped")) statusEmoji = "🚚";
+                if(currentStatus.includes("Cancelled")) statusEmoji = "❌";
+
+                msg = `*Order Status Update - Custom Zone* ${statusEmoji}\n\n` +
+                      `Hello *${order.customerName}*,\n\n` +
+                      `Your Order *#${orderId}* status has been updated to:\n` +
+                      `👉 *${currentStatus}*\n\n` +
+                      `*Order Details:*\n` +
+                      `${order.items}\n` +
+                      `*Total Amount:* ₹${order.totalAmount}\n\n` +
+                      `Track live on our website: https://customzone.netlify.app/track-order.html\n\n` +
+                      `Thank you for shopping with Custom Zone! ❤️\n` +
+                      `📞 Support: +91 6290407730`;
+            }
+
+            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, "_blank");
+        }
+
+        // Offer Modal Handlers
+        function openOfferModal(custName, custPhone) {
+            document.getElementById('modal-cust-name').innerText = custName || 'Valued Customer';
+            document.getElementById('modal-cust-phone').innerText = custPhone || 'N/A';
+            document.getElementById('modal-target-phone').value = (custPhone || '').replace(/[^0-9]/g, '');
+            document.getElementById('modal-target-name').value = custName || 'Valued Customer';
+            
+            document.getElementById('modal-coupon-select').selectedIndex = 0;
+            document.getElementById('modal-offer-preview').value = "Please select a coupon above to generate preview...";
+            document.getElementById('offer-modal').style.display = 'flex';
+        }
+
+        function closeOfferModal() {
+            document.getElementById('offer-modal').style.display = 'none';
+        }
+
+        function generateOfferMessagePreview() {
+            const code = document.getElementById('modal-coupon-select').value;
+            const custName = document.getElementById('modal-target-name').value;
+            const preview = document.getElementById('modal-offer-preview');
+
+            if(!code) {
+                preview.value = "Please select a coupon above to generate preview...";
+                return;
+            }
+
+            const coupon = allCouponsCache.find(c => c.code === code);
+            if(!coupon) return;
+
+            preview.value = `✨ SPECIAL EXCLUSIVE OFFER FOR YOU! ✨\n\n` +
+                            `Hello *${custName}*,\n\n` +
+                            `Thank you for being a wonderful customer of Custom Zone! As a token of love, we have an exclusive discount for your next order. 🎁❤️\n\n` +
+                            `Get FLAT ₹${coupon.discount} OFF on your next purchase!\n` +
+                            `👉 Use Code: *${coupon.code}*\n` +
+                            `👉 Min Order Value: ₹${coupon.minOrder || 0}\n\n` +
+                            `🛍️ Explore new arrivals & order now:\n` +
+                            `https://customzone.netlify.app\n\n` +
+                            `Happy Gifting! | WhatsApp Support: +91 6290407730`;
+        }
+
+        function sendDirectOfferWhatsApp() {
+            let phone = document.getElementById('modal-target-phone').value;
+            let msg = document.getElementById('modal-offer-preview').value;
+            let code = document.getElementById('modal-coupon-select').value;
+
+            if(!code) {
+                alert("Please select a coupon code first."); return;
+            }
+            if(!phone || phone.length < 10) {
+                alert("Customer phone number is missing or invalid."); return;
+            }
+
+            let targetNumber = phone.length === 10 ? "91" + phone : phone;
+            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
+            window.open(waUrl, "_blank");
+            closeOfferModal();
         }
 
         function deleteOrderCloud(orderId) {
@@ -229,7 +422,7 @@
                     <div style="text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px;">
                         <h1 style="color: #2c3e50; margin: 0; font-size: 32px; font-weight: 900;">CUSTOM ZONE</h1>
                         <p style="color: #e74c3c; margin: 5px 0; font-weight: bold;">CUSTOMIZE WITH LOVE & CARE</p>
-                        <p style="color: #555; margin: 0; font-size: 14px;">+91 7439958857 | support@customzone.com</p>
+                        <p style="color: #555; margin: 0; font-size: 14px;">+91 6290407730 | support@customzone.com</p>
                     </div>
                     
                     <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">

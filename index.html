@@ -4,22 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Zone - Home</title>
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Firebase CDN Links -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- Custom Firebase Config -->
     <script src="js/firebase-config.js"></script>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="manifest" href="manifest.json">
+
+    <style>
+        .filter-section {
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .search-box-home {
+            flex: 1;
+            min-width: 220px;
+            position: relative;
+        }
+        .search-box-home input {
+            width: 100%;
+            padding: 10px 15px 10px 38px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .search-box-home i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+        }
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .cat-btn {
+            background: #f1f2f6;
+            color: #2c3e50;
+            border: 1px solid #dcdde1;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .cat-btn.active, .cat-btn:hover {
+            background: #e74c3c;
+            color: #fff;
+            border-color: #e74c3c;
+        }
+        .custom-select-filter {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            outline: none;
+            background: #fff;
+            font-weight: 600;
+            color: #2c3e50;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Header / Navbar -->
     <header class="navbar">
         <div class="logo-container">
             <a href="index.html">
@@ -27,14 +90,12 @@
             </a>
             <h1 class="brand-name">Custom Zone</h1>
         </div>
-        
         <nav class="nav-links">
             <a href="index.html" class="active">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html">Contact Us</a>
             <a href="track-order.html">Track Order</a>
         </nav>
-
         <div class="cart-icon">
             <a href="cart.html">
                 <i class="fas fa-shopping-cart"></i>
@@ -43,14 +104,24 @@
         </div>
     </header>
 
-    <!-- Main Content: Product List -->
     <main class="container">
+        
+        <div class="filter-section">
+            <div class="search-box-home">
+                <i class="fas fa-search"></i>
+                <input type="text" id="home-search-input" onkeyup="filterHomeProducts()" placeholder="Search gifts, keychains...">
+            </div>
+            
+            <!-- Dynamic Category & Price Budget Filters -->
+            <div class="category-tabs" id="dynamic-cat-container">
+                <button class="cat-btn active">Loading...</button>
+            </div>
+        </div>
+
         <h2 class="section-title">Trending Products</h2>
-        <!-- Products will load dynamically from main.js -->
         <div class="product-grid" id="product-list"></div>
     </main>
 
-    <!-- Promo Pop-up Modal -->
     <div id="promo-popup" class="popup-overlay">
         <div class="popup-content">
             <span class="close-btn" onclick="closePopup()">&times;</span>
@@ -61,13 +132,11 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
         <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
     </footer>
 
-    <!-- Main JS -->
     <script src="js/main.js"></script>
 </body>
 </html>

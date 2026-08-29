@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Invoice Generator - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN Links -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; margin-bottom: 10px; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.3s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
+        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; border-left: none !important; }
+
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
+        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); margin-bottom: 25px;}
+        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 13px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+
+        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
+
+        #invoice-print-area { display: none; }
+        @media print {
+            body { background: #fff; }
+            .sidebar, .main-content, .mobile-admin-header { display: none !important; }
+            #invoice-print-area { display: block !important; position: static; width: 100%; padding: 0; margin: 0; border: none; }
+            @page { margin: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.active { left: 0; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .mobile-admin-header { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-admin-header">
+        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
+        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>CZ Admin</h2></div>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-invoice.html" class="active" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manual Billing & Invoice Generator</h2>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            
+            <!-- Quick Load from Order -->
+            <div class="admin-card" style="flex: 1; min-width: 300px;">
+                <h3><i class="fas fa-search"></i> Select Order to Bill</h3>
+                <div class="form-group">
+                    <label>Select Pending / Active Order</label>
+                    <select id="select-order-dropdown" onchange="loadSelectedOrderData()" style="width: 100%; padding: 9px; border-radius: 4px; border: 1px solid #ccc;">
+                        <option value="">-- Choose Order ID --</option>
+                    </select>
+                </div>
+                <p style="font-size: 12px; color: #7f8c8d;">Or create a new custom manual invoice from scratch.</p>
+            </div>
+
+            <!-- Invoice Editor -->
+            <div class="admin-card" style="flex: 2; min-width: 320px;">
+                <h3><i class="fas fa-edit"></i> Bill Details Editor</h3>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label>Order ID</label>
+                        <input type="text" id="inv-order-id" placeholder="CZ1234">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label>Bill Date</label>
+                        <input type="text" id="inv-date">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label>Customer Name</label>
+                        <input type="text" id="inv-name" placeholder="Customer Name">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 150px;">
+                        <label>Customer Phone (WhatsApp)</label>
+                        <input type="text" id="inv-phone" placeholder="e.g., 9876543210">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Customer Address</label>
+                    <textarea id="inv-address" rows="2" placeholder="Full delivery address"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Ordered Items (One item per line)</label>
+                    <textarea id="inv-items" rows="3" placeholder="- Custom Keychain (₹199)"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Subtotal (₹)</label>
+                        <input type="number" id="inv-subtotal" oninput="calculateTotalBill()" placeholder="0">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Delivery Fee (₹)</label>
+                        <input type="number" id="inv-delivery" oninput="calculateTotalBill()" placeholder="0">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Discount / Coupon (₹)</label>
+                        <input type="number" id="inv-discount" oninput="calculateTotalBill()" placeholder="0">
+                    </div>
+                </div>
+
+                <div style="margin: 15px 0; font-size: 18px; font-weight: bold; color: #27ae60;">
+                    Final Payable Total: ₹<span id="inv-total-display">0</span>
+                </div>
+
+                <!-- Action Buttons: Print & 1-Click WhatsApp -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="printGeneratedInvoice()" style="flex: 1; min-width: 180px; background: #2c3e50; color: white; border: none; padding: 12px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                        <i class="fas fa-print"></i> Print Invoice
+                    </button>
+                    <button onclick="sendInvoiceViaWhatsApp()" style="flex: 1; min-width: 180px; background: #25d366; color: white; border: none; padding: 12px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                        <i class="fab fa-whatsapp"></i> Send Invoice via WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Letterhead Container -->
+    <div id="invoice-print-area"></div>
+
+    <script>
+        let allOrdersMap = {};
+        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+
+        if (!loggedInUser) {
+            window.location.href = "admin-login.html";
+        } else {
+            document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
+            fetchOrdersForDropdown();
+        }
+
+        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+
+        async function fetchOrdersForDropdown() {
+            const dropdown = document.getElementById('select-order-dropdown');
+            try {
+                const snapshot = await db.collection("orders").orderBy("timestamp", "desc").get();
+                dropdown.innerHTML = '<option value="">-- Choose Order ID --</option>';
+                allOrdersMap = {};
+
+                snapshot.forEach(doc => {
+                    let ord = doc.data();
+                    let id = doc.id;
+                    allOrdersMap[id] = ord;
+                    dropdown.innerHTML += `<option value="${id}">${id} - ${ord.customerName || 'Customer'} (₹${ord.totalAmount || 0})</option>`;
+                });
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        function loadSelectedOrderData() {
+            const id = document.getElementById('select-order-dropdown').value;
+            if(!id || !allOrdersMap[id]) return;
+
+            const ord = allOrdersMap[id];
+            document.getElementById('inv-order-id').value = id;
+            document.getElementById('inv-date').value = ord.date || new Date().toLocaleDateString('en-GB');
+            document.getElementById('inv-name').value = ord.customerName || '';
+            document.getElementById('inv-phone').value = ord.phone || '';
+            document.getElementById('inv-address').value = ord.address || '';
+            document.getElementById('inv-items').value = ord.items || '';
+            document.getElementById('inv-subtotal').value = ord.subTotal || ord.totalAmount || 0;
+            document.getElementById('inv-delivery').value = ord.deliveryFee || 0;
+            document.getElementById('inv-discount').value = ord.discountGiven || 0;
+
+            calculateTotalBill();
+        }
+
+        function calculateTotalBill() {
+            let sub = parseInt(document.getElementById('inv-subtotal').value) || 0;
+            let del = parseInt(document.getElementById('inv-delivery').value) || 0;
+            let disc = parseInt(document.getElementById('inv-discount').value) || 0;
+
+            let total = Math.max(0, sub + del - disc);
+            document.getElementById('inv-total-display').innerText = total;
+            return total;
+        }
+
+        // 1-Click WhatsApp Invoice Sender
+        function sendInvoiceViaWhatsApp() {
+            let orderId = document.getElementById('inv-order-id').value.trim() || ("CZ" + Math.floor(1000 + Math.random() * 9000));
+            let date = document.getElementById('inv-date').value.trim();
+            let name = document.getElementById('inv-name').value.trim();
+            let phone = document.getElementById('inv-phone').value.replace(/[^0-9]/g, '');
+            let address = document.getElementById('inv-address').value.trim();
+            let items = document.getElementById('inv-items').value.trim();
+            let subtotal = parseInt(document.getElementById('inv-subtotal').value) || 0;
+            let delivery = parseInt(document.getElementById('inv-delivery').value) || 0;
+            let discount = parseInt(document.getElementById('inv-discount').value) || 0;
+            let total = calculateTotalBill();
+
+            if(!phone || phone.length < 10) {
+                alert("Please enter a valid customer phone number to send WhatsApp invoice.");
+                return;
+            }
+            if(!name || !items) {
+                alert("Please fill customer details and items.");
+                return;
+            }
+
+            let deliveryMsg = delivery === 0 ? "FREE" : `₹${delivery}`;
+            let discountMsg = discount > 0 ? `\n🎁 Discount Applied: -₹${discount}` : "";
+            let targetNumber = phone.length === 10 ? "91" + phone : phone;
+
+            let invoiceMsg = `*🧾 OFFICIAL TAX INVOICE - CUSTOM ZONE*\n\n` +
+                             `*Invoice No:* #${orderId}\n` +
+                             `*Date:* ${date}\n` +
+                             `*Status:* Payment Verified & Approved ✅\n\n` +
+                             `*Billed To:*\n` +
+                             `Name: ${name}\n` +
+                             `Phone: ${phone}\n` +
+                             `Delivery Address: ${address}\n\n` +
+                             `*Ordered Items:*\n${items}\n\n` +
+                             `-------------------------------\n` +
+                             `Subtotal: ₹${subtotal}\n` +
+                             `Delivery Charge: ${deliveryMsg}${discountMsg}\n` +
+                             `*Total Paid: ₹${total}*\n` +
+                             `-------------------------------\n\n` +
+                             `✨ Thank you for shopping with Custom Zone! Your order is being handcrafted with love.\n` +
+                             `📞 Support: +91 6290407730`;
+
+            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(invoiceMsg)}`;
+            window.open(waUrl, "_blank");
+        }
+
+        function printGeneratedInvoice() {
+            let orderId = document.getElementById('inv-order-id').value.trim() || ("CZ" + Math.floor(1000 + Math.random() * 9000));
+            let date = document.getElementById('inv-date').value.trim();
+            let name = document.getElementById('inv-name').value.trim();
+            let phone = document.getElementById('inv-phone').value.trim();
+            let address = document.getElementById('inv-address').value.trim();
+            let items = document.getElementById('inv-items').value.trim();
+            let subtotal = parseInt(document.getElementById('inv-subtotal').value) || 0;
+            let delivery = parseInt(document.getElementById('inv-delivery').value) || 0;
+            let discount = parseInt(document.getElementById('inv-discount').value) || 0;
+            let total = calculateTotalBill();
+
+            if(!name || !items) {
+                alert("Please fill customer name and items."); return;
+            }
+
+            let deliveryText = delivery === 0 ? '<span style="color:#27ae60;">FREE</span>' : `₹${delivery}`;
+            let discountHTML = discount > 0 ? `<p style="margin: 4px 0; color: #27ae60;">Special Discount: <strong>-₹${discount}</strong></p>` : '';
+
+            const printArea = document.getElementById('invoice-print-area');
+            printArea.innerHTML = `
+                <div style="border: 2px solid #2c3e50; padding: 30px; border-radius: 8px; background: #fff; max-width: 800px; margin: 20px auto; font-family: 'Poppins', sans-serif;">
+                    
+                    <!-- Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px;">
+                        <div>
+                            <h1 style="color: #2c3e50; margin: 0; font-size: 30px; font-weight: 900;">CUSTOM ZONE</h1>
+                            <p style="color: #e74c3c; margin: 4px 0; font-weight: bold; font-size: 13px;">CUSTOMIZE WITH LOVE & CARE</p>
+                            <p style="color: #555; margin: 0; font-size: 12px;">+91 6290407730 | support@customzone.com</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h2 style="margin: 0; color: #2c3e50; font-size: 24px;">TAX INVOICE</h2>
+                            <p style="margin: 4px 0; font-size: 14px;"><strong>Invoice No:</strong> <span style="color: #e74c3c;">#${orderId}</span></p>
+                            <p style="margin: 2px 0; font-size: 13px;"><strong>Date:</strong> ${date}</p>
+                        </div>
+                    </div>
+
+                    <!-- Customer & Store Info -->
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px;">
+                        <div>
+                            <h4 style="color: #2c3e50; margin: 0 0 5px 0;">BILLED TO:</h4>
+                            <p style="margin: 2px 0;"><strong>${name}</strong></p>
+                            <p style="margin: 2px 0; color: #555;">Phone: ${phone || 'N/A'}</p>
+                            <p style="margin: 2px 0; color: #555; max-width: 300px;">${address || 'N/A'}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h4 style="color: #2c3e50; margin: 0 0 5px 0;">SUPPLIED BY:</h4>
+                            <p style="margin: 2px 0;"><strong>Custom Zone Store</strong></p>
+                            <p style="margin: 2px 0; color: #555;">Liluah Chakpara, Howrah</p>
+                            <p style="margin: 2px 0; color: #555;">West Bengal, India</p>
+                        </div>
+                    </div>
+
+                    <!-- Ordered Items -->
+                    <div style="margin-bottom: 20px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: #2c3e50; color: white;">
+                                    <th style="padding: 8px; text-align: left;">Item Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 10px;"><pre style="font-family: inherit; font-size: 13px; margin: 0; white-space: pre-wrap; line-height: 1.6;">${items}</pre></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Calculation & Total -->
+                    <div style="text-align: right; margin-bottom: 20px; font-size: 14px; color: #555; border-top: 1px dashed #ddd; padding-top: 10px;">
+                        <p style="margin: 4px 0;">Subtotal: <strong>₹${subtotal}</strong></p>
+                        <p style="margin: 4px 0;">Delivery Charge: <strong>${deliveryText}</strong></p>
+                        ${discountHTML}
+                        <h3 style="color: #27ae60; font-size: 20px; margin: 8px 0 0 0; border-top: 1px solid #eee; padding-top: 5px;">Total Paid: ₹${total}</h3>
+                    </div>
+
+                    <!-- Thank You & Signature -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 2px solid #2c3e50; padding-top: 15px;">
+                        <div>
+                            <p style="color: #2c3e50; font-weight: bold; margin: 0 0 3px 0;">Thank you for trusting Custom Zone! ❤️</p>
+                            <small style="color: #7f8c8d;">For queries, contact support on WhatsApp at +91 6290407730</small>
+                        </div>
+                        <div style="text-align: center; width: 140px;">
+                            <div style="height: 35px;"></div>
+                            <hr style="border: 1px solid #2c3e50; margin-bottom: 4px;">
+                            <p style="margin: 0; font-weight: bold; font-size: 12px; color: #2c3e50;">Authorized Signatory</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            window.print();
+        }
+    </script>
+</body>
+</html>

@@ -37,7 +37,7 @@
 
         /* Edit Modal */
         #edit-modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:99999; justify-content:center; align-items:center; padding:15px; }
-        .modal-body { background:#fff; padding:25px; border-radius:8px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; position:relative; }
+        .modal-body { background:#fff; padding:25px; border-radius:8px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; position:relative; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -58,27 +58,58 @@
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
         <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
         <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
         <a href="admin-products.html" class="active" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount Coupons</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Products (Cloud)</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Products & Categories (Cloud)</h2>
 
         <!-- Add New Product -->
         <div class="admin-card" style="max-width: 800px;">
             <h3><i class="fas fa-cloud-upload-alt"></i> Add New Product (Upload 1 to 4 Images)</h3>
             <div class="form-group">
                 <label>Product Name</label>
-                <input type="text" id="prod-name" placeholder="E.g., Custom Photo Keychain">
+                <input type="text" id="prod-name" placeholder="E.g., ₹500 Digital Gift Card">
             </div>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div class="form-group" style="flex:1; min-width: 200px;">
+                    <label>Main Category</label>
+                    <select id="prod-main-category" onchange="handleMainCatChange('new')">
+                        <option value="handmade">Handmade (Non-Customized)</option>
+                        <option value="customized">Customized</option>
+                        <option value="__custom__">+ Add New Main Category</option>
+                    </select>
+                    <input type="text" id="prod-maincat-custom" placeholder="E.g., Gift Cards" style="display:none; margin-top:8px;">
+                </div>
+                
+                <div class="form-group" style="flex:1; min-width: 200px;">
+                    <label>Sub-Category / Variety</label>
+                    <select id="prod-subcategory-select" onchange="handleSubcatChange('new')">
+                        <option value="Keychain">Keychain</option>
+                        <option value="Hair Pin">Hair Pin</option>
+                        <option value="Photo Frame">Photo Frame</option>
+                        <option value="Shirt">Shirt</option>
+                        <option value="Pen">Pen</option>
+                        <option value="Mug">Mug</option>
+                        <option value="Wallet">Wallet</option>
+                        <option value="Jewellery">Jewellery</option>
+                        <option value="Voucher">Digital Voucher</option>
+                        <option value="__custom__">+ Add New Sub-Category</option>
+                    </select>
+                    <input type="text" id="prod-subcategory-custom" placeholder="Type new sub-category name..." style="display:none; margin-top:8px;">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Price (₹)</label>
-                <input type="number" id="prod-price" placeholder="E.g., 299">
+                <input type="number" id="prod-price" placeholder="E.g., 500">
             </div>
             <div class="form-group">
                 <label>Customization Type</label>
@@ -104,11 +135,11 @@
                 <input type="text" id="product-search-input" onkeyup="filterProducts()" placeholder="🔍 Search product name..." style="max-width:280px; padding:8px 12px; border:1px solid #ccc; border-radius:4px;">
             </div>
 
-            <table style="width:100%; border-collapse: collapse; min-width: 650px;">
+            <table style="width:100%; border-collapse: collapse; min-width: 700px;">
                 <thead>
                     <tr style="background:#f8f9fa; text-align:left;">
                         <th style="padding:10px;">Images</th>
-                        <th style="padding:10px;">Name & Admin Note</th>
+                        <th style="padding:10px;">Name, Category & Admin Note</th>
                         <th style="padding:10px;">Price (₹)</th>
                         <th style="padding:10px;">Status</th>
                         <th style="padding:10px;">Action</th>
@@ -125,12 +156,43 @@
     <div id="edit-modal">
         <div class="modal-body">
             <span onclick="closeEditModal()" style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer; font-weight:bold;">&times;</span>
-            <h3 style="color:#2c3e50; margin-bottom:15px;">Edit Product</h3>
+            <h3 style="color:#2c3e50; margin-bottom:15px;">Edit Product & Category</h3>
             <input type="hidden" id="edit-prod-id">
+            
             <div class="form-group">
                 <label>Product Name</label>
                 <input type="text" id="edit-prod-name">
             </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 180px;">
+                    <label>Main Category</label>
+                    <select id="edit-prod-main-cat" onchange="handleMainCatChange('edit')">
+                        <option value="handmade">Handmade (Non-Customized)</option>
+                        <option value="customized">Customized</option>
+                        <option value="__custom__">+ Add New Main Category</option>
+                    </select>
+                    <input type="text" id="edit-prod-maincat-custom" placeholder="E.g., Gift Cards" style="display:none; margin-top:8px;">
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 180px;">
+                    <label>Sub-Category / Variety</label>
+                    <select id="edit-prod-subcat-select" onchange="handleSubcatChange('edit')">
+                        <option value="Keychain">Keychain</option>
+                        <option value="Hair Pin">Hair Pin</option>
+                        <option value="Photo Frame">Photo Frame</option>
+                        <option value="Shirt">Shirt</option>
+                        <option value="Pen">Pen</option>
+                        <option value="Mug">Mug</option>
+                        <option value="Wallet">Wallet</option>
+                        <option value="Jewellery">Jewellery</option>
+                        <option value="Voucher">Digital Voucher</option>
+                        <option value="__custom__">+ Add New Sub-Category</option>
+                    </select>
+                    <input type="text" id="edit-prod-subcat-custom" placeholder="Type sub-category..." style="display:none; margin-top:8px;">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Price (₹)</label>
                 <input type="number" id="edit-prod-price">
@@ -158,16 +220,35 @@
         if (!loggedInUser) {
             window.location.href = "admin-login.html";
         } else {
-            if (loggedInUser.username !== 'admin' && loggedInUser.permissions && !loggedInUser.permissions.includes('products')) {
-                alert("Permission denied!");
-                window.location.href = "admin-dashboard.html";
-            }
             fetchProductsFromCloud();
         }
 
         function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
 
-        // পার্মানেন্ট ডিরেক্ট ইমেজ আপলোড ফাংশন
+        function handleMainCatChange(mode) {
+            if(mode === 'new') {
+                const sel = document.getElementById('prod-main-category');
+                const customInput = document.getElementById('prod-maincat-custom');
+                customInput.style.display = sel.value === '__custom__' ? 'block' : 'none';
+            } else {
+                const sel = document.getElementById('edit-prod-main-cat');
+                const customInput = document.getElementById('edit-prod-maincat-custom');
+                customInput.style.display = sel.value === '__custom__' ? 'block' : 'none';
+            }
+        }
+
+        function handleSubcatChange(mode) {
+            if(mode === 'new') {
+                const sel = document.getElementById('prod-subcategory-select');
+                const customInput = document.getElementById('prod-subcategory-custom');
+                customInput.style.display = sel.value === '__custom__' ? 'block' : 'none';
+            } else {
+                const sel = document.getElementById('edit-prod-subcat-select');
+                const customInput = document.getElementById('edit-prod-subcat-custom');
+                customInput.style.display = sel.value === '__custom__' ? 'block' : 'none';
+            }
+        }
+
         async function uploadSingleImage(file) {
             const apiKey = typeof IMGBB_API_KEY !== 'undefined' ? IMGBB_API_KEY : "fac19ae5956e46b656a6004b390875e2";
             const formData = new FormData();
@@ -180,7 +261,6 @@
             
             const data = await res.json();
             if(data.success) {
-                // ডিরেক্ট পার্মানেন্ট ইমেজ লিংক
                 return data.data.display_url || data.data.url;
             }
             throw new Error(data.error ? data.error.message : "Image Upload Failed");
@@ -188,13 +268,24 @@
 
         async function uploadProductToCloud() {
             const name = document.getElementById('prod-name').value.trim();
+            
+            let mainCategory = document.getElementById('prod-main-category').value;
+            if(mainCategory === '__custom__') {
+                mainCategory = document.getElementById('prod-maincat-custom').value.trim();
+            }
+
+            let subCategory = document.getElementById('prod-subcategory-select').value;
+            if(subCategory === '__custom__') {
+                subCategory = document.getElementById('prod-subcategory-custom').value.trim();
+            }
+
             const price = document.getElementById('prod-price').value.trim();
             const customType = document.getElementById('prod-custom-type').value;
             const fileInput = document.getElementById('prod-img-files');
             const msgBox = document.getElementById('prod-msg');
             const btnUpload = document.getElementById('btn-upload');
 
-            if (!name || !price || fileInput.files.length === 0) { 
+            if (!name || !price || !subCategory || !mainCategory || fileInput.files.length === 0) { 
                 alert("Please fill all fields and select at least 1 image."); return; 
             }
             if (fileInput.files.length > 4) {
@@ -216,6 +307,8 @@
                 btnUpload.innerText = "Saving Product...";
                 await db.collection("products").add({
                     name: name,
+                    mainCategory: mainCategory,
+                    subCategory: subCategory,
                     price: parseInt(price),
                     images: imagesArray,
                     customType: customType,
@@ -227,6 +320,12 @@
                 msgBox.style.color = "green";
                 msgBox.innerText = "Product uploaded successfully!";
                 document.getElementById('prod-name').value = ""; 
+                document.getElementById('prod-maincat-custom').value = ""; 
+                document.getElementById('prod-maincat-custom').style.display = "none";
+                document.getElementById('prod-main-category').selectedIndex = 0;
+                document.getElementById('prod-subcategory-custom').value = ""; 
+                document.getElementById('prod-subcategory-custom').style.display = "none";
+                document.getElementById('prod-subcategory-select').selectedIndex = 0;
                 document.getElementById('prod-price').value = ""; 
                 fileInput.value = "";
                 fetchProductsFromCloud();
@@ -256,6 +355,8 @@
                 snapshot.forEach((doc) => {
                     let prod = doc.data();
                     prod.id = doc.id;
+                    if(!prod.mainCategory) prod.mainCategory = prod.customType === 'none' ? 'handmade' : 'customized';
+                    if(!prod.subCategory) prod.subCategory = 'General';
                     allProductsCache.push(prod);
                 });
 
@@ -281,7 +382,10 @@
                     imagesHTML = "No Image";
                 }
 
-                let typeLabel = prod.customType === "name" ? "Name" : (prod.customType === "pic" ? "Picture" : "None");
+                let catText = prod.mainCategory.charAt(0).toUpperCase() + prod.mainCategory.slice(1);
+                let catBadge = `<span style='background:#3498db; color:white; padding:2px 6px; border-radius:3px; font-size:11px;'>${catText}</span>`;
+                let subBadge = `<span style='background:#34495e; color:white; padding:2px 6px; border-radius:3px; font-size:11px; margin-left:3px;'>${prod.subCategory}</span>`;
+
                 let statusText = prod.isActive !== false ? "Active" : "Disabled";
                 let btnClass = prod.isActive !== false ? "background:#7f8c8d;" : "background:#27ae60;";
                 let btnText = prod.isActive !== false ? "Disable" : "Enable";
@@ -290,7 +394,8 @@
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding:10px; min-width:140px;">${imagesHTML}</td>
                         <td style="padding:10px;">
-                            <strong>${prod.name}</strong> <small style="color:#e74c3c;">[${typeLabel}]</small>
+                            <strong>${prod.name}</strong><br>
+                            ${catBadge} ${subBadge}
                             <textarea class="sticky-note-input" id="note-${docId}" placeholder="📝 Admin note (Private)..." rows="1">${prod.adminNote || ""}</textarea>
                             <button onclick="saveAdminNote('${docId}')" style="background:#f39c12; color:white; border:none; padding:3px 8px; font-size:11px; border-radius:3px; cursor:pointer; margin-top:3px;">Save Note</button>
                         </td>
@@ -300,7 +405,7 @@
                         </td>
                         <td style="padding:10px; font-weight:600;">${statusText}</td>
                         <td style="padding:10px; min-width:130px;">
-                            <button onclick="openEditModal('${docId}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
+                            <button onclick="openEditModal('${docId}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i> Edit</button>
                             <button onclick="toggleProductCloud('${docId}', ${prod.isActive})" style="${btnClass} color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;">${btnText}</button>
                             <button onclick="deleteProductCloud('${docId}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;"><i class="fas fa-trash"></i></button>
                         </td>
@@ -320,6 +425,45 @@
             if(!prod) return;
             document.getElementById('edit-prod-id').value = docId;
             document.getElementById('edit-prod-name').value = prod.name;
+            
+            // Main Category Matching
+            const mainSelect = document.getElementById('edit-prod-main-cat');
+            const mainCustomInput = document.getElementById('edit-prod-maincat-custom');
+            let mainMatched = false;
+            for(let i=0; i<mainSelect.options.length; i++) {
+                if(mainSelect.options[i].value.toLowerCase() === (prod.mainCategory || '').toLowerCase()) {
+                    mainSelect.selectedIndex = i;
+                    mainMatched = true; break;
+                }
+            }
+            if(!mainMatched) {
+                mainSelect.value = '__custom__';
+                mainCustomInput.style.display = 'block';
+                mainCustomInput.value = prod.mainCategory || '';
+            } else {
+                mainCustomInput.style.display = 'none';
+                mainCustomInput.value = '';
+            }
+
+            // Sub Category Matching
+            const subSelect = document.getElementById('edit-prod-subcat-select');
+            const subCustomInput = document.getElementById('edit-prod-subcat-custom');
+            let subMatched = false;
+            for(let i=0; i<subSelect.options.length; i++) {
+                if(subSelect.options[i].value.toLowerCase() === (prod.subCategory || '').toLowerCase()) {
+                    subSelect.selectedIndex = i;
+                    subMatched = true; break;
+                }
+            }
+            if(!subMatched) {
+                subSelect.value = '__custom__';
+                subCustomInput.style.display = 'block';
+                subCustomInput.value = prod.subCategory || '';
+            } else {
+                subCustomInput.style.display = 'none';
+                subCustomInput.value = '';
+            }
+
             document.getElementById('edit-prod-price').value = prod.price;
             document.getElementById('edit-prod-type').value = prod.customType || 'none';
             document.getElementById('edit-prod-files').value = "";
@@ -333,18 +477,31 @@
         async function saveProductEditCloud() {
             const docId = document.getElementById('edit-prod-id').value;
             const name = document.getElementById('edit-prod-name').value.trim();
+            
+            let mainCategory = document.getElementById('edit-prod-main-cat').value;
+            if(mainCategory === '__custom__') mainCategory = document.getElementById('edit-prod-maincat-custom').value.trim();
+
+            let subCategory = document.getElementById('edit-prod-subcat-select').value;
+            if(subCategory === '__custom__') subCategory = document.getElementById('edit-prod-subcat-custom').value.trim();
+
             const price = parseInt(document.getElementById('edit-prod-price').value);
             const customType = document.getElementById('edit-prod-type').value;
             const fileInput = document.getElementById('edit-prod-files');
             const btn = document.getElementById('btn-save-edit');
 
-            if(!name || isNaN(price)) { alert("Enter valid name and price."); return; }
+            if(!name || isNaN(price) || !subCategory || !mainCategory) { alert("Please enter valid name, categories, and price."); return; }
 
             btn.disabled = true;
             btn.innerText = "Updating...";
 
             try {
-                let updateData = { name: name, price: price, customType: customType };
+                let updateData = { 
+                    name: name, 
+                    mainCategory: mainCategory, 
+                    subCategory: subCategory, 
+                    price: price, 
+                    customType: customType 
+                };
                 
                 if(fileInput.files.length > 0) {
                     if(fileInput.files.length > 4) { alert("Max 4 images allowed."); btn.disabled = false; return; }
