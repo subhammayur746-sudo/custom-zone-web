@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Access - Custom Zone</title>
+    <title>Manage Staff & Access - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -15,27 +15,27 @@
 
     <style>
         body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
         .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
-        .menu-item { display: none; }
         
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
         .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn-admin { background: #8e44ad; color: #fff; padding: 11px 22px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
-        .permission-box { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-        .permission-box label { font-weight: normal; font-size: 13px; cursor: pointer; background: #ecf0f1; padding: 8px 12px; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        .btn-admin { background: #27ae60; color: #fff; padding: 11px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; }
+        
+        .perm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 8px; }
+        .perm-item { background: #f8f9fa; padding: 8px 12px; border: 1px solid #eee; border-radius: 4px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
         
         .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
-        
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.active { left: 0; }
@@ -54,59 +54,76 @@
     <div class="sidebar">
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
         <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" class="menu-item" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" class="menu-item" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" class="menu-item" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-ads.html" class="menu-item" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" class="menu-item active" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" class="active" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Staff Access (Cloud Database)</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Staff & Sub-Admin Accounts</h2>
 
-        <!-- Create New User -->
-        <div class="admin-card" style="max-width: 800px;">
-            <h3><i class="fas fa-user-plus"></i> Create New Staff Account</h3>
+        <div style="display:flex; gap:20px; flex-wrap:wrap;">
             
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                <div class="form-group" style="flex: 1; min-width: 220px;">
-                    <label>Username</label>
-                    <input type="text" id="new-username" placeholder="E.g., sayan" autocomplete="off">
+            <!-- Create Sub-Admin / Staff Card -->
+            <div class="admin-card" style="flex: 1; min-width: 320px;">
+                <h3><i class="fas fa-user-plus"></i> Create New Staff Account</h3>
+                <div class="form-group">
+                    <label>Staff Full Name</label>
+                    <input type="text" id="staff-name" placeholder="e.g., Rahul Sharma">
                 </div>
-                <div class="form-group" style="flex: 1; min-width: 220px;">
-                    <label>Password</label>
-                    <input type="password" id="new-password" placeholder="Enter password">
+                <div class="form-group">
+                    <label>Username / Login ID</label>
+                    <input type="text" id="staff-username" placeholder="e.g., rahul_cz" style="text-transform:lowercase;">
                 </div>
+                <div class="form-group">
+                    <label>Login Password</label>
+                    <input type="password" id="staff-password" placeholder="Create a secure password">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="staff-role">
+                        <option value="Staff Manager">Staff Manager</option>
+                        <option value="Order Dispatcher">Order Dispatcher (Orders & Invoice)</option>
+                        <option value="Product Manager">Product Manager (Products only)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Allowed Page Permissions:</label>
+                    <div class="perm-grid">
+                        <label class="perm-item"><input type="checkbox" class="perm-chk" value="orders" checked> Manage Orders</label>
+                        <label class="perm-item"><input type="checkbox" class="perm-chk" value="invoice" checked> Manual Invoice</label>
+                        <label class="perm-item"><input type="checkbox" class="perm-chk" value="products"> Manage Products</label>
+                        <label class="perm-item"><input type="checkbox" class="perm-chk" value="coupons"> Coupons & Offers</label>
+                        <label class="perm-item"><input type="checkbox" class="perm-chk" value="ads"> Store Settings</label>
+                        <label class="perm-item"><input type="checkbox" class="perm-chk" value="reviews"> Manage Reviews</label>
+                    </div>
+                </div>
+
+                <button class="btn-admin" id="btn-save-staff" onclick="createStaffCloud()">Create Staff Account</button>
             </div>
-            
-            <div class="form-group">
-                <label>Select Permissions</label>
-                <div class="permission-box">
-                    <label><input type="checkbox" value="orders" class="perm-check"> Manage Orders</label>
-                    <label><input type="checkbox" value="products" class="perm-check"> Manage Products</label>
-                    <label><input type="checkbox" value="reviews" class="perm-check"> Manage Reviews</label>
-                    <label><input type="checkbox" value="ads" class="perm-check"> Store Settings</label>
-                </div>
-            </div>
-            
-            <button class="btn-admin" id="btn-create-user" onclick="createNewUser()">Create Account in Cloud</button>
-            <p id="user-msg" style="margin-top: 12px; font-weight: bold; display: none;"></p>
+
         </div>
 
-        <!-- Users List -->
+        <!-- Staff List Table -->
         <div class="admin-card" style="overflow-x: auto;">
-            <h3><i class="fas fa-users-cog"></i> Active Users List</h3>
-            <table style="width:100%; border-collapse: collapse;">
+            <h3><i class="fas fa-users-cog"></i> Active Staff Accounts</h3>
+            <table style="width:100%; border-collapse: collapse; min-width: 600px;">
                 <thead>
                     <tr style="background:#f8f9fa; text-align:left;">
-                        <th style="padding:10px;">Username</th>
+                        <th style="padding:10px;">Name & Username</th>
+                        <th style="padding:10px;">Role</th>
                         <th style="padding:10px;">Permissions</th>
                         <th style="padding:10px;">Action</th>
                     </tr>
                 </thead>
-                <tbody id="admin-users-list">
-                    <tr><td colspan="3" style="text-align:center; padding:15px;">Loading users from Cloud...</td></tr>
+                <tbody id="admin-staff-list">
+                    <tr><td colspan="4" style="text-align:center; padding:15px;">Loading staff accounts...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -114,110 +131,107 @@
 
     <script>
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-        if (!loggedInUser || !loggedInUser.permissions.includes('users')) {
-            alert("Permission denied!");
-            window.location.href = "admin-dashboard.html";
+
+        // মাস্টার অ্যাডমিন বা উপযুক্ত পারমিশন চেক (FIXED)
+        if (!loggedInUser) {
+            window.location.href = "admin-login.html";
         } else {
-            loggedInUser.permissions.forEach(perm => {
-                let menuId = 'menu-' + perm;
-                if(document.getElementById(menuId)) document.getElementById(menuId).style.display = 'block';
-            });
-            fetchCloudUsers();
+            let isMasterAdmin = (loggedInUser.username && loggedInUser.username.toLowerCase() === "admin") || 
+                                (loggedInUser.role && loggedInUser.role.toLowerCase().includes("master")) ||
+                                (loggedInUser.permissions && loggedInUser.permissions.includes("all"));
+
+            if (!isMasterAdmin) {
+                alert("Access Denied: Only Master Admin has permission to manage staff accounts.");
+                window.location.href = "admin-dashboard.html";
+            } else {
+                fetchStaffAccounts();
+            }
         }
 
         function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
 
-        async function createNewUser() {
-            const username = document.getElementById('new-username').value.trim().toLowerCase();
-            const pass = document.getElementById('new-password').value.trim();
-            const msgBox = document.getElementById('user-msg');
-            const btn = document.getElementById('btn-create-user');
-            
-            if(!username || !pass) {
-                alert("Please fill username and password.");
-                return;
+        async function createStaffCloud() {
+            const name = document.getElementById('staff-name').value.trim();
+            const username = document.getElementById('staff-username').value.trim().toLowerCase();
+            const password = document.getElementById('staff-password').value.trim();
+            const role = document.getElementById('staff-role').value;
+            const btn = document.getElementById('btn-save-staff');
+
+            if (!name || !username || !password) {
+                alert("Please fill all required staff fields."); return;
             }
 
             let permissions = [];
-            document.querySelectorAll('.perm-check:checked').forEach(cb => permissions.push(cb.value));
-
-            if(permissions.length === 0) {
-                alert("Please select at least one permission.");
-                return;
-            }
+            document.querySelectorAll('.perm-chk:checked').forEach(cb => permissions.push(cb.value));
 
             btn.disabled = true;
-            btn.innerText = "Saving to Cloud...";
+            btn.innerText = "Creating...";
 
             try {
-                await db.collection("users").doc(username).set({
-                    password: pass,
+                await db.collection("staff").doc(username).set({
+                    name: name,
+                    username: username,
+                    password: password,
+                    role: role,
                     permissions: permissions,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                msgBox.style.display = "block";
-                msgBox.style.color = "green";
-                msgBox.innerText = `User '${username}' added to Cloud successfully!`;
-                
-                document.getElementById('new-username').value = "";
-                document.getElementById('new-password').value = "";
-                document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
-                
-                fetchCloudUsers();
-            } catch (err) {
-                console.error(err);
-                msgBox.style.display = "block";
-                msgBox.style.color = "red";
-                msgBox.innerText = "Error creating user in cloud.";
+                alert(`✅ Staff account for "${name}" created successfully!`);
+                document.getElementById('staff-name').value = "";
+                document.getElementById('staff-username').value = "";
+                document.getElementById('staff-password').value = "";
+                fetchStaffAccounts();
+            } catch (e) {
+                console.error(e);
+                alert("Error creating staff account.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Create Account in Cloud";
-                setTimeout(() => { msgBox.style.display = "none"; }, 3500);
+                btn.innerText = "Create Staff Account";
             }
         }
 
-        async function fetchCloudUsers() {
-            const tbody = document.getElementById('admin-users-list');
+        async function fetchStaffAccounts() {
+            const tbody = document.getElementById('admin-staff-list');
             try {
-                const snapshot = await db.collection("users").get();
-                tbody.innerHTML = `
-                    <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:10px;"><strong>admin</strong></td>
-                        <td style="padding:10px;">All Permissions</td>
-                        <td style="padding:10px;"><span style="color:#7f8c8d; font-size:12px;">Master Admin</span></td>
-                    </tr>
-                `;
+                const snapshot = await db.collection("staff").get();
+                tbody.innerHTML = "";
+
+                if (snapshot.empty) {
+                    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:15px;'>No additional staff accounts created yet.</td></tr>";
+                    return;
+                }
 
                 snapshot.forEach(doc => {
-                    let user = doc.id;
-                    if(user === 'admin') return;
-                    let data = doc.data();
-                    let perms = (data.permissions || []).join(", ") || "None";
-                    
+                    let s = doc.data();
+                    let permBadges = (s.permissions || []).map(p => `<span style="background:#eaf2f8; color:#2980b9; padding:2px 6px; border-radius:3px; font-size:11px; margin-right:3px;">${p}</span>`).join(" ");
+
                     tbody.innerHTML += `
                         <tr style="border-bottom:1px solid #eee;">
-                            <td style="padding:10px;"><strong>${user}</strong></td>
-                            <td style="padding:10px; text-transform:capitalize;">${perms}</td>
+                            <td style="padding:10px;"><strong>${s.name}</strong><br><small style="color:#7f8c8d;">@${s.username}</small></td>
+                            <td style="padding:10px;"><span style="background:#2c3e50; color:white; padding:3px 8px; border-radius:4px; font-size:12px;">${s.role}</span></td>
+                            <td style="padding:10px;">${permBadges || 'No extra permissions'}</td>
                             <td style="padding:10px;">
-                                <button onclick="deleteCloudUser('${user}')" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                                <button onclick="deleteStaffCloud('${s.username}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Delete Staff Account">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
                             </td>
                         </tr>
                     `;
                 });
-            } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Failed to load users from cloud.</td></tr>`;
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = "<tr><td colspan='4' style='color:red; text-align:center; padding:15px;'>Error loading staff accounts.</td></tr>";
             }
         }
 
-        async function deleteCloudUser(username) {
-            if(confirm(`Delete staff '${username}' permanently from Cloud?`)) {
+        async function deleteStaffCloud(username) {
+            if (confirm(`Are you sure you want to delete staff account @${username}?`)) {
                 try {
-                    await db.collection("users").doc(username).delete();
-                    fetchCloudUsers();
-                } catch(e) {
-                    alert("Error deleting user.");
+                    await db.collection("staff").doc(username).delete();
+                    fetchStaffAccounts();
+                } catch (e) {
+                    alert("Error deleting account.");
                 }
             }
         }
