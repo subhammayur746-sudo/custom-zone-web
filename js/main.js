@@ -1,7 +1,7 @@
 let liveProducts = [];
-let selectedCategory = "all";
-let globalSubcats = new Set();
-let globalMainCats = new Set();
+let selectedMainCategory = "all";
+let selectedSubCategory = "all";
+let categoryMap = {}; // Main Category -> Set of Subcategories
 
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
@@ -12,12 +12,13 @@ async function fetchLiveProducts() {
     try {
         const snapshot = await db.collection("products").where("isActive", "==", true).get();
         liveProducts = [];
-        globalSubcats.clear();
-        globalMainCats.clear();
+        categoryMap = {
+            "Handmade": new Set(),
+            "Customized": new Set()
+        };
         
         if (snapshot.empty) {
             container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1;'>No products available right now.</p>";
-            document.getElementById('dynamic-cat-container').innerHTML = `<button class="cat-btn active">All</button>`;
             return;
         }
 
@@ -26,18 +27,25 @@ async function fetchLiveProducts() {
             prod.id = doc.id;
             
             if (!prod.mainCategory) {
-                prod.mainCategory = prod.customType === "none" ? "handmade" : "customized";
+                prod.mainCategory = prod.customType === "none" ? "Handmade" : "Customized";
             }
             
-            globalMainCats.add(prod.mainCategory.trim());
-            if(prod.subCategory && prod.subCategory.trim() !== "") {
-                globalSubcats.add(prod.subCategory.trim());
+            // Format Main Category
+            let mainCatFormatted = prod.mainCategory.trim();
+            mainCatFormatted = mainCatFormatted.charAt(0).toUpperCase() + mainCatFormatted.slice(1);
+
+            if (!categoryMap[mainCatFormatted]) {
+                categoryMap[mainCatFormatted] = new Set();
+            }
+
+            if (prod.subCategory && prod.subCategory.trim() !== "") {
+                categoryMap[mainCatFormatted].add(prod.subCategory.trim());
             }
 
             liveProducts.push(prod);
         });
 
-        renderCategoryTabs();
+        renderCategorySubnav();
         renderHomeProducts(liveProducts);
     } catch (error) {
         console.error("Error fetching products:", error);
@@ -45,43 +53,49 @@ async function fetchLiveProducts() {
     }
 }
 
-// হোমপেজে ডাইনামিক ক্যাটাগরি ও বাজেট বাটন রেন্ডার
-function renderCategoryTabs() {
-    const container = document.getElementById('dynamic-cat-container');
-    if(!container) return;
+// ন্যাভবারে ড্রপডাউন সহ মেইন ও সাব-ক্যাটাগরি সাজানো
+function renderCategorySubnav() {
+    const nav = document.getElementById('dynamic-cat-nav');
+    if (!nav) return;
 
-    let html = `<button type="button" class="cat-btn ${selectedCategory === 'all' ? 'active' : ''}" onclick="setMainCategory('all', this)">All</button>`;
-    
-    // Main Fixed Categories
-    html += `<button type="button" class="cat-btn ${selectedCategory === 'handmade' ? 'active' : ''}" onclick="setMainCategory('handmade', this)">Handmade</button>`;
-    html += `<button type="button" class="cat-btn ${selectedCategory === 'customized' ? 'active' : ''}" onclick="setMainCategory('customized', this)">Customized</button>`;
+    let html = `<button class="cat-dropdown-btn ${selectedMainCategory === 'all' ? 'active' : ''}" onclick="setMainCategoryFilter('all', this)">All</button>`;
 
-    // Custom Categories (e.g., Gift Cards)
-    globalMainCats.forEach(cat => {
-        let lower = cat.toLowerCase();
-        if(lower !== 'handmade' && lower !== 'customized') {
-            html += `<button type="button" class="cat-btn ${selectedCategory === cat ? 'active' : ''}" onclick="setMainCategory('${cat}', this)">${cat}</button>`;
+    for (let mainCat in categoryMap) {
+        let subCats = Array.from(categoryMap[mainCat]);
+        let isActive = selectedMainCategory.toLowerCase() === mainCat.toLowerCase();
+
+        if (subCats.length > 0) {
+            html += `
+                <div class="cat-dropdown">
+                    <button class="cat-dropdown-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">
+                        ${mainCat} <i class="fas fa-chevron-down" style="font-size:10px;"></i>
+                    </button>
+                    <div class="cat-dropdown-content">
+                        <a href="javascript:void(0)" onclick="setSubCategoryFilter('${mainCat}', 'all')">All ${mainCat}</a>
+                        ${subCats.map(sub => `<a href="javascript:void(0)" onclick="setSubCategoryFilter('${mainCat}', '${sub}')">${sub}</a>`).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `<button class="cat-dropdown-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">${mainCat}</button>`;
         }
-    });
+    }
 
-    // Subcategory Filter Dropdown
-    html += `<select id="subcat-filter" class="custom-select-filter" onchange="filterHomeProducts()">
-                <option value="all">All Varieties</option>`;
-    globalSubcats.forEach(sub => {
-        html += `<option value="${sub}">${sub}</option>`;
-    });
-    html += `</select>`;
+    nav.innerHTML = html;
+}
 
-    // Budget Price Filter Dropdown (New Feature 🔍)
-    html += `<select id="budget-filter" class="custom-select-filter" onchange="filterHomeProducts()" style="border-color:#e67e22; color:#d35400;">
-                <option value="all">💰 All Budgets</option>
-                <option value="199">Under ₹199</option>
-                <option value="299">Under ₹299</option>
-                <option value="499">Under ₹499</option>
-                <option value="500plus">₹500+ Luxury Gifts</option>
-             </select>`;
+function setMainCategoryFilter(cat, btn) {
+    selectedMainCategory = cat;
+    selectedSubCategory = "all";
+    renderCategorySubnav();
+    filterHomeProducts();
+}
 
-    container.innerHTML = html;
+function setSubCategoryFilter(mainCat, subCat) {
+    selectedMainCategory = mainCat;
+    selectedSubCategory = subCat;
+    renderCategorySubnav();
+    filterHomeProducts();
 }
 
 function renderHomeProducts(products) {
@@ -90,7 +104,7 @@ function renderHomeProducts(products) {
     container.innerHTML = "";
 
     if (products.length === 0) {
-        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:20px;'>No matching products found in this budget/category.</p>";
+        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:25px;'>No products found matching your search or price criteria.</p>";
         return;
     }
 
@@ -100,28 +114,18 @@ function renderHomeProducts(products) {
         let images = prod.images && prod.images.length > 0 ? prod.images : [fallbackImg];
         let mainImg = images[0];
 
-        let thumbnailsHTML = "";
-        if (images.length > 1) {
-            thumbnailsHTML = `<div class="product-thumb-gallery" style="display:flex; gap:6px; justify-content:center; margin-bottom:10px; overflow-x:auto; padding:2px;">`;
-            images.forEach((img) => {
-                thumbnailsHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" onclick="changeCardMainImg('${prod.id}', '${img}')" style="width:38px; height:38px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:pointer;">`;
-            });
-            thumbnailsHTML += `</div>`;
-        }
-
         let catTag = prod.mainCategory.charAt(0).toUpperCase() + prod.mainCategory.slice(1);
         let subTag = prod.subCategory ? ` • ${prod.subCategory}` : "";
         
         container.innerHTML += `
-            <div class="product-card">
-                <div style="position:relative; cursor:zoom-in;" onclick="openImageZoom('${mainImg}')">
+            <div class="product-card" onclick="openProductDetailsModal('${prod.id}')" style="cursor:pointer;">
+                <div style="position:relative;">
                     <img id="main-img-${prod.id}" src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
-                    <span style="position:absolute; top:8px; left:8px; background:rgba(44,62,80,0.85); color:#fff; font-size:10px; padding:3px 7px; border-radius:12px; font-weight:600;">${catTag}${subTag}</span>
+                    <span style="position:absolute; top:8px; left:8px; background:rgba(44,62,80,0.88); color:#fff; font-size:10px; padding:3px 7px; border-radius:12px; font-weight:600;">${catTag}${subTag}</span>
                 </div>
-                ${thumbnailsHTML}
                 <h3>${prod.name}</h3>
                 <p>₹${prod.price}</p>
-                <button onclick="addToCart('${prod.id}')">
+                <button onclick="event.stopPropagation(); addToCart('${prod.id}')">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
@@ -129,37 +133,21 @@ function renderHomeProducts(products) {
     });
 }
 
-function setMainCategory(cat, btn) {
-    selectedCategory = cat;
-    renderCategoryTabs();
-    filterHomeProducts();
-}
-
 function filterHomeProducts() {
     const searchInput = document.getElementById('home-search-input');
-    const subcatSelect = document.getElementById('subcat-filter');
     const budgetSelect = document.getElementById('budget-filter');
 
     const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    const subcatVal = subcatSelect ? subcatSelect.value : "all";
     const budgetVal = budgetSelect ? budgetSelect.value : "all";
 
     let filtered = liveProducts.filter(prod => {
         let matchName = prod.name.toLowerCase().includes(searchVal);
-        let matchSubCat = (subcatVal === "all") || (prod.subCategory === subcatVal);
         
-        let matchMainCat = false;
-        if(selectedCategory === "all") {
-            matchMainCat = true;
-        } else if(selectedCategory === "handmade") {
-            matchMainCat = prod.mainCategory.toLowerCase() === 'handmade';
-        } else if(selectedCategory === "customized") {
-            matchMainCat = prod.mainCategory.toLowerCase() === 'customized';
-        } else {
-            matchMainCat = prod.mainCategory === selectedCategory;
-        }
+        // Category Matching
+        let matchMainCat = (selectedMainCategory === "all") || (prod.mainCategory.toLowerCase() === selectedMainCategory.toLowerCase());
+        let matchSubCat = (selectedSubCategory === "all") || (prod.subCategory === selectedSubCategory);
 
-        // Budget Filter Check
+        // Price Filter Matching
         let matchBudget = true;
         let price = parseInt(prod.price) || 0;
         if (budgetVal === "199") matchBudget = price <= 199;
@@ -173,32 +161,66 @@ function filterHomeProducts() {
     renderHomeProducts(filtered);
 }
 
-function changeCardMainImg(prodId, imgSrc) {
-    const mainImgEl = document.getElementById(`main-img-${prodId}`);
-    if(mainImgEl) {
-        mainImgEl.src = imgSrc;
-        mainImgEl.parentElement.setAttribute('onclick', `openImageZoom('${imgSrc}')`);
-    }
-}
+// Flipkart/Amazon স্টাইল প্রোডাক্ট ডিটেইলস পপআপ ভিউ
+function openProductDetailsModal(productId) {
+    let product = liveProducts.find(p => p.id === productId);
+    if (!product) return;
 
-function openImageZoom(imgSrc) {
-    let modal = document.getElementById('cz-zoom-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'cz-zoom-modal';
-        modal.style.cssText = "display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.88); z-index:999999; justify-content:center; align-items:center; cursor:zoom-out;";
-        modal.innerHTML = `
-            <span style="position:absolute; top:15px; right:25px; color:#fff; font-size:35px; font-weight:bold; cursor:pointer;">&times;</span>
-            <img id="cz-zoom-img" src="" style="max-width:92%; max-height:85vh; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.5); object-fit:contain;">
-        `;
-        modal.onclick = () => modal.style.display = "none";
-        document.body.appendChild(modal);
+    const modal = document.getElementById('product-details-modal');
+    const fallbackImg = "assets/images/logo.png";
+    const images = product.images && product.images.length > 0 ? product.images : [fallbackImg];
+
+    document.getElementById('pdm-main-img').src = images[0];
+    document.getElementById('pdm-badge').innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
+    document.getElementById('pdm-title').innerText = product.name;
+    document.getElementById('pdm-price').innerText = product.price;
+
+    // Thumbnails
+    const thumbsContainer = document.getElementById('pdm-thumbs');
+    thumbsContainer.innerHTML = "";
+    if (images.length > 1) {
+        images.forEach(img => {
+            thumbsContainer.innerHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" onclick="document.getElementById('pdm-main-img').src='${img}'">`;
+        });
     }
-    document.getElementById('cz-zoom-img').src = imgSrc;
+
+    // Customization Input in Details View
+    const customContainer = document.getElementById('pdm-custom-field-container');
+    customContainer.innerHTML = "";
+    if (product.customType === "name") {
+        customContainer.innerHTML = `
+            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:#2c3e50;">Customize Text / Name to Print:</label>
+            <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid #fab1a0; border-radius:4px; box-sizing:border-box;">
+        `;
+    } else if (product.customType === "pic") {
+        customContainer.innerHTML = `
+            <p style="font-size:12px; color:#e74c3c; background:#fff5f5; padding:8px; border-radius:4px; border:1px dashed #e74c3c;">
+                📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
+            </p>
+        `;
+    }
+
+    // Button Handlers
+    document.getElementById('pdm-btn-add').onclick = () => {
+        let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+        addToCart(product.id, customVal);
+        closeProductDetailsModal();
+    };
+
+    document.getElementById('pdm-btn-buy').onclick = () => {
+        let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+        addToCart(product.id, customVal);
+        window.location.href = "cart.html";
+    };
+
     modal.style.display = "flex";
 }
 
-function addToCart(productId) {
+function closeProductDetailsModal() {
+    document.getElementById('product-details-modal').style.display = "none";
+}
+
+function addToCart(productId, customText = "") {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
     
@@ -208,7 +230,7 @@ function addToCart(productId) {
         name: product.name,
         price: product.price,
         customType: product.customType,
-        userText: "" 
+        userText: customText 
     });
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));

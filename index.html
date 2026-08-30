@@ -13,71 +13,183 @@
     <link rel="manifest" href="manifest.json">
 
     <style>
-        .filter-section {
-            background: #fff;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
+        /* Secondary Category Bar under Navbar */
+        .category-subnav {
+            background: #2c3e50;
+            padding: 0 20px;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
             flex-wrap: wrap;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .cat-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .cat-dropdown-btn {
+            background: transparent;
+            color: #ecf0f1;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.3s;
+        }
+        .cat-dropdown-btn:hover, .cat-dropdown-btn.active {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .cat-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #fff;
+            min-width: 180px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            z-index: 1000;
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+        }
+        .cat-dropdown-content a {
+            color: #2c3e50;
+            padding: 10px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #f1f2f6;
+            transition: 0.2s;
+        }
+        .cat-dropdown-content a:hover {
+            background: #f8f9fa;
+            color: #e74c3c;
+            padding-left: 20px;
+        }
+        .cat-dropdown:hover .cat-dropdown-content {
+            display: block;
+        }
+
+        /* Search & Price Filter Controls Bar */
+        .filter-control-bar {
+            max-width: 1200px;
+            margin: 20px auto 10px auto;
+            padding: 0 15px;
+            display: flex;
             gap: 15px;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
         }
-        .search-box-home {
+        .search-wrapper {
             flex: 1;
-            min-width: 220px;
+            min-width: 260px;
             position: relative;
         }
-        .search-box-home input {
+        .search-wrapper input {
             width: 100%;
-            padding: 10px 15px 10px 38px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            outline: none;
+            padding: 11px 15px 11px 40px;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
             font-size: 14px;
+            outline: none;
             box-sizing: border-box;
+            background: #fff;
+            transition: 0.3s;
         }
-        .search-box-home i {
+        .search-wrapper input:focus {
+            border-color: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.15);
+        }
+        .search-wrapper i {
             position: absolute;
             left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #7f8c8d;
+            color: #95a5a6;
         }
-        .category-tabs {
+        .price-filter-select {
+            padding: 11px 16px;
+            border-radius: 6px;
+            border: 1px solid #dcdde1;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            background: #fff;
+            outline: none;
+            cursor: pointer;
+            min-width: 170px;
+        }
+
+        /* Flipkart / Amazon Style Product Detail Modal */
+        #product-details-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .pdm-card {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 850px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            padding: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .pdm-close {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        .pdm-main-img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        .pdm-gallery {
             display: flex;
             gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
+            margin-top: 10px;
+            overflow-x: auto;
         }
-        .cat-btn {
-            background: #f1f2f6;
-            color: #2c3e50;
-            border: 1px solid #dcdde1;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: 0.3s;
-        }
-        .cat-btn.active, .cat-btn:hover {
-            background: #e74c3c;
-            color: #fff;
-            border-color: #e74c3c;
-        }
-        .custom-select-filter {
-            padding: 8px 14px;
-            border-radius: 20px;
+        .pdm-gallery img {
+            width: 55px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 4px;
             border: 1px solid #ddd;
-            font-size: 13px;
-            outline: none;
-            background: #fff;
-            font-weight: 600;
-            color: #2c3e50;
             cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .pdm-card { grid-template-columns: 1fr; }
+            .category-subnav { justify-content: flex-start; overflow-x: auto; padding: 5px 10px; }
         }
     </style>
 </head>
@@ -104,24 +216,69 @@
         </div>
     </header>
 
-    <main class="container">
-        
-        <div class="filter-section">
-            <div class="search-box-home">
-                <i class="fas fa-search"></i>
-                <input type="text" id="home-search-input" onkeyup="filterHomeProducts()" placeholder="Search gifts, keychains...">
-            </div>
-            
-            <!-- Dynamic Category & Price Budget Filters -->
-            <div class="category-tabs" id="dynamic-cat-container">
-                <button class="cat-btn active">Loading...</button>
-            </div>
-        </div>
+    <!-- Professional E-Commerce Category Subnav -->
+    <div class="category-subnav" id="dynamic-cat-nav">
+        <button class="cat-dropdown-btn active" onclick="setMainCategoryFilter('all', this)">All Categories</button>
+    </div>
 
-        <h2 class="section-title">Trending Products</h2>
+    <!-- Search & Prices Filter Bar -->
+    <div class="filter-control-bar">
+        <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="home-search-input" onkeyup="filterHomeProducts()" placeholder="Search trending gifts, customized keychains, frames...">
+        </div>
+        
+        <!-- Price Filter Dropdown -->
+        <select id="budget-filter" class="price-filter-select" onchange="filterHomeProducts()">
+            <option value="all">🏷️ Prices: All</option>
+            <option value="199">Under ₹199</option>
+            <option value="299">Under ₹299</option>
+            <option value="499">Under ₹499</option>
+            <option value="500plus">₹500+ Luxury Items</option>
+        </select>
+    </div>
+
+    <main class="container" style="margin-top: 15px;">
+        <h2 class="section-title" id="feed-title">Trending Products</h2>
         <div class="product-grid" id="product-list"></div>
     </main>
 
+    <!-- Flipkart/Amazon Style Single Product Detail View Modal -->
+    <div id="product-details-modal">
+        <div class="pdm-card">
+            <span class="pdm-close" onclick="closeProductDetailsModal()">&times;</span>
+            
+            <!-- Left: Images Gallery -->
+            <div>
+                <img id="pdm-main-img" class="pdm-main-img" src="" alt="Product">
+                <div class="pdm-gallery" id="pdm-thumbs"></div>
+            </div>
+
+            <!-- Right: Product Information & Add to Cart -->
+            <div>
+                <span id="pdm-badge" style="background:#eaf2f8; color:#2980b9; font-size:11px; padding:3px 8px; border-radius:12px; font-weight:bold;">Category</span>
+                <h2 id="pdm-title" style="margin: 8px 0; color:#2c3e50; font-size:22px;">Product Title</h2>
+                <div style="font-size:24px; font-weight:800; color:#e74c3c; margin-bottom:12px;">₹<span id="pdm-price">0</span></div>
+                
+                <p style="font-size:13px; color:#555; line-height:1.6; margin-bottom:15px;" id="pdm-desc">
+                    100% Handcrafted premium keepsake customized with love & precision. Perfect for gifting on Birthdays, Anniversaries, and special moments.
+                </p>
+
+                <div id="pdm-custom-field-container" style="margin-bottom:15px;"></div>
+
+                <div style="display:flex; gap:10px;">
+                    <button id="pdm-btn-add" style="flex:1; background:#2c3e50; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                    <button id="pdm-btn-buy" style="flex:1; background:#e74c3c; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Popup -->
     <div id="promo-popup" class="popup-overlay">
         <div class="popup-content">
             <span class="close-btn" onclick="closePopup()">&times;</span>
