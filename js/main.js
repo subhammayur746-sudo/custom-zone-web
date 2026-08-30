@@ -3,7 +3,8 @@ let selectedMainCategory = "all";
 let selectedSubCategory = "all";
 let categoryMap = {};
 let pendingAction = null;
-let currentGeneratedOtp = null;
+let currentAuthMode = "login"; // 'login' or 'signup'
+let activeSessionOtp = null;
 
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
@@ -114,14 +115,14 @@ function renderHomeProducts(products) {
         let isWishlisted = wishlist.some(w => w.id === prod.id);
 
         container.innerHTML += `
-            <div class="product-card">
-                <button class="wishlist-btn-heart ${isWishlisted ? 'active' : ''}" onclick="toggleWishlistCloud('${prod.id}')">
+            <div class="product-card" onclick="openProductDetailsModal('${prod.id}')">
+                <button class="wishlist-btn-heart ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlistCloud('${prod.id}')">
                     <i class="fas fa-heart"></i>
                 </button>
                 <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
                 <h3>${prod.name}</h3>
                 <p>₹${prod.price}</p>
-                <button class="btn-cart-action" onclick="handleAddToCart('${prod.id}')">
+                <button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
@@ -154,10 +155,66 @@ function filterHomeProducts() {
     renderHomeProducts(filtered);
 }
 
-function handleAddToCart(productId) {
+// Flipkart / Amazon স্টাইল সিঙ্গেল প্রোডাক্ট ভিউ মডাল
+function openProductDetailsModal(productId) {
+    let product = liveProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const modal = document.getElementById('product-details-modal');
+    const fallbackImg = "assets/images/logo.png";
+    const images = product.images && product.images.length > 0 ? product.images : [fallbackImg];
+
+    document.getElementById('pdm-main-img').src = images[0];
+    document.getElementById('pdm-badge').innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
+    document.getElementById('pdm-title').innerText = product.name;
+    document.getElementById('pdm-price').innerText = product.price;
+
+    const thumbsContainer = document.getElementById('pdm-thumbs');
+    thumbsContainer.innerHTML = "";
+    if (images.length > 1) {
+        images.forEach(img => {
+            thumbsContainer.innerHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" onclick="document.getElementById('pdm-main-img').src='${img}'">`;
+        });
+    }
+
+    const customContainer = document.getElementById('pdm-custom-field-container');
+    customContainer.innerHTML = "";
+    if (product.customType === "name") {
+        customContainer.innerHTML = `
+            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:#2c3e50;">Customize Text / Name to Print:</label>
+            <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid #fab1a0; border-radius:4px; box-sizing:border-box;">
+        `;
+    } else if (product.customType === "pic") {
+        customContainer.innerHTML = `
+            <p style="font-size:12px; color:#e74c3c; background:#fff5f5; padding:8px; border-radius:4px; border:1px dashed #e74c3c;">
+                📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
+            </p>
+        `;
+    }
+
+    document.getElementById('pdm-btn-add').onclick = () => {
+        let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+        handleAddToCart(product.id, customVal);
+        closeProductDetailsModal();
+    };
+
+    document.getElementById('pdm-btn-buy').onclick = () => {
+        let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+        handleAddToCart(product.id, customVal);
+        window.location.href = "cart.html";
+    };
+
+    modal.classList.add('show-modal');
+}
+
+function closeProductDetailsModal() {
+    document.getElementById('product-details-modal').classList.remove('show-modal');
+}
+
+function handleAddToCart(productId, customText = "") {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
-        pendingAction = { type: 'cart', id: productId };
+        pendingAction = { type: 'cart', id: productId, text: customText };
         openAuthModal();
         return;
     }
@@ -171,7 +228,7 @@ function handleAddToCart(productId) {
         name: product.name,
         price: product.price,
         customType: product.customType,
-        userText: "" 
+        userText: customText 
     });
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
@@ -219,8 +276,30 @@ async function toggleWishlistCloud(productId) {
     renderHomeProducts(liveProducts);
 }
 
+// প্রফেশনাল Login vs Sign Up সুইচিং
+function switchAuthForm(mode) {
+    currentAuthMode = mode;
+    const nameField = document.getElementById('signup-name-field');
+    const tabLogin = document.getElementById('tab-btn-login');
+    const tabSignup = document.getElementById('tab-btn-signup');
+    const err = document.getElementById('auth-error-msg');
+
+    err.style.display = "none";
+    backToStepOne();
+
+    if(mode === 'signup') {
+        nameField.style.display = "block";
+        tabSignup.classList.add('active');
+        tabLogin.classList.remove('active');
+    } else {
+        nameField.style.display = "none";
+        tabLogin.classList.add('active');
+        tabSignup.classList.remove('active');
+    }
+}
+
 function openAuthModal() {
-    resetOtpSteps();
+    switchAuthForm('login');
     document.getElementById('auth-modal').classList.add('show-modal');
 }
 
@@ -228,53 +307,80 @@ function closeAuthModal() {
     document.getElementById('auth-modal').classList.remove('show-modal');
 }
 
-function resetOtpSteps() {
-    document.getElementById('otp-step-1').style.display = "block";
-    document.getElementById('otp-step-2').style.display = "none";
-    document.getElementById('auth-msg-display').style.display = "none";
-    document.getElementById('auth-entered-otp').value = "";
+function backToStepOne() {
+    document.getElementById('auth-form-step-1').style.display = "block";
+    document.getElementById('auth-form-step-2').style.display = "none";
+    document.getElementById('auth-error-msg').style.display = "none";
+    document.getElementById('entered-otp-input').value = "";
 }
 
-// Step 1: Generate & Send OTP
-function sendOtpStep() {
+// ওটিপি জেনারেট ও রিকুয়েস্ট
+async function requestOtpAction() {
     const name = document.getElementById('auth-user-name').value.trim();
     const phone = document.getElementById('auth-user-phone').value.replace(/[^0-9]/g, '');
-    const msg = document.getElementById('auth-msg-display');
+    const err = document.getElementById('auth-error-msg');
+    const btn = document.getElementById('btn-request-otp');
 
-    if (phone.length !== 10) {
-        msg.style.display = "block";
-        msg.style.color = "red";
-        msg.innerText = "Please enter a valid 10-digit phone number.";
+    if(phone.length !== 10) {
+        err.style.display = "block";
+        err.innerText = "Please enter a valid 10-digit WhatsApp number.";
         return;
     }
 
-    currentGeneratedOtp = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
-
-    document.getElementById('hint-phone-number').innerText = "+91 " + phone;
-    document.getElementById('generated-otp-code').innerText = currentGeneratedOtp;
-
-    document.getElementById('otp-step-1').style.display = "none";
-    document.getElementById('otp-step-2').style.display = "block";
-    msg.style.display = "none";
-}
-
-// Step 2: Verify OTP & Sync Cloud
-async function verifyOtpAndLogin() {
-    const enteredOtp = document.getElementById('auth-entered-otp').value.trim();
-    const name = document.getElementById('auth-user-name').value.trim() || "Customer";
-    const phone = document.getElementById('auth-user-phone').value.replace(/[^0-9]/g, '');
-    const msg = document.getElementById('auth-msg-display');
-    const btn = document.getElementById('btn-verify-otp');
-
-    if (enteredOtp !== currentGeneratedOtp) {
-        msg.style.display = "block";
-        msg.style.color = "red";
-        msg.innerText = "❌ Incorrect verification code.";
+    if(currentAuthMode === 'signup' && !name) {
+        err.style.display = "block";
+        err.innerText = "Please enter your Full Name.";
         return;
     }
 
     btn.disabled = true;
-    btn.innerText = "Signing in...";
+    btn.innerText = "Checking...";
+
+    try {
+        const userDoc = await db.collection("customers").doc(phone).get();
+
+        if(currentAuthMode === 'login' && !userDoc.exists) {
+            err.style.display = "block";
+            err.innerText = "No account found! Please click 'Sign Up' tab to create one.";
+            btn.disabled = false;
+            btn.innerText = "Get Verification Code";
+            return;
+        }
+
+        activeSessionOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+        document.getElementById('hint-display-phone').innerText = "+91 " + phone;
+        document.getElementById('hint-display-otp').innerText = activeSessionOtp;
+
+        document.getElementById('auth-form-step-1').style.display = "none";
+        document.getElementById('auth-form-step-2').style.display = "block";
+        err.style.display = "none";
+
+    } catch(e) {
+        err.style.display = "block";
+        err.innerText = "Connection error. Please try again.";
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Get Verification Code";
+    }
+}
+
+// ওটিপি যাচাই ও অ্যাকাউন্ট লগইন/রেজিস্ট্রেশন
+async function verifyAndAuthenticateUser() {
+    const entered = document.getElementById('entered-otp-input').value.trim();
+    const name = document.getElementById('auth-user-name').value.trim() || "Customer";
+    const phone = document.getElementById('auth-user-phone').value.replace(/[^0-9]/g, '');
+    const err = document.getElementById('auth-error-msg');
+    const btn = document.getElementById('btn-submit-otp');
+
+    if(entered !== activeSessionOtp) {
+        err.style.display = "block";
+        err.innerText = "❌ Incorrect 4-digit code.";
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Verifying...";
 
     try {
         const userDoc = await db.collection("customers").doc(phone).get();
@@ -282,16 +388,10 @@ async function verifyOtpAndLogin() {
 
         if (userDoc.exists) {
             customerData = userDoc.data();
-            // নাম আপডেট হলে তা ক্লাউডে সেভ করা
-            if (name !== "Customer" && customerData.name !== name) {
-                customerData.name = name;
-                await db.collection("customers").doc(phone).update({ name: name });
-            }
             await db.collection("customers").doc(phone).update({
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             });
         } else {
-            // নতুন কাস্টমার অ্যাকাউন্ট তৈরি
             customerData = {
                 name: name,
                 phone: phone,
@@ -311,18 +411,16 @@ async function verifyOtpAndLogin() {
         alert(`🎉 Welcome ${customerData.name}! Logged in successfully.`);
 
         if (pendingAction) {
-            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id);
+            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id, pendingAction.text || "");
             if (pendingAction.type === 'wishlist') toggleWishlistCloud(pendingAction.id);
             pendingAction = null;
         }
-    } catch (e) {
-        console.error(e);
-        msg.style.display = "block";
-        msg.style.color = "red";
-        msg.innerText = "Error syncing with cloud.";
+    } catch(e) {
+        err.style.display = "block";
+        err.innerText = "Error syncing with cloud.";
     } finally {
         btn.disabled = false;
-        btn.innerText = "Verify & Access Account";
+        btn.innerText = "Verify & Proceed";
     }
 }
 
@@ -333,7 +431,7 @@ function updateNavUserSlot() {
     if (customer) {
         slot.innerHTML = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
     } else {
-        slot.innerHTML = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login / Profile</a>`;
+        slot.innerHTML = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login / Sign Up</a>`;
     }
 }
 
