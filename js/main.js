@@ -3,6 +3,7 @@ let selectedMainCategory = "all";
 let selectedSubCategory = "all";
 let categoryMap = {};
 let pendingAction = null;
+let currentGeneratedOtp = null;
 
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
@@ -178,7 +179,6 @@ function handleAddToCart(productId) {
     alert(`✅ ${product.name} added to cart!`);
 }
 
-// ক্লাউড-সিঙ্কড উইশলিস্ট হ্যান্ডলার
 async function toggleWishlistCloud(productId) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
@@ -213,13 +213,14 @@ async function toggleWishlistCloud(productId) {
     try {
         await db.collection("customers").doc(customer.phone).update({ wishlist: wishlist });
     } catch(e) {
-        console.error("Wishlist cloud update failed", e);
+        console.error("Wishlist sync error", e);
     }
 
     renderHomeProducts(liveProducts);
 }
 
 function openAuthModal() {
+    resetOtpSteps();
     document.getElementById('auth-modal').classList.add('show-modal');
 }
 
@@ -227,152 +228,102 @@ function closeAuthModal() {
     document.getElementById('auth-modal').classList.remove('show-modal');
 }
 
-function switchAuthTab(tab) {
-    const loginBox = document.getElementById('auth-login-box');
-    const signupBox = document.getElementById('auth-signup-box');
-    const tabLogin = document.getElementById('tab-login-btn');
-    const tabSignup = document.getElementById('tab-signup-btn');
+function resetOtpSteps() {
+    document.getElementById('otp-step-1').style.display = "block";
+    document.getElementById('otp-step-2').style.display = "none";
+    document.getElementById('auth-msg-display').style.display = "none";
+    document.getElementById('auth-entered-otp').value = "";
+}
+
+// Step 1: Generate & Send OTP
+function sendOtpStep() {
+    const name = document.getElementById('auth-user-name').value.trim();
+    const phone = document.getElementById('auth-user-phone').value.replace(/[^0-9]/g, '');
     const msg = document.getElementById('auth-msg-display');
 
+    if (phone.length !== 10) {
+        msg.style.display = "block";
+        msg.style.color = "red";
+        msg.innerText = "Please enter a valid 10-digit phone number.";
+        return;
+    }
+
+    currentGeneratedOtp = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
+
+    document.getElementById('hint-phone-number').innerText = "+91 " + phone;
+    document.getElementById('generated-otp-code').innerText = currentGeneratedOtp;
+
+    document.getElementById('otp-step-1').style.display = "none";
+    document.getElementById('otp-step-2').style.display = "block";
     msg.style.display = "none";
-
-    if(tab === 'login') {
-        loginBox.style.display = "block";
-        signupBox.style.display = "none";
-        tabLogin.classList.add('active');
-        tabSignup.classList.remove('active');
-    } else {
-        loginBox.style.display = "none";
-        signupBox.style.display = "block";
-        tabLogin.classList.remove('active');
-        tabSignup.classList.add('active');
-    }
 }
 
-// ক্লাউড সাইন-আপ (নতুন কাস্টমার তৈরি)
-async function handleCustomerSignup() {
-    const name = document.getElementById('signup-name').value.trim();
-    const phone = document.getElementById('signup-phone').value.replace(/[^0-9]/g, '');
-    const pass = document.getElementById('signup-pass').value.trim();
+// Step 2: Verify OTP & Sync Cloud
+async function verifyOtpAndLogin() {
+    const enteredOtp = document.getElementById('auth-entered-otp').value.trim();
+    const name = document.getElementById('auth-user-name').value.trim() || "Customer";
+    const phone = document.getElementById('auth-user-phone').value.replace(/[^0-9]/g, '');
     const msg = document.getElementById('auth-msg-display');
-    const btn = document.getElementById('btn-signup-action');
+    const btn = document.getElementById('btn-verify-otp');
 
-    if(!name || phone.length < 10 || pass.length < 4) {
+    if (enteredOtp !== currentGeneratedOtp) {
         msg.style.display = "block";
         msg.style.color = "red";
-        msg.innerText = "Fill Name, 10-digit Phone & 4+ character password.";
+        msg.innerText = "❌ Incorrect verification code.";
         return;
     }
 
     btn.disabled = true;
-    btn.innerText = "Registering...";
+    btn.innerText = "Signing in...";
 
     try {
         const userDoc = await db.collection("customers").doc(phone).get();
-        if(userDoc.exists) {
-            msg.style.display = "block";
-            msg.style.color = "red";
-            msg.innerText = "An account already exists with this phone! Please Login.";
-            btn.disabled = false;
-            btn.innerText = "Create New Account";
-            return;
+        let customerData;
+
+        if (userDoc.exists) {
+            customerData = userDoc.data();
+            // নাম আপডেট হলে তা ক্লাউডে সেভ করা
+            if (name !== "Customer" && customerData.name !== name) {
+                customerData.name = name;
+                await db.collection("customers").doc(phone).update({ name: name });
+            }
+            await db.collection("customers").doc(phone).update({
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // নতুন কাস্টমার অ্যাকাউন্ট তৈরি
+            customerData = {
+                name: name,
+                phone: phone,
+                wishlist: [],
+                isActive: true,
+                totalOrders: 0,
+                joinedDate: new Date().toLocaleDateString('en-GB'),
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection("customers").doc(phone).set(customerData);
         }
 
-        const newUser = {
-            name: name,
-            phone: phone,
-            password: pass,
-            wishlist: [],
-            isActive: true,
-            totalOrders: 0,
-            joinedDate: new Date().toLocaleDateString('en-GB'),
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        await db.collection("customers").doc(phone).set(newUser);
-        localStorage.setItem('cz_customer_user', JSON.stringify(newUser));
-
+        localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
         closeAuthModal();
         updateNavUserSlot();
         renderHomeProducts(liveProducts);
-        alert(`🎉 Welcome ${name}! Account created successfully.`);
+        alert(`🎉 Welcome ${customerData.name}! Logged in successfully.`);
 
-        if(pendingAction) executePendingAction();
-    } catch(e) {
+        if (pendingAction) {
+            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id);
+            if (pendingAction.type === 'wishlist') toggleWishlistCloud(pendingAction.id);
+            pendingAction = null;
+        }
+    } catch (e) {
         console.error(e);
         msg.style.display = "block";
         msg.style.color = "red";
-        msg.innerText = "Failed to register. Please try again.";
+        msg.innerText = "Error syncing with cloud.";
     } finally {
         btn.disabled = false;
-        btn.innerText = "Create New Account";
+        btn.innerText = "Verify & Access Account";
     }
-}
-
-// ক্লাউড লগইন (পুরনো কাস্টমার লগইন)
-async function handleCustomerLogin() {
-    const phone = document.getElementById('login-phone').value.replace(/[^0-9]/g, '');
-    const pass = document.getElementById('login-pass').value.trim();
-    const msg = document.getElementById('auth-msg-display');
-    const btn = document.getElementById('btn-login-action');
-
-    if(phone.length < 10 || !pass) {
-        msg.style.display = "block";
-        msg.style.color = "red";
-        msg.innerText = "Enter phone and password.";
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerText = "Verifying...";
-
-    try {
-        const userDoc = await db.collection("customers").doc(phone).get();
-        if(!userDoc.exists) {
-            msg.style.display = "block";
-            msg.style.color = "red";
-            msg.innerText = "No account found! Please Sign Up first.";
-            btn.disabled = false;
-            btn.innerText = "Login to Account";
-            return;
-        }
-
-        const userData = userDoc.data();
-        if(userData.password !== pass) {
-            msg.style.display = "block";
-            msg.style.color = "red";
-            msg.innerText = "Wrong password!";
-            btn.disabled = false;
-            btn.innerText = "Login to Account";
-            return;
-        }
-
-        // লাস্ট লগইন টাইম ক্লাউডে আপডেট করা
-        await db.collection("customers").doc(phone).update({
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        localStorage.setItem('cz_customer_user', JSON.stringify(userData));
-        closeAuthModal();
-        updateNavUserSlot();
-        renderHomeProducts(liveProducts);
-
-        if(pendingAction) executePendingAction();
-    } catch(e) {
-        console.error(e);
-        msg.style.display = "block";
-        msg.style.color = "red";
-        msg.innerText = "Login error. Try again.";
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Login to Account";
-    }
-}
-
-function executePendingAction() {
-    if(pendingAction.type === 'cart') handleAddToCart(pendingAction.id);
-    if(pendingAction.type === 'wishlist') toggleWishlistCloud(pendingAction.id);
-    pendingAction = null;
 }
 
 function updateNavUserSlot() {
@@ -382,7 +333,7 @@ function updateNavUserSlot() {
     if (customer) {
         slot.innerHTML = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
     } else {
-        slot.innerHTML = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login / Register</a>`;
+        slot.innerHTML = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login / Profile</a>`;
     }
 }
 

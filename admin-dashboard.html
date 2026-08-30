@@ -54,6 +54,7 @@
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
         <a href="admin-dashboard.html" class="active"><i class="fas fa-home"></i> Home Dashboard</a>
         <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-customers.html" id="menu-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
         <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
@@ -205,11 +206,9 @@
                         let occDate = new Date(ord.occasionDate);
                         if(!isNaN(occDate.getTime())) {
                             let thisYearOcc = new Date(currentYear, occDate.getMonth(), occDate.getDate());
-                            
                             if(thisYearOcc < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
                                 thisYearOcc.setFullYear(currentYear + 1);
                             }
-
                             let diffDays = Math.ceil((thisYearOcc - today) / (1000 * 60 * 60 * 24));
 
                             if(diffDays >= 0 && diffDays <= 10) {
