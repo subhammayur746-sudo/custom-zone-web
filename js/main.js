@@ -1,24 +1,22 @@
 let liveProducts = [];
 let selectedMainCategory = "all";
 let selectedSubCategory = "all";
-let categoryMap = {}; // Main Category -> Set of Subcategories
+let categoryMap = {};
+let pendingAction = null; // লগইন করার পর স্বয়ংক্রিয়ভাবে অ্যাকশন এক্সিকিউট করতে
 
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
     
-    container.innerHTML = "<p style='text-align:center; width:100%; color:#7f8c8d; grid-column: 1/-1;'><i class='fas fa-spinner fa-spin'></i> Loading awesome products...</p>";
+    container.innerHTML = "<p style='text-align:center; width:100%; color:#7f8c8d; grid-column: 1/-1;'><i class='fas fa-spinner fa-spin'></i> Loading products...</p>";
     
     try {
         const snapshot = await db.collection("products").where("isActive", "==", true).get();
         liveProducts = [];
-        categoryMap = {
-            "Handmade": new Set(),
-            "Customized": new Set()
-        };
+        categoryMap = { "Handmade": new Set(), "Customized": new Set() };
         
         if (snapshot.empty) {
-            container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1;'>No products available right now.</p>";
+            container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1;'>No products available.</p>";
             return;
         }
 
@@ -30,7 +28,6 @@ async function fetchLiveProducts() {
                 prod.mainCategory = prod.customType === "none" ? "Handmade" : "Customized";
             }
             
-            // Format Main Category
             let mainCatFormatted = prod.mainCategory.trim();
             mainCatFormatted = mainCatFormatted.charAt(0).toUpperCase() + mainCatFormatted.slice(1);
 
@@ -49,11 +46,9 @@ async function fetchLiveProducts() {
         renderHomeProducts(liveProducts);
     } catch (error) {
         console.error("Error fetching products:", error);
-        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products.</p>";
     }
 }
 
-// ন্যাভবারে ড্রপডাউন সহ মেইন ও সাব-ক্যাটাগরি সাজানো
 function renderCategorySubnav() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
@@ -104,28 +99,29 @@ function renderHomeProducts(products) {
     container.innerHTML = "";
 
     if (products.length === 0) {
-        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:25px;'>No products found matching your search or price criteria.</p>";
+        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:25px;'>No products found.</p>";
         return;
     }
+
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    let wishlist = customer ? (JSON.parse(localStorage.getItem('cz_wishlist_' + customer.phone)) || []) : [];
 
     const fallbackImg = "assets/images/logo.png";
 
     products.forEach(prod => {
         let images = prod.images && prod.images.length > 0 ? prod.images : [fallbackImg];
         let mainImg = images[0];
+        let isWishlisted = wishlist.some(w => w.id === prod.id);
 
-        let catTag = prod.mainCategory.charAt(0).toUpperCase() + prod.mainCategory.slice(1);
-        let subTag = prod.subCategory ? ` • ${prod.subCategory}` : "";
-        
         container.innerHTML += `
-            <div class="product-card" onclick="openProductDetailsModal('${prod.id}')" style="cursor:pointer;">
-                <div style="position:relative;">
-                    <img id="main-img-${prod.id}" src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
-                    <span style="position:absolute; top:8px; left:8px; background:rgba(44,62,80,0.88); color:#fff; font-size:10px; padding:3px 7px; border-radius:12px; font-weight:600;">${catTag}${subTag}</span>
-                </div>
+            <div class="product-card">
+                <button class="wishlist-btn-heart ${isWishlisted ? 'active' : ''}" onclick="toggleWishlist('${prod.id}')">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
                 <h3>${prod.name}</h3>
                 <p>₹${prod.price}</p>
-                <button onclick="event.stopPropagation(); addToCart('${prod.id}')">
+                <button class="btn-cart-action" onclick="handleAddToCart('${prod.id}')">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
             </div>
@@ -142,12 +138,9 @@ function filterHomeProducts() {
 
     let filtered = liveProducts.filter(prod => {
         let matchName = prod.name.toLowerCase().includes(searchVal);
-        
-        // Category Matching
         let matchMainCat = (selectedMainCategory === "all") || (prod.mainCategory.toLowerCase() === selectedMainCategory.toLowerCase());
         let matchSubCat = (selectedSubCategory === "all") || (prod.subCategory === selectedSubCategory);
 
-        // Price Filter Matching
         let matchBudget = true;
         let price = parseInt(prod.price) || 0;
         if (budgetVal === "199") matchBudget = price <= 199;
@@ -161,66 +154,15 @@ function filterHomeProducts() {
     renderHomeProducts(filtered);
 }
 
-// Flipkart/Amazon স্টাইল প্রোডাক্ট ডিটেইলস পপআপ ভিউ
-function openProductDetailsModal(productId) {
-    let product = liveProducts.find(p => p.id === productId);
-    if (!product) return;
-
-    const modal = document.getElementById('product-details-modal');
-    const fallbackImg = "assets/images/logo.png";
-    const images = product.images && product.images.length > 0 ? product.images : [fallbackImg];
-
-    document.getElementById('pdm-main-img').src = images[0];
-    document.getElementById('pdm-badge').innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
-    document.getElementById('pdm-title').innerText = product.name;
-    document.getElementById('pdm-price').innerText = product.price;
-
-    // Thumbnails
-    const thumbsContainer = document.getElementById('pdm-thumbs');
-    thumbsContainer.innerHTML = "";
-    if (images.length > 1) {
-        images.forEach(img => {
-            thumbsContainer.innerHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" onclick="document.getElementById('pdm-main-img').src='${img}'">`;
-        });
+// লগইন ভেরিফিকেশন দিয়ে কার্ট ও উইশলিস্ট কন্ট্রোল
+function handleAddToCart(productId) {
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    if (!customer) {
+        pendingAction = { type: 'cart', id: productId };
+        openAuthModal();
+        return;
     }
 
-    // Customization Input in Details View
-    const customContainer = document.getElementById('pdm-custom-field-container');
-    customContainer.innerHTML = "";
-    if (product.customType === "name") {
-        customContainer.innerHTML = `
-            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:#2c3e50;">Customize Text / Name to Print:</label>
-            <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid #fab1a0; border-radius:4px; box-sizing:border-box;">
-        `;
-    } else if (product.customType === "pic") {
-        customContainer.innerHTML = `
-            <p style="font-size:12px; color:#e74c3c; background:#fff5f5; padding:8px; border-radius:4px; border:1px dashed #e74c3c;">
-                📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
-            </p>
-        `;
-    }
-
-    // Button Handlers
-    document.getElementById('pdm-btn-add').onclick = () => {
-        let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-        addToCart(product.id, customVal);
-        closeProductDetailsModal();
-    };
-
-    document.getElementById('pdm-btn-buy').onclick = () => {
-        let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-        addToCart(product.id, customVal);
-        window.location.href = "cart.html";
-    };
-
-    modal.style.display = "flex";
-}
-
-function closeProductDetailsModal() {
-    document.getElementById('product-details-modal').style.display = "none";
-}
-
-function addToCart(productId, customText = "") {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
     
@@ -230,12 +172,86 @@ function addToCart(productId, customText = "") {
         name: product.name,
         price: product.price,
         customType: product.customType,
-        userText: customText 
+        userText: "" 
     });
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert(`✅ ${product.name} has been added to your cart!`);
+    alert(`✅ ${product.name} added to cart!`);
+}
+
+function toggleWishlist(productId) {
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    if (!customer) {
+        pendingAction = { type: 'wishlist', id: productId };
+        openAuthModal();
+        return;
+    }
+
+    let product = liveProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    let wishlistKey = 'cz_wishlist_' + customer.phone;
+    let wishlist = JSON.parse(localStorage.getItem(wishlistKey)) || [];
+
+    let index = wishlist.findIndex(w => w.id === productId);
+    if (index > -1) {
+        wishlist.splice(index, 1);
+        alert(`Removed from Wishlist.`);
+    } else {
+        wishlist.push({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.images ? product.images[0] : 'assets/images/logo.png',
+            customType: product.customType
+        });
+        alert(`❤️ Added to Wishlist!`);
+    }
+
+    localStorage.setItem(wishlistKey, JSON.stringify(wishlist));
+    renderHomeProducts(liveProducts);
+}
+
+function openAuthModal() {
+    document.getElementById('auth-modal').classList.add('show-modal');
+}
+
+function closeAuthModal() {
+    document.getElementById('auth-modal').classList.remove('show-modal');
+}
+
+function handleCustomerAuth() {
+    const name = document.getElementById('auth-name').value.trim();
+    const phone = document.getElementById('auth-phone').value.trim();
+
+    if (!name || phone.length < 10) {
+        alert("Please enter your Name and a valid 10-digit Phone number."); return;
+    }
+
+    const userObj = { name: name, phone: phone };
+    localStorage.setItem('cz_customer_user', JSON.stringify(userObj));
+    closeAuthModal();
+    updateNavUserSlot();
+    renderHomeProducts(liveProducts);
+
+    // পেন্ডিং অ্যাকশন সম্পন্ন করা
+    if (pendingAction) {
+        if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id);
+        if (pendingAction.type === 'wishlist') toggleWishlist(pendingAction.id);
+        pendingAction = null;
+    }
+}
+
+function updateNavUserSlot() {
+    const slot = document.getElementById('nav-user-slot');
+    if (!slot) return;
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    if (customer) {
+        slot.innerHTML = `<a href="profile.html"><i class="fas fa-user-check"></i> ${customer.name.split(" ")[0]}</a>`;
+    } else {
+        slot.innerHTML = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>`;
+    }
 }
 
 function updateCartCount() {
@@ -256,46 +272,29 @@ function displayPopup(data) {
     if (titleEl) titleEl.innerText = data.title || "Special Offer!";
     if (descEl) descEl.innerText = data.description || "";
     
-    if (imgEl) {
-        if (data.imageUrl && data.imageUrl.trim() !== "") {
-            imgEl.src = data.imageUrl;
-            imgEl.onerror = function() { this.style.display = 'none'; };
-            imgEl.style.display = "block";
-        } else {
-            imgEl.style.display = "none";
-        }
+    if (imgEl && data.imageUrl && data.imageUrl.trim() !== "") {
+        imgEl.src = data.imageUrl;
+        imgEl.style.display = "block";
     }
 
-    setTimeout(() => {
-        popup.classList.add('show-popup');
-    }, 1000);
+    setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
 }
 
 function checkPromoPopup() {
     try {
-        if (typeof db !== 'undefined') {
-            db.collection("settings").doc("promo").get().then(doc => {
-                if (doc.exists) {
-                    displayPopup(doc.data());
-                } else {
-                    const local = JSON.parse(localStorage.getItem('cz_promo_settings'));
-                    if (local && local.enabled) displayPopup(local);
-                }
-            });
-        }
-    } catch (e) {
-        console.log("Promo cloud error", e);
-    }
+        db.collection("settings").doc("promo").get().then(doc => {
+            if (doc.exists) displayPopup(doc.data());
+        });
+    } catch (e) {}
 }
 
 function closePopup() {
     const popup = document.getElementById('promo-popup');
-    if (popup) {
-        popup.classList.remove('show-popup');
-    }
+    if (popup) popup.classList.remove('show-popup');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    updateNavUserSlot();
     updateCartCount();
     fetchLiveProducts();
     checkPromoPopup();
