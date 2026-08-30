@@ -19,32 +19,38 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            background: radial-gradient(circle at center, #4e1e4c, #3B163A);
             font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 15px;
             box-sizing: border-box;
         }
         .login-card {
-            background: #fff;
-            padding: 35px 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 14px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
             width: 100%;
             max-width: 400px;
             text-align: center;
+            border-top: 6px solid #F0C986;
         }
         .login-card img {
-            width: 70px;
-            margin-bottom: 15px;
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #F0C986;
+            margin-bottom: 12px;
         }
         .login-card h2 {
-            margin: 0 0 8px 0;
-            color: #2c3e50;
+            margin: 0 0 6px 0;
+            color: #3B163A;
             font-size: 24px;
+            font-weight: 800;
         }
         .login-card p {
-            color: #7f8c8d;
+            color: #636e72;
             font-size: 13px;
             margin-bottom: 25px;
         }
@@ -57,12 +63,12 @@
             margin-bottom: 6px;
             font-size: 13px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #3B163A;
         }
         .form-group input {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid #ccc;
+            border: 1px solid #dcdde1;
             border-radius: 6px;
             font-size: 14px;
             box-sizing: border-box;
@@ -70,22 +76,25 @@
             transition: 0.3s;
         }
         .form-group input:focus {
-            border-color: #e74c3c;
+            border-color: #F0C986;
+            box-shadow: 0 0 8px rgba(240, 201, 134, 0.4);
         }
         .btn-login {
-            background: #e74c3c;
-            color: white;
+            background: #3B163A;
+            color: #F0C986;
             border: none;
-            padding: 12px;
+            padding: 13px;
             width: 100%;
             border-radius: 6px;
             font-size: 15px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
             transition: 0.3s;
         }
         .btn-login:hover {
-            background: #c0392b;
+            background: #260c25;
+            color: #ffffff;
+            transform: translateY(-1px);
         }
     </style>
 </head>
@@ -99,22 +108,19 @@
         <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
             <div class="form-group">
                 <label>Admin Username / Email</label>
-                <input type="text" id="login-email" placeholder="admin" required>
+                <input type="text" id="login-email" placeholder="admin" required autocomplete="off">
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••" required>
+                <input type="password" id="login-password" placeholder="••••••••" required autocomplete="off">
             </div>
             <button type="submit" class="btn-login" id="btn-login-submit">Login to Dashboard</button>
-            <p id="login-error-msg" style="color:red; font-size:13px; margin-top:12px; font-weight:bold; display:none;"></p>
+            <p id="login-error-msg" style="color:#e74c3c; font-size:13px; margin-top:12px; font-weight:bold; display:none;"></p>
         </form>
     </div>
 
     <script>
-        // Check if already logged in
-        if (localStorage.getItem('cz_logged_in_user')) {
-            window.location.href = "admin-dashboard.html";
-        }
+        localStorage.removeItem('cz_logged_in_user');
 
         async function handleAdminLogin(e) {
             e.preventDefault();
@@ -127,7 +133,6 @@
             submitBtn.disabled = true;
             submitBtn.innerText = "Verifying...";
 
-            // নতুন মাস্টার পাসওয়ার্ড চেক
             if ((emailInput.toLowerCase() === "admin" || emailInput.toLowerCase() === "admin@customzone.com") && passwordInput === "admin@2005") {
                 const sessionUser = {
                     name: "Master Admin",
@@ -140,7 +145,6 @@
                 return;
             }
 
-            // ক্লাউড স্টাফ ইউজার চেক
             try {
                 const userDoc = await db.collection("staff").doc(emailInput.toLowerCase()).get();
                 if (userDoc.exists && userDoc.data().password === passwordInput) {
