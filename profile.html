@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - Custom Zone</title>
+    <title>My Account - Custom Zone</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -30,25 +30,25 @@
     </header>
 
     <main class="container">
-        <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid #F0C986;">
+        <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid var(--honey-dawn);">
             <div>
-                <h2 style="color:#3B163A; margin:0;" id="user-display-name">Welcome!</h2>
+                <h2 style="color:var(--midnight-plum); margin:0;" id="user-display-name">Welcome!</h2>
                 <p style="color:#7f8c8d; margin:4px 0 0 0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
             </div>
             <button onclick="logoutCustomer()" style="background:#e74c3c; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
         </div>
 
-        <!-- Wishlist Section -->
+        <!-- Saved Wishlist Section -->
         <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:25px;">
-            <h3 style="color:#3B163A; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:8px;"><i class="fas fa-heart" style="color:#e74c3c;"></i> My Saved Wishlist</h3>
+            <h3 style="color:var(--midnight-plum); margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:8px;"><i class="fas fa-heart" style="color:#e74c3c;"></i> My Saved Wishlist (Synced across devices)</h3>
             <div class="product-grid" id="wishlist-container">
-                <p style="text-align:center; color:#7f8c8d; grid-column:1/-1;">Loading your saved items...</p>
+                <p style="text-align:center; color:#7f8c8d; grid-column:1/-1;">Loading your saved wishlist...</p>
             </div>
         </div>
 
         <!-- Orders History Section -->
         <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft);">
-            <h3 style="color:#3B163A; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:8px;"><i class="fas fa-shopping-bag"></i> My Previous Orders</h3>
+            <h3 style="color:var(--midnight-plum); margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:8px;"><i class="fas fa-shopping-bag"></i> My Previous Orders</h3>
             <div id="orders-history-container">
                 <p style="text-align:center; color:#7f8c8d;">Fetching order history...</p>
             </div>
@@ -64,9 +64,9 @@
         if(!currentCust) {
             window.location.href = "index.html";
         } else {
-            document.getElementById('user-display-name').innerText = currentCust.name || "Valued Customer";
+            document.getElementById('user-display-name').innerText = currentCust.name || "Customer";
             document.getElementById('user-display-phone').innerText = currentCust.phone || "";
-            loadCustomerWishlist();
+            loadFreshCloudProfile();
             loadCustomerOrders();
         }
 
@@ -75,10 +75,21 @@
             window.location.href = "index.html";
         }
 
-        async function loadCustomerWishlist() {
-            const container = document.getElementById('wishlist-container');
-            let wishlist = JSON.parse(localStorage.getItem('cz_wishlist_' + currentCust.phone)) || [];
+        async function loadFreshCloudProfile() {
+            try {
+                const doc = await db.collection("customers").doc(currentCust.phone).get();
+                if(doc.exists) {
+                    currentCust = doc.data();
+                    localStorage.setItem('cz_customer_user', JSON.stringify(currentCust));
+                    renderWishlistDOM(currentCust.wishlist || []);
+                }
+            } catch(e) {
+                renderWishlistDOM(currentCust.wishlist || []);
+            }
+        }
 
+        function renderWishlistDOM(wishlist) {
+            const container = document.getElementById('wishlist-container');
             if(wishlist.length === 0) {
                 container.innerHTML = "<p style='text-align:center; color:#7f8c8d; grid-column:1/-1; padding:20px;'>Your wishlist is empty.</p>";
                 return;
@@ -93,27 +104,30 @@
                         <p>₹${prod.price}</p>
                         <div style="display:flex; gap:6px;">
                             <button class="btn-cart-action" onclick="moveWishlistToCart('${prod.id}', ${index})"><i class="fas fa-shopping-cart"></i> Move to Cart</button>
-                            <button onclick="removeWishlistItem(${index})" style="background:#e74c3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                            <button onclick="removeWishlistItemCloud(${index})" style="background:#e74c3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        function removeWishlistItem(idx) {
-            let wishlist = JSON.parse(localStorage.getItem('cz_wishlist_' + currentCust.phone)) || [];
+        async function removeWishlistItemCloud(idx) {
+            let wishlist = currentCust.wishlist || [];
             wishlist.splice(idx, 1);
-            localStorage.setItem('cz_wishlist_' + currentCust.phone, JSON.stringify(wishlist));
-            loadCustomerWishlist();
+            currentCust.wishlist = wishlist;
+            localStorage.setItem('cz_customer_user', JSON.stringify(currentCust));
+
+            await db.collection("customers").doc(currentCust.phone).update({ wishlist: wishlist });
+            renderWishlistDOM(wishlist);
         }
 
         function moveWishlistToCart(prodId, idx) {
-            let wishlist = JSON.parse(localStorage.getItem('cz_wishlist_' + currentCust.phone)) || [];
+            let wishlist = currentCust.wishlist || [];
             let item = wishlist[idx];
             let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
             cart.push(item);
             localStorage.setItem('cz_cart', JSON.stringify(cart));
-            removeWishlistItem(idx);
+            removeWishlistItemCloud(idx);
             alert("Moved to cart!");
         }
 
@@ -148,7 +162,7 @@
                     html += `
                         <div style="border:1px solid #eee; padding:15px; border-radius:8px; background:#fafbfc;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <strong style="color:#3B163A; font-size:15px;">Order #${ord.id}</strong>
+                                <strong style="color:var(--midnight-plum); font-size:15px;">Order #${ord.id}</strong>
                                 <span style="background:${badgeBg}; color:white; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold;">${ord.status}</span>
                             </div>
                             <p style="font-size:13px; color:#555; margin:4px 0;"><pre style="font-family:inherit; font-size:12px; white-space:pre-wrap;">${ord.items}</pre></p>
