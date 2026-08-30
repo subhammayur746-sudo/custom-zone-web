@@ -23,14 +23,12 @@ async function initDynamicFomoTimer() {
             flashData = doc.data();
         }
 
-        // অ্যাডমিন থেকে বন্ধ থাকলে ব্যানার পুরো হাইড থাকবে
         if (flashData.enabled === false) {
             fomoContainer.style.display = "none";
             isGiftWrappingClaimed = false;
             return;
         }
 
-        // চালু থাকলে ক্লাউড ডেটা অনুযায়ী শো হবে
         fomoContainer.style.display = "flex";
         flashBenefitName = flashData.benefit || "FREE Premium Gift Wrapping!";
         let durationMinutes = flashData.duration || 5;
@@ -66,7 +64,7 @@ async function initDynamicFomoTimer() {
         fomoTimerInterval = setInterval(updateTimer, 1000);
 
     } catch (e) {
-        console.log("Flash offer sync error, fallback to default", e);
+        console.log("Flash offer sync error", e);
     }
 }
 
@@ -179,7 +177,7 @@ async function lookupPincode(pin) {
     }
 }
 
-// কুপন লোড
+// কুপন লোড (শুধুমাত্র সাধারণ অফার কুপন শো করবে, গিফট কার্ড বা রেফারেল কোড সম্পূর্ণ লুকিয়ে রাখবে)
 async function loadAvailableCoupons() {
     const badge = document.getElementById('available-coupons-badge');
     if(!badge) return;
@@ -192,10 +190,12 @@ async function loadAvailableCoupons() {
         let offers = [];
         snapshot.forEach(doc => {
             let c = doc.data();
-            if(c.type !== 'referral') {
+            // সিকিউরিটি ফিল্টার: voucher, gift card বা referral কোড ব্যানারে শো করবে না
+            if(c.type !== 'referral' && c.type !== 'voucher' && !c.code.startsWith('GIFT-') && !c.code.startsWith('REF-')) {
                 offers.push(`Use <strong>${c.code}</strong> (₹${c.discount} OFF on min ₹${c.minOrder || 0})`);
             }
         });
+
         if(offers.length > 0) {
             badge.innerHTML = `<i class="fas fa-gift" style="color: #27ae60;"></i> Offers: ` + offers.join(" | ");
             badge.style.display = "block";
@@ -207,12 +207,12 @@ async function loadAvailableCoupons() {
     }
 }
 
-// ইউনিভার্সাল কুপন ও ডাইরেক্ট রেফারেল ভ্যালিডেশন
+// ইউনিভার্সাল কুপন, গিফট কার্ড ও রেফারেল ভ্যালিডেশন
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
 
-    if(!rawCode) { alert("Please enter a coupon / referral code."); return; }
+    if(!rawCode) { alert("Please enter a coupon, gift card, or referral code."); return; }
     if(currentSubTotal === 0) { alert("Cart is empty."); return; }
 
     msg.style.display = "block";
@@ -249,11 +249,14 @@ async function applyCoupon() {
             appliedDiscount = coupon.discount;
             appliedCouponCode = targetCode;
             msg.style.color = "green";
-            msg.innerText = `✅ Code "${targetCode}" applied! You saved ₹${appliedDiscount}.`;
+            
+            let successLabel = coupon.type === 'voucher' ? '🎁 Gift Card' : 'Code';
+            msg.innerText = `✅ ${successLabel} "${targetCode}" applied! You saved ₹${appliedDiscount}.`;
             renderCart();
             return;
         }
 
+        // সরাসরি 'orders' টেবিলে রেফারেল চেক
         let cleanOrderId = rawCode.replace("REF-", "");
         let orderDoc = await db.collection("orders").doc(cleanOrderId).get();
 
@@ -344,7 +347,7 @@ async function submitOrderViaWhatsApp() {
     });
 
     let deliveryTextMsg = currentDeliveryCharge === 0 ? "FREE" : `₹${currentDeliveryCharge}`;
-    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon/Referral Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
+    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon/Gift Card/Referral Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
     let giftWrapTag = isGiftWrappingClaimed ? `\n🎁 Special Perk: ${flashBenefitName} (Claimed via Flash Timer)` : "";
     let greetingCardTag = greetingNote ? `\n💌 Handwritten Greeting Note: "${greetingNote}"` : "";
     let occasionMsg = (occasionType && occasionDate) ? `\n🎉 Special Occasion: ${occasionType} (${occasionDate})` : "";
