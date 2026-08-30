@@ -7,7 +7,6 @@ let isGiftWrappingClaimed = false;
 let fomoTimerInterval = null;
 let flashBenefitName = "FREE Premium Gift Wrapping";
 
-// ক্লাউড ডেটাবেস থেকে Flash Offer সেটিংস যাচাই ও টাইমার চালনা
 async function initDynamicFomoTimer() {
     const fomoContainer = document.getElementById('fomo-timer-container');
     const countdownEl = document.getElementById('fomo-countdown');
@@ -64,7 +63,7 @@ async function initDynamicFomoTimer() {
         fomoTimerInterval = setInterval(updateTimer, 1000);
 
     } catch (e) {
-        console.log("Flash offer sync error", e);
+        console.log("Flash offer sync error, fallback to default", e);
     }
 }
 
@@ -89,8 +88,10 @@ function renderCart() {
     cartItems.forEach((item, index) => {
         currentSubTotal += item.price;
         let customHTML = "";
+        let placeholderText = item.name.toLowerCase().includes("gift card") ? "Enter Recipient (কার জন্য গিফট কার্ড নিচ্ছেন তার নাম)" : "Enter Name/Text to print";
+
         if(item.customType === "name") {
-            customHTML = `<input type="text" placeholder="Enter Name/Text to print" onchange="saveCustomData(${index}, 'text', this.value)" style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #e74c3c; border-radius: 4px;">`;
+            customHTML = `<input type="text" placeholder="${placeholderText}" onchange="saveCustomData(${index}, 'text', this.value)" style="width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #e74c3c; border-radius: 4px;">`;
         } else if(item.customType === "pic") {
             customHTML = `<p style="font-size:12px; color:#e74c3c; margin-top:5px;">*Please send your photo on WhatsApp along with your order message.</p>`;
         }
@@ -177,7 +178,7 @@ async function lookupPincode(pin) {
     }
 }
 
-// কুপন লোড (শুধুমাত্র সাধারণ অফার কুপন শো করবে, গিফট কার্ড বা রেফারেল কোড সম্পূর্ণ লুকিয়ে রাখবে)
+// কুপন লোড (গোপন ভাউচার সম্পূর্ণ হাইড থাকবে)
 async function loadAvailableCoupons() {
     const badge = document.getElementById('available-coupons-badge');
     if(!badge) return;
@@ -190,7 +191,6 @@ async function loadAvailableCoupons() {
         let offers = [];
         snapshot.forEach(doc => {
             let c = doc.data();
-            // সিকিউরিটি ফিল্টার: voucher, gift card বা referral কোড ব্যানারে শো করবে না
             if(c.type !== 'referral' && c.type !== 'voucher' && !c.code.startsWith('GIFT-') && !c.code.startsWith('REF-')) {
                 offers.push(`Use <strong>${c.code}</strong> (₹${c.discount} OFF on min ₹${c.minOrder || 0})`);
             }
@@ -207,7 +207,7 @@ async function loadAvailableCoupons() {
     }
 }
 
-// ইউনিভার্সাল কুপন, গিফট কার্ড ও রেফারেল ভ্যালিডেশন
+// ইউনিভার্সাল কুপন ও ওয়ান-টাইম গিফট কার্ড ভ্যালিডেশন
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
@@ -256,7 +256,6 @@ async function applyCoupon() {
             return;
         }
 
-        // সরাসরি 'orders' টেবিলে রেফারেল চেক
         let cleanOrderId = rawCode.replace("REF-", "");
         let orderDoc = await db.collection("orders").doc(cleanOrderId).get();
 
@@ -314,7 +313,7 @@ function removeFromCart(index) {
     if(countEl) countEl.innerText = cartItems.length;
 }
 
-// WhatsApp অর্ডার সাবমিশন
+// WhatsApp অর্ডার সাবমিশন (ওয়ান-টাইম কোড স্বয়ংক্রিয়ভাবে অকার্যকর করার লজিক সহ)
 async function submitOrderViaWhatsApp() {
     let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
     const name = document.getElementById('cust-name').value.trim();
@@ -325,7 +324,6 @@ async function submitOrderViaWhatsApp() {
     const postOffice = document.getElementById('cust-postoffice').value.trim();
     const address = document.getElementById('cust-address').value.trim();
     
-    // Greeting Note & Occasion
     const greetingNote = document.getElementById('cust-greeting-note') ? document.getElementById('cust-greeting-note').value.trim() : "";
     const occasionType = document.getElementById('cust-occasion-type') ? document.getElementById('cust-occasion-type').value : "";
     const occasionDate = document.getElementById('cust-occasion-date') ? document.getElementById('cust-occasion-date').value : "";
@@ -347,7 +345,7 @@ async function submitOrderViaWhatsApp() {
     });
 
     let deliveryTextMsg = currentDeliveryCharge === 0 ? "FREE" : `₹${currentDeliveryCharge}`;
-    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon/Gift Card/Referral Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
+    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon/Gift Card Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
     let giftWrapTag = isGiftWrappingClaimed ? `\n🎁 Special Perk: ${flashBenefitName} (Claimed via Flash Timer)` : "";
     let greetingCardTag = greetingNote ? `\n💌 Handwritten Greeting Note: "${greetingNote}"` : "";
     let occasionMsg = (occasionType && occasionDate) ? `\n🎉 Special Occasion: ${occasionType} (${occasionDate})` : "";
@@ -393,8 +391,18 @@ async function submitOrderViaWhatsApp() {
     
     try {
         await db.collection("orders").doc(internalOrderId).set(orderData);
+        
+        // ওয়ান-টাইম গিফট কার্ড রিডিম হলে ডাটাবেসে চিরতরে অকার্যকর করা
         if(appliedCouponCode) {
             localStorage.setItem('cz_used_' + appliedCouponCode, 'true');
+            if(appliedCouponCode.startsWith('GIFT-')) {
+                await db.collection("coupons").doc(appliedCouponCode).update({
+                    isActive: false,
+                    isUsed: true,
+                    usedByOrder: internalOrderId,
+                    usedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
         }
     } catch (error) {
         console.error(error);

@@ -69,7 +69,7 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Orders & Referral Tracking</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Manage Orders & Gift Card Delivery</h2>
         <div class="admin-card" style="overflow-x: auto;">
             
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:12px;">
@@ -82,7 +82,7 @@
                         <option value="Payment Verified - Processing">Processing</option>
                         <option value="Packed & Ready to Ship">Packed</option>
                         <option value="Shipped & On the Way">Shipped</option>
-                        <option value="Delivered Successfully">Delivered Successfully (Auto-Referral)</option>
+                        <option value="Delivered Successfully">Delivered / Gift Card Sent</option>
                         <option value="Order Cancelled">Cancelled</option>
                     </select>
                 </div>
@@ -96,7 +96,7 @@
                         <th style="padding:10px;">Items Ordered</th>
                         <th style="padding:10px;">Amount</th>
                         <th style="padding:10px;">Status Update</th>
-                        <th style="padding:10px;">Actions & Promo</th>
+                        <th style="padding:10px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="admin-order-list">
@@ -159,8 +159,10 @@
 
                 snap.forEach(doc => {
                     let c = doc.data();
-                    allCouponsCache.push(c);
-                    selectEl.innerHTML += `<option value="${c.code}">${c.code} (₹${c.discount} OFF on min ₹${c.minOrder || 0})</option>`;
+                    if(c.type !== 'voucher') {
+                        allCouponsCache.push(c);
+                        selectEl.innerHTML += `<option value="${c.code}">${c.code} (₹${c.discount} OFF on min ₹${c.minOrder || 0})</option>`;
+                    }
                 });
             } catch(e) {
                 console.error("Error loading coupons for modal", e);
@@ -202,17 +204,22 @@
 
             orders.forEach(order => {
                 let orderId = order.id;
+                let isGiftCardOrder = (order.items || '').toLowerCase().includes('gift card') || (order.items || '').toLowerCase().includes('voucher');
+
                 let statusOptions = `
                     <select id="status-${orderId}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; width: 100%; margin-bottom: 5px;">
                         <option value="Payment Pending" ${order.status === 'Payment Pending' ? 'selected' : ''}>Payment Pending</option>
                         <option value="Payment Verified - Processing" ${order.status === 'Payment Verified - Processing' ? 'selected' : ''}>Processing</option>
                         <option value="Packed & Ready to Ship" ${order.status === 'Packed & Ready to Ship' ? 'selected' : ''}>Packed</option>
                         <option value="Shipped & On the Way" ${order.status === 'Shipped & On the Way' ? 'selected' : ''}>Shipped</option>
-                        <option value="Delivered Successfully" ${order.status === 'Delivered Successfully' ? 'selected' : ''}>Delivered</option>
+                        <option value="Delivered Successfully" ${order.status === 'Delivered Successfully' ? 'selected' : ''}>Delivered / Sent</option>
                         <option value="Order Cancelled" ${order.status === 'Order Cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
                     <button onclick="updateOrderStatusCloud('${orderId}')" style="background:#2c3e50; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; width:100%;">Save Status</button>
                 `;
+
+                let notifyBtnText = isGiftCardOrder ? '<i class="fas fa-gift"></i> Send Voucher' : '<i class="fab fa-whatsapp"></i> Notify';
+                let notifyBtnBg = isGiftCardOrder ? 'background:#8e44ad;' : 'background:#25d366;';
 
                 tbody.innerHTML += `
                     <tr style="border-bottom: 1px solid #eee;">
@@ -227,11 +234,11 @@
                         <td style="padding:10px; min-width: 140px;">${statusOptions}</td>
                         <td style="padding:10px; min-width: 140px;">
                             <div style="display:flex; gap:4px; margin-bottom:4px;">
-                                <button style="background:#25d366; color:white; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Send Status Update / Review & Referral Code" onclick="sendOrderStatusWhatsApp('${orderId}')">
-                                    <i class="fab fa-whatsapp"></i> Notify
+                                <button style="${notifyBtnBg} color:white; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Send Update / Unique Gift Card Voucher" onclick="sendOrderStatusWhatsApp('${orderId}')">
+                                    ${notifyBtnText}
                                 </button>
                                 <button style="background:#e67e22; color:white; border:none; padding:6px 8px; border-radius:4px; cursor:pointer; flex:1;" title="Send Exclusive Discount Offer" onclick="openOfferModal('${order.customerName}', '${order.phone}')">
-                                    <i class="fas fa-gift"></i> Offer
+                                    <i class="fas fa-tags"></i> Offer
                                 </button>
                             </div>
                             <div style="display:flex; gap:4px;">
@@ -287,8 +294,8 @@
             }
         }
 
-        // WhatsApp স্ট্যাটাস এবং ডেলিভারির পর অটো রিভিউ ও রেফারেল কোড সেন্ডার
-        function sendOrderStatusWhatsApp(orderId) {
+        // WhatsApp হ্যান্ডলার: ইউনিক ওয়ান-টাইম গিফট কার্ড জেনারেটর ও নরমাল পার্সেল ডেলিভারি
+        async function sendOrderStatusWhatsApp(orderId) {
             let order = allOrdersCache.find(o => o.id === orderId);
             if(!order) return;
 
@@ -301,9 +308,61 @@
             }
 
             let targetNumber = phone.length === 10 ? "91" + phone : phone;
+            let itemsText = order.items || "";
+            let isGiftCardOrder = itemsText.toLowerCase().includes('gift card') || itemsText.toLowerCase().includes('voucher');
+
             let msg = "";
 
-            if (currentStatus === "Delivered Successfully") {
+            // ১. যদি এটি গিফট কার্ডের অর্ডার হয়: অটো ওয়ান-টাইম সিক্রেট কোড তৈরি করে পাঠানো
+            if (isGiftCardOrder) {
+                let giftCode = "GIFT-" + Math.floor(100000 + Math.random() * 900000); // 6-digit unique code
+                let cardValue = parseInt(order.totalAmount) || 299;
+
+                // প্রাপকের নাম বের করা (যদি কাস্টমার টেক্সট দিয়ে থাকে)
+                let recipientMatch = itemsText.match(/\(Name:\s*([^)]+)\)/i);
+                let recipientName = recipientMatch ? recipientMatch[1].trim() : "Special One";
+
+                // ফায়ারবেসে ওয়ান-টাইম কুপন হিসেবে রেজিস্টার করা
+                await db.collection("coupons").doc(giftCode).set({
+                    code: giftCode,
+                    discount: cardValue,
+                    minOrder: 0,
+                    type: "voucher",
+                    isSingleUse: true,
+                    issuedForOrder: orderId,
+                    recipientName: recipientName,
+                    isActive: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // অর্ডারের স্ট্যাটাস ক্লাউডে ডেলিভারড আপডেট করে দেওয়া
+                await db.collection("orders").doc(orderId).update({ 
+                    status: "Delivered Successfully",
+                    generatedGiftCode: giftCode
+                });
+
+                msg = `*🎁 CUSTOM ZONE DIGITAL GIFT CARD DELIVERY*\n` +
+                      `*Customize with Love & Care*\n` +
+                      `-------------------------------------------\n\n` +
+                      `Hello *${order.customerName}*,\n\n` +
+                      `Your Digital Gift Card purchase has been verified & successfully generated! 🎉✨\n\n` +
+                      `*Gift Card Details:*\n` +
+                      `👤 *For (Recipient):* ${recipientName}\n` +
+                      `💰 *Gift Card Value:* FLAT ₹${cardValue} (100% Redeemable)\n` +
+                      `🎟️ *Secret Voucher Code:* *${giftCode}*\n` +
+                      `🔒 *Usage:* Single-Use (One-Time Redeemable)\n\n` +
+                      `-------------------------------------------\n` +
+                      `📝 *HOW TO REDEEM:*\n` +
+                      `1. Visit our store: https://custom-zone-web.vercel.app\n` +
+                      `2. Add any customized product to the Cart.\n` +
+                      `3. Enter the secret code *${giftCode}* in the Coupon box at checkout.\n` +
+                      `4. Flat ₹${cardValue} will be deducted automatically!\n` +
+                      `-------------------------------------------\n\n` +
+                      `You can now forward this message & voucher to *${recipientName}* ❤️\n\n` +
+                      `Thank you for choosing Custom Zone!\n` +
+                      `📞 Support: +91 6290407730`;
+
+            } else if (currentStatus === "Delivered Successfully") {
                 let refCode = "REF-" + orderId;
                 msg = `*🎉 ORDER DELIVERED - CUSTOM ZONE*\n\n` +
                       `Hello *${order.customerName}*,\n\n` +
@@ -339,6 +398,7 @@
 
             const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
             window.open(waUrl, "_blank");
+            fetchCloudOrders();
         }
 
         // Offer Modal Handlers
