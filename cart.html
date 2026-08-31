@@ -31,8 +31,8 @@
             to { box-shadow: 0 0 14px rgba(243, 156, 18, 0.5); }
         }
         .timer-badge {
-            background: #e74c3c;
-            color: #fff;
+            background: var(--midnight-plum);
+            color: var(--honey-dawn);
             padding: 5px 12px;
             border-radius: 20px;
             font-weight: 800;
@@ -44,28 +44,54 @@
 </head>
 <body>
 
+    <!-- Unified Clean Navbar -->
     <header class="navbar">
-        <div class="logo-container">
-            <a href="index.html">
+        <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
+                <span class="brand-title">Custom Zone</span>
             </a>
-            <h1 class="brand-name">Custom Zone</h1>
         </div>
-        
-        <nav class="nav-links">
+
+        <nav class="nav-menu-links">
             <a href="index.html">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html">Contact Us</a>
             <a href="track-order.html">Track Order</a>
         </nav>
 
-        <div class="cart-icon">
-            <a href="cart.html" class="active">
+        <div class="nav-actions">
+            <span id="nav-user-slot-desktop">
+                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
+            </span>
+            <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count">0</span>
+                <span class="cart-badge cart-count">0</span>
             </a>
         </div>
     </header>
+
+    <!-- Mobile Side Drawer -->
+    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
+                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+            </div>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
+            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
+            <div id="nav-user-slot-mobile" style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
+                <a href="javascript:void(0)" onclick="closeMobileDrawer(); openAuthModal();"><i class="fas fa-user"></i> Login / Sign Up</a>
+            </div>
+        </div>
+    </div>
 
     <main class="container">
         <h2 class="section-title">Your Shopping Cart</h2>
@@ -74,7 +100,7 @@
             <div class="cart-items" id="cart-items-container"></div>
 
             <div class="checkout-box">
-                <!-- 5-Minute FOMO Timer Box -->
+                <!-- FOMO Timer Box -->
                 <div class="fomo-timer-box" id="fomo-timer-container">
                     <div>
                         <strong style="color:#d35400; font-size:14px; display:block;"><i class="fas fa-bolt"></i> FLASH OFFER!</strong>
@@ -89,25 +115,25 @@
 
                 <!-- Coupon Box -->
                 <div style="background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                    <h4 style="color: #2c3e50; margin-bottom: 8px;"><i class="fas fa-percentage"></i> Apply Coupon / Referral Code</h4>
+                    <h4 style="color: var(--midnight-plum); margin-bottom: 8px;"><i class="fas fa-percentage"></i> Apply Coupon / Referral Code</h4>
                     <div style="display: flex; gap: 8px;">
                         <input type="text" id="coupon-input" placeholder="e.g., FLAT50 / REF-CZ1024" style="flex: 1; padding: 9px; border: 1px solid #ccc; border-radius: 4px; text-transform: uppercase; font-weight: bold;">
-                        <button onclick="applyCoupon()" id="btn-apply-coupon" style="background: #2c3e50; color: white; border: none; padding: 9px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">Apply</button>
+                        <button onclick="applyCoupon()" id="btn-apply-coupon" style="background: var(--midnight-plum); color: var(--honey-dawn); border: none; padding: 9px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">Apply</button>
                     </div>
                     <p id="coupon-msg" style="font-size: 12px; margin-top: 6px; font-weight: bold; display: none;"></p>
                 </div>
 
                 <!-- Summary Box -->
                 <div style="background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                    <h3 style="color: #2c3e50; margin-bottom: 10px;"><i class="fas fa-receipt"></i> Order Summary</h3>
+                    <h3 style="color: var(--midnight-plum); margin-bottom: 10px;"><i class="fas fa-receipt"></i> Order Summary</h3>
                     <p style="margin: 5px 0; color: #555;">Total Items: <strong id="total-items">0</strong></p>
-                    <p id="discount-row" style="margin: 5px 0; color: #27ae60; display: none;">Coupon / Referral Discount: <strong>-₹<span id="discount-price">0</span></strong></p>
-                    <p style="margin: 5px 0; color: #555;">Payable Total: <strong style="color: #e74c3c; font-size: 18px;">₹<span id="total-price">0</span></strong></p>
+                    <p id="discount-row" style="margin: 5px 0; color: #27ae60; display: none;">Discount: <strong>-₹<span id="discount-price">0</span></strong></p>
+                    <p style="margin: 5px 0; color: #555;">Payable Total: <strong style="color: var(--midnight-plum); font-size: 18px;">₹<span id="total-price">0</span></strong></p>
                 </div>
 
                 <!-- Delivery Details Form -->
                 <div class="checkout-form" style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                    <h3 style="margin-bottom: 15px; color: #2c3e50;"><i class="fas fa-user-edit"></i> Delivery Details</h3>
+                    <h3 style="margin-bottom: 15px; color: var(--midnight-plum);"><i class="fas fa-user-edit"></i> Delivery Details</h3>
                     
                     <div style="margin-bottom: 15px;">
                         <input type="text" id="cust-name" placeholder="Full Name *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;" required>
@@ -136,16 +162,16 @@
                         <textarea id="cust-address" placeholder="House No, Street, Landmark / Full Address *" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; height: 70px;" required></textarea>
                     </div>
 
-                    <!-- Free Personalized Handwritten Greeting Card Box (New Feature 💌) -->
-                    <div style="background: #fff8f8; border: 1px dashed #e74c3c; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px;">
-                        <label style="font-size: 13px; font-weight: bold; color: #c0392b; display: block; margin-bottom: 4px;">
+                    <!-- Free Handwritten Greeting Card Box -->
+                    <div style="background: #fff8eb; border: 1px dashed var(--honey-dawn); padding: 12px 15px; border-radius: 6px; margin-bottom: 15px;">
+                        <label style="font-size: 13px; font-weight: bold; color: var(--midnight-plum); display: block; margin-bottom: 4px;">
                             <i class="fas fa-envelope-open-text"></i> Free Handwritten Gift Greeting Card Note (Optional)
                         </label>
-                        <textarea id="cust-greeting-note" maxlength="150" placeholder="E.g., Happy Birthday Rahul! Wish you endless love and happiness ❤️" style="width: 100%; padding: 8px; border: 1px solid #fab1a0; border-radius: 4px; font-size: 12px; font-family: inherit; box-sizing: border-box; height: 55px;"></textarea>
+                        <textarea id="cust-greeting-note" maxlength="150" placeholder="E.g., Happy Birthday Rahul! Wish you endless love and happiness ❤️" style="width: 100%; padding: 8px; border: 1px solid #dcdde1; border-radius: 4px; font-size: 12px; font-family: inherit; box-sizing: border-box; height: 55px;"></textarea>
                         <small style="color: #7f8c8d; font-size: 11px;">Our team will handwrite this message on a mini gift card and put it inside your parcel for free!</small>
                     </div>
 
-                    <!-- Special Occasion / Birthday Reminder Box (Optional) -->
+                    <!-- Occasion Date -->
                     <div style="background: #f8f9fa; border: 1px dashed #3498db; padding: 12px 15px; border-radius: 6px;">
                         <label style="font-size: 13px; font-weight: bold; color: #2c3e50; display: block; margin-bottom: 6px;">
                             <i class="fas fa-birthday-cake" style="color:#e74c3c;"></i> Occasion Date for Surprise Offers (Optional)
@@ -164,7 +190,7 @@
                     </div>
                 </div>
 
-                <button class="checkout-btn" onclick="submitOrderViaWhatsApp()" style="background: #25d366; font-size: 16px; width: 100%;">
+                <button class="checkout-btn" onclick="submitOrderViaWhatsApp()" style="background: #25d366; font-size: 16px; width: 100%; color: white;">
                     <i class="fab fa-whatsapp"></i> Send Order Request on WhatsApp
                 </button>
             </div>
@@ -177,5 +203,25 @@
     </footer>
 
     <script src="js/cart.js"></script>
+    <script>
+        function openMobileDrawer() {
+            document.getElementById('mobile-drawer').classList.add('open');
+            document.getElementById('drawer-overlay').style.display = 'block';
+        }
+
+        function closeMobileDrawer() {
+            document.getElementById('mobile-drawer').classList.remove('open');
+            document.getElementById('drawer-overlay').style.display = 'none';
+        }
+
+        // কাস্টমার আগে থেকেই লগইন থাকলে চেকআউট ফর্মে নাম ও ফোন অটো-ফিল হওয়া
+        window.addEventListener('DOMContentLoaded', () => {
+            let cust = JSON.parse(localStorage.getItem('cz_customer_user'));
+            if(cust) {
+                if(document.getElementById('cust-name') && cust.name) document.getElementById('cust-name').value = cust.name;
+                if(document.getElementById('cust-phone') && cust.phone) document.getElementById('cust-phone').value = cust.phone;
+            }
+        });
+    </script>
 </body>
 </html>

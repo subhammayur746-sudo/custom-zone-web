@@ -3,39 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Account - Custom Zone</title>
+    <title>My Profile - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
-    <link rel="icon" type="image/png" href="assets/images/logo.png">
 </head>
 <body>
 
+    <!-- Unified Clean Navbar -->
     <header class="navbar">
-        <div class="logo-container">
-            <a href="index.html"><img src="assets/images/logo.png" alt="Custom Zone" class="logo-img"></a>
-            <h1 class="brand-name">Custom Zone</h1>
+        <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <a href="index.html" class="logo-link">
+                <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
+                <span class="brand-title">Custom Zone</span>
+            </a>
         </div>
-        <nav class="nav-links">
+
+        <nav class="nav-menu-links">
             <a href="index.html">Home</a>
-            <a href="profile.html" class="active">My Account</a>
-            <a href="cart.html">Cart</a>
-            <a href="javascript:void(0)" onclick="logoutCustomer()" style="color:#e74c3c;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="about.html">About Us</a>
+            <a href="contact.html">Contact Us</a>
+            <a href="track-order.html">Track Order</a>
         </nav>
-        <div class="cart-icon">
-            <a href="cart.html"><i class="fas fa-shopping-cart"></i><span class="cart-count">0</span></a>
+
+        <div class="nav-actions">
+            <span id="nav-user-slot-desktop">
+                <a href="javascript:void(0)" onclick="logoutCustomer()" class="btn-nav-login" style="background:#e74c3c; color:#fff !important;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </span>
+            <a href="cart.html" class="cart-icon-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge cart-count">0</span>
+            </a>
         </div>
     </header>
 
+    <!-- Mobile Side Drawer -->
+    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
+                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+            </div>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
+            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
+            <div style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
+                <a href="javascript:void(0)" onclick="logoutCustomer()" style="color:#e74c3c;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </div>
+
     <main class="container">
-        <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid var(--honey-dawn);">
+        <!-- Profile Banner -->
+        <div style="background:#fff; padding:22px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid var(--honey-dawn);">
             <div>
                 <h2 style="color:var(--midnight-plum); margin:0;" id="user-display-name">Welcome!</h2>
-                <p style="color:#7f8c8d; margin:4px 0 0 0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
+                <p style="color:#7f8c8d; margin:6px 0 0 0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
             </div>
-            <button onclick="logoutCustomer()" style="background:#e74c3c; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
+            <button onclick="logoutCustomer()" style="background:#e74c3c; color:#fff; border:none; padding:9px 18px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
         </div>
 
         <!-- Saved Wishlist Section -->
@@ -57,6 +93,7 @@
 
     <footer class="footer">
         <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
+        <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
     </footer>
 
     <script>
@@ -68,6 +105,16 @@
             document.getElementById('user-display-phone').innerText = currentCust.phone || "";
             loadFreshCloudProfile();
             loadCustomerOrders();
+        }
+
+        function openMobileDrawer() {
+            document.getElementById('mobile-drawer').classList.add('open');
+            document.getElementById('drawer-overlay').style.display = 'block';
+        }
+
+        function closeMobileDrawer() {
+            document.getElementById('mobile-drawer').classList.remove('open');
+            document.getElementById('drawer-overlay').style.display = 'none';
         }
 
         function logoutCustomer() {
