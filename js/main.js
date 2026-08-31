@@ -3,8 +3,19 @@ let selectedMainCategory = "all";
 let selectedSubCategory = "all";
 let categoryMap = {};
 let pendingAction = null;
-let currentAuthMode = "login"; // 'login' or 'signup'
+let currentAuthMode = "login";
 let activeSessionOtp = null;
+
+// Drawer Controls
+function openMobileDrawer() {
+    document.getElementById('mobile-drawer').classList.add('open');
+    document.getElementById('drawer-overlay').style.display = 'block';
+}
+
+function closeMobileDrawer() {
+    document.getElementById('mobile-drawer').classList.remove('open');
+    document.getElementById('drawer-overlay').style.display = 'none';
+}
 
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
@@ -44,54 +55,65 @@ async function fetchLiveProducts() {
             liveProducts.push(prod);
         });
 
-        renderCategorySubnav();
+        renderCategoryPills();
         renderHomeProducts(liveProducts);
     } catch (error) {
         console.error("Error fetching products:", error);
     }
 }
 
-function renderCategorySubnav() {
+// মেইন ক্যাটাগরি পিলস রেন্ডার
+function renderCategoryPills() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
 
-    let html = `<button class="cat-dropdown-btn ${selectedMainCategory === 'all' ? 'active' : ''}" onclick="setMainCategoryFilter('all', this)">All</button>`;
+    let html = `<button class="cat-pill-btn ${selectedMainCategory === 'all' ? 'active' : ''}" onclick="setMainCategoryFilter('all', this)">All</button>`;
 
     for (let mainCat in categoryMap) {
-        let subCats = Array.from(categoryMap[mainCat]);
         let isActive = selectedMainCategory.toLowerCase() === mainCat.toLowerCase();
-
-        if (subCats.length > 0) {
-            html += `
-                <div class="cat-dropdown">
-                    <button class="cat-dropdown-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">
-                        ${mainCat} <i class="fas fa-chevron-down" style="font-size:10px;"></i>
-                    </button>
-                    <div class="cat-dropdown-content">
-                        <a href="javascript:void(0)" onclick="setSubCategoryFilter('${mainCat}', 'all')">All ${mainCat}</a>
-                        ${subCats.map(sub => `<a href="javascript:void(0)" onclick="setSubCategoryFilter('${mainCat}', '${sub}')">${sub}</a>`).join('')}
-                    </div>
-                </div>
-            `;
-        } else {
-            html += `<button class="cat-dropdown-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">${mainCat}</button>`;
-        }
+        html += `<button class="cat-pill-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">${mainCat}</button>`;
     }
 
     nav.innerHTML = html;
+    renderSubCategoryRow();
+}
+
+// সাব-ক্যাটাগরি রো রেন্ডার (কোনো ড্রপডাউন স্ক্রিন কাটার ঝামেলা থাকবে না)
+function renderSubCategoryRow() {
+    const subRow = document.getElementById('dynamic-subcat-row');
+    if (!subRow) return;
+
+    if (selectedMainCategory === "all" || !categoryMap[selectedMainCategory]) {
+        subRow.style.display = "none";
+        subRow.innerHTML = "";
+        return;
+    }
+
+    let subCats = Array.from(categoryMap[selectedMainCategory]);
+    if (subCats.length === 0) {
+        subRow.style.display = "none";
+        return;
+    }
+
+    let html = `<span class="subcat-pill ${selectedSubCategory === 'all' ? 'active' : ''}" onclick="setSubCategoryFilter('all')">All ${selectedMainCategory}</span>`;
+    subCats.forEach(sub => {
+        html += `<span class="subcat-pill ${selectedSubCategory === sub ? 'active' : ''}" onclick="setSubCategoryFilter('${sub}')">${sub}</span>`;
+    });
+
+    subRow.innerHTML = html;
+    subRow.style.display = "flex";
 }
 
 function setMainCategoryFilter(cat, btn) {
     selectedMainCategory = cat;
     selectedSubCategory = "all";
-    renderCategorySubnav();
+    renderCategoryPills();
     filterHomeProducts();
 }
 
-function setSubCategoryFilter(mainCat, subCat) {
-    selectedMainCategory = mainCat;
+function setSubCategoryFilter(subCat) {
     selectedSubCategory = subCat;
-    renderCategorySubnav();
+    renderSubCategoryRow();
     filterHomeProducts();
 }
 
@@ -314,7 +336,6 @@ function backToStepOne() {
     document.getElementById('entered-otp-input').value = "";
 }
 
-// ওটিপি জেনারেট ও রিকুয়েস্ট
 async function requestOtpAction() {
     const name = document.getElementById('auth-user-name').value.trim();
     const phone = document.getElementById('auth-user-phone').value.replace(/[^0-9]/g, '');
@@ -365,7 +386,6 @@ async function requestOtpAction() {
     }
 }
 
-// ওটিপি যাচাই ও অ্যাকাউন্ট লগইন/রেজিস্ট্রেশন
 async function verifyAndAuthenticateUser() {
     const entered = document.getElementById('entered-otp-input').value.trim();
     const name = document.getElementById('auth-user-name').value.trim() || "Customer";
@@ -425,14 +445,19 @@ async function verifyAndAuthenticateUser() {
 }
 
 function updateNavUserSlot() {
-    const slot = document.getElementById('nav-user-slot');
-    if (!slot) return;
+    const desktopSlot = document.getElementById('nav-user-slot-desktop');
+    const mobileSlot = document.getElementById('nav-user-slot-mobile');
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+
+    let html = "";
     if (customer) {
-        slot.innerHTML = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
+        html = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
     } else {
-        slot.innerHTML = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login / Sign Up</a>`;
+        html = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>`;
     }
+
+    if (desktopSlot) desktopSlot.innerHTML = html;
+    if (mobileSlot) mobileSlot.innerHTML = html;
 }
 
 function updateCartCount() {
