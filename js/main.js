@@ -1,4 +1,5 @@
 let liveProducts = [];
+let allReviewsMap = {}; // Product ID -> Array of Reviews
 let selectedMainCategory = "all";
 let selectedSubCategory = "all";
 let categoryMap = {};
@@ -24,7 +25,7 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Fetch Live Products from Firebase
+// Fetch Live Products & Reviews from Firebase
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -32,6 +33,21 @@ async function fetchLiveProducts() {
     container.innerHTML = "<p style='text-align:center; width:100%; color:#7f8c8d; grid-column: 1/-1;'><i class='fas fa-spinner fa-spin'></i> Loading products...</p>";
     
     try {
+        // ১. সমস্ত রিভিউ ফেচ করে প্রোডাক্ট অনুযায়ী ম্যাপিং করা
+        const revSnapshot = await db.collection("reviews").get();
+        allReviewsMap = {};
+        revSnapshot.forEach(doc => {
+            let rev = doc.data();
+            rev.id = doc.id;
+            if (rev.productId) {
+                if (!allReviewsMap[rev.productId]) {
+                    allReviewsMap[rev.productId] = [];
+                }
+                allReviewsMap[rev.productId].push(rev);
+            }
+        });
+
+        // ২. প্রোডাক্ট ফেচ করা
         const snapshot = await db.collection("products").where("isActive", "==", true).get();
         liveProducts = [];
         categoryMap = { "Handmade": new Set(), "Customized": new Set() };
@@ -60,6 +76,17 @@ async function fetchLiveProducts() {
                 categoryMap[mainCatFormatted].add(prod.subCategory.trim());
             }
 
+            // রিয়েল-টাইম গড় রেটিং ও রিভিউ সংখ্যা হিসাব
+            let prodReviews = allReviewsMap[prod.id] || [];
+            if (prodReviews.length > 0) {
+                let totalScore = prodReviews.reduce((sum, r) => sum + (parseInt(r.rating) || 5), 0);
+                prod.avgRating = (totalScore / prodReviews.length);
+                prod.reviewCount = prodReviews.length;
+            } else {
+                prod.avgRating = 5.0;
+                prod.reviewCount = 0;
+            }
+
             liveProducts.push(prod);
         });
 
@@ -68,7 +95,7 @@ async function fetchLiveProducts() {
         checkUrlProductParam();
 
     } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching products & reviews:", error);
         container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products from cloud.</p>";
     }
 }
@@ -135,7 +162,7 @@ function renderHomeProducts(products) {
     container.innerHTML = "";
 
     if (products.length === 0) {
-        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:25px;'>No products found matching your search or budget.</p>";
+        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:25px;'>No products found matching your criteria.</p>";
         return;
     }
 
@@ -166,7 +193,7 @@ function renderHomeProducts(products) {
                 
                 <div class="card-rating-row">
                     <span>★ ${ratingVal}</span>
-                    <span style="color:#7f8c8d; font-size:11px;">(${reviewNum})</span>
+                    <span style="color:#7f8c8d; font-size:11px;">(${reviewNum} ${reviewNum === 1 ? 'review' : 'reviews'})</span>
                 </div>
 
                 <p>₹${prod.price}</p>
@@ -240,7 +267,6 @@ function openProductDetailsModal(productId) {
     const badgeEl = document.getElementById('pdm-badge');
     const titleEl = document.getElementById('pdm-title');
     const priceEl = document.getElementById('pdm-price');
-    const descEl = document.getElementById('pdm-desc');
     const starsEl = document.getElementById('pdm-overall-stars');
     const revCountEl = document.getElementById('pdm-review-count');
 
@@ -252,7 +278,7 @@ function openProductDetailsModal(productId) {
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
     if (starsEl) starsEl.innerText = `${ratingVal} ★`;
-    if (revCountEl) revCountEl.innerText = `(${reviewNum} customer reviews)`;
+    if (revCountEl) revCountEl.innerText = `(${reviewNum} ${reviewNum === 1 ? 'customer review' : 'customer reviews'})`;
 
     const thumbsContainer = document.getElementById('pdm-thumbs');
     if (thumbsContainer) {
@@ -327,7 +353,7 @@ function closeImageZoomModal() {
     if (zoomModal) zoomModal.classList.remove('show-modal');
 }
 
-// Reviews Engine
+// Product Specific Reviews (ইনডেক্স ঝামেলা ছাড়া ১০০% ফিক্সড)
 async function loadProductSpecificReviews(productId) {
     const container = document.getElementById('pdm-reviews-container');
     if (!container) return;
@@ -336,7 +362,6 @@ async function loadProductSpecificReviews(productId) {
     try {
         const snapshot = await db.collection("reviews")
             .where("productId", "==", productId)
-            .orderBy("timestamp", "desc")
             .get();
 
         if (snapshot.empty) {
@@ -344,9 +369,22 @@ async function loadProductSpecificReviews(productId) {
             return;
         }
 
-        container.innerHTML = "";
+        let reviews = [];
         snapshot.forEach(doc => {
             let r = doc.data();
+            r.id = doc.id;
+            reviews.push(r);
+        });
+
+        // ক্লায়েন্ট-সাইডে তারিখ অনুযায়ী সাজানো
+        reviews.sort((a, b) => {
+            let timeA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
+            let timeB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
+            return timeB - timeA;
+        });
+
+        container.innerHTML = "";
+        reviews.forEach(r => {
             let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
             let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="zoomReviewImage('${r.photoUrl}')" alt="Customer Real Pic">` : "";
 
@@ -362,7 +400,9 @@ async function loadProductSpecificReviews(productId) {
                 </div>
             `;
         });
+
     } catch (e) {
+        console.error("Error loading product reviews:", e);
         container.innerHTML = "<p style='color:#7f8c8d; font-size:12px;'>Verified product rating: 5.0 ★</p>";
     }
 }
@@ -443,7 +483,7 @@ function previewReviewImage(input) {
     reader.readAsDataURL(file);
 }
 
-// Submit Review to Firebase
+// Submit Review to Firebase & Refresh Counts
 async function submitProductReviewCloud() {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) { openAuthModal(); return; }
@@ -485,7 +525,12 @@ async function submitProductReviewCloud() {
         const writeBox = document.getElementById('product-write-review-box');
         if (writeBox) writeBox.style.display = "none";
         
-        loadProductSpecificReviews(currentOpenProductId);
+        // রিভিউ সাবমিট হওয়ার সাথে সাথে প্রোডাক্ট লিস্ট ও মোডাল রিফ্রেশ
+        await fetchLiveProducts();
+        if (currentOpenProductId) {
+            openProductDetailsModal(currentOpenProductId);
+        }
+
     } catch (e) {
         console.error(e);
         alert("Failed to submit review.");
