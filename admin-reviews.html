@@ -26,13 +26,40 @@
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
         .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
-        .btn-admin { background: #27ae60; color: #fff; padding: 11px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; }
-        
-        .stats-summary-box { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
-        .stat-item-box { background: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex: 1; min-width: 180px; border-left: 4px solid #f1c40f; }
+
+        .review-thumb-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        /* Edit Review Modal */
+        #edit-review-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.6);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .edit-modal-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+        }
 
         .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
 
@@ -66,74 +93,79 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Customer Reviews & Feedback Management</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Customer Reviews & Image Moderation</h2>
 
-        <!-- Rating Stats Overview -->
-        <div class="stats-summary-box">
-            <div class="stat-item-box">
-                <p style="margin:0; font-size:12px; color:#7f8c8d;">Total Reviews Received</p>
-                <h3 style="margin:4px 0 0 0; font-size:24px; color:#2c3e50;" id="stat-total-rev">0</h3>
+        <!-- Reviews Management Table -->
+        <div class="admin-card" style="overflow-x: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
+                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-images"></i> Customer Submitted Reviews</h3>
+                <input type="text" id="search-rev-input" onkeyup="filterReviews()" placeholder="🔍 Search Product / Customer..." style="padding:7px 12px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:200px;">
             </div>
-            <div class="stat-item-box" style="border-left-color: #27ae60;">
-                <p style="margin:0; font-size:12px; color:#7f8c8d;">Average Store Rating</p>
-                <h3 style="margin:4px 0 0 0; font-size:24px; color:#27ae60;" id="stat-avg-stars">5.0 ★</h3>
-            </div>
+
+            <table style="width:100%; border-collapse:collapse; min-width:700px;">
+                <thead>
+                    <tr style="background:#f8f9fa; text-align:left; font-size:13px;">
+                        <th style="padding:10px;">Product Name</th>
+                        <th style="padding:10px;">Customer Details</th>
+                        <th style="padding:10px;">Rating</th>
+                        <th style="padding:10px;">Feedback Comment</th>
+                        <th style="padding:10px;">Attached Photo</th>
+                        <th style="padding:10px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-reviews-table">
+                    <tr><td colspan="6" style="text-align:center; padding:15px;">Loading reviews from database...</td></tr>
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+    <!-- Edit Review / Clean Feedback Modal -->
+    <div id="edit-review-modal">
+        <div class="edit-modal-box">
+            <span onclick="closeEditModal()" style="position:absolute; top:12px; right:15px; font-size:22px; cursor:pointer; font-weight:bold;">&times;</span>
+            <h3 style="color:#2c3e50; margin-top:0; margin-bottom:15px;"><i class="fas fa-edit" style="color:#e67e22;"></i> Edit / Moderate Review</h3>
             
-            <!-- Left: Add Test Review Form -->
-            <div class="admin-card" style="flex: 1; min-width: 300px;">
-                <h3><i class="fas fa-plus-circle"></i> Add / Post Official Review</h3>
-                <div class="form-group">
-                    <label>Customer Name</label>
-                    <input type="text" id="rev-name" placeholder="e.g., Ananya Roy">
-                </div>
-                <div class="form-group">
-                    <label>Rating (Stars)</label>
-                    <select id="rev-rating" style="font-weight:bold; color:#f39c12;">
-                        <option value="5">★★★★★ (5 Stars - Excellent)</option>
-                        <option value="4">★★★★☆ (4 Stars - Very Good)</option>
-                        <option value="3">★★★☆☆ (3 Stars - Average)</option>
-                        <option value="2">★★☆☆☆ (2 Stars - Poor)</option>
-                        <option value="1">★☆☆☆☆ (1 Star - Bad)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Feedback Message / Comment</label>
-                    <textarea id="rev-comment" rows="3" placeholder="Write feedback details..."></textarea>
-                </div>
-                <button class="btn-admin" id="btn-save-review" onclick="addReviewCloud()">Save Review</button>
+            <input type="hidden" id="edit-rev-id">
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Customer Name:</label>
+                <input type="text" id="edit-rev-name" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
             </div>
 
-            <!-- Right: Live Reviews Table -->
-            <div class="admin-card" style="flex: 1.8; min-width: 320px; overflow-x: auto;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
-                    <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-list"></i> Live Reviews List</h3>
-                    <input type="text" id="search-rev-input" onkeyup="filterReviews()" placeholder="🔍 Search by Name / Text..." style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:180px;">
-                </div>
-
-                <table style="width:100%; border-collapse:collapse; min-width:550px;">
-                    <thead>
-                        <tr style="background:#f8f9fa; text-align:left; font-size:13px;">
-                            <th style="padding:10px;">Customer</th>
-                            <th style="padding:10px;">Rating</th>
-                            <th style="padding:10px;">Feedback</th>
-                            <th style="padding:10px;">Date</th>
-                            <th style="padding:10px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-reviews-table">
-                        <tr><td colspan="5" style="text-align:center; padding:15px;">Loading reviews from database...</td></tr>
-                    </tbody>
-                </table>
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Star Rating:</label>
+                <select id="edit-rev-rating" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-weight:bold; color:#f39c12;">
+                    <option value="5">★★★★★ (5 Stars)</option>
+                    <option value="4">★★★★☆ (4 Stars)</option>
+                    <option value="3">★★★☆☆ (3 Stars)</option>
+                    <option value="2">★★☆☆☆ (2 Stars)</option>
+                    <option value="1">★☆☆☆☆ (1 Star)</option>
+                </select>
             </div>
 
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Review Comment Text:</label>
+                <textarea id="edit-rev-comment" rows="3" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit; box-sizing:border-box;"></textarea>
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:4px;">Attached Photo Action:</label>
+                <div id="edit-rev-img-preview" style="margin-bottom:8px;"></div>
+                <button type="button" onclick="removeReviewImage()" style="background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">
+                    <i class="fas fa-trash-alt"></i> Remove Inappropriate Image
+                </button>
+            </div>
+
+            <button onclick="saveReviewEditsCloud()" style="background:#27ae60; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold; width:100%; cursor:pointer;">
+                Save Changes
+            </button>
         </div>
     </div>
 
     <script>
         let allReviewsCache = [];
+        let currentEditPhotoUrl = "";
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
         if (!loggedInUser) {
@@ -155,29 +187,21 @@
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:15px; color:#7f8c8d;'>No reviews found.</td></tr>";
-                    document.getElementById('stat-total-rev').innerText = "0";
-                    document.getElementById('stat-avg-stars').innerText = "5.0 ★";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#7f8c8d;'>No reviews found.</td></tr>";
                     return;
                 }
 
-                let totalStars = 0;
                 snapshot.forEach(doc => {
                     let r = doc.data();
                     r.id = doc.id;
                     allReviewsCache.push(r);
-                    totalStars += (parseInt(r.rating) || 5);
                 });
-
-                document.getElementById('stat-total-rev').innerText = allReviewsCache.length;
-                let avg = (totalStars / allReviewsCache.length).toFixed(1);
-                document.getElementById('stat-avg-stars').innerText = avg + " ★";
 
                 renderReviewsList(allReviewsCache);
 
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center; padding:15px;'>Error connecting to reviews database.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center; padding:15px;'>Error connecting to reviews database.</td></tr>";
             }
         }
 
@@ -186,21 +210,30 @@
             tbody.innerHTML = "";
 
             if (reviews.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:15px; color:#7f8c8d;'>No matching reviews found.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#7f8c8d;'>No matching reviews found.</td></tr>";
                 return;
             }
 
             reviews.forEach(r => {
                 let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
+                let prodTitle = r.productName || (r.productId ? `Product #${r.productId}` : 'General Store Review');
+                let imgTag = r.photoUrl ? `<img src="${r.photoUrl}" class="review-thumb-img" onclick="window.open('${r.photoUrl}')" title="Click to view full image">` : '<span style="color:#95a5a6; font-size:11px;">No Photo</span>';
 
                 tbody.innerHTML += `
                     <tr style="border-bottom:1px solid #eee; font-size:13px;">
-                        <td style="padding:10px;"><strong>${r.customerName || 'Anonymous'}</strong></td>
-                        <td style="padding:10px; color:#f1c40f; font-size:14px; white-space:nowrap;">${stars}</td>
-                        <td style="padding:10px; max-width:220px; word-break:break-word;">${r.comment || '-'}</td>
-                        <td style="padding:10px; color:#7f8c8d; font-size:12px;">${r.date || 'Recent'}</td>
+                        <td style="padding:10px;"><strong style="color:#2c3e50;">${prodTitle}</strong></td>
                         <td style="padding:10px;">
-                            <button onclick="deleteReviewCloud('${r.id}')" style="background:#e74c3c; color:white; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Delete Review">
+                            <strong>${r.customerName || 'Anonymous'}</strong><br>
+                            <small style="color:#7f8c8d;">${r.customerPhone || 'N/A'}</small>
+                        </td>
+                        <td style="padding:10px; color:#f39c12; font-size:14px; white-space:nowrap;">${stars}</td>
+                        <td style="padding:10px; max-width:240px; word-break:break-word;">${r.comment || '-'}</td>
+                        <td style="padding:10px;">${imgTag}</td>
+                        <td style="padding:10px; min-width:130px;">
+                            <button onclick="openEditModal('${r.id}')" style="background:#e67e22; color:white; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Edit Review & Photo">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="deleteReviewCloud('${r.id}')" style="background:#e74c3c; color:white; border:none; padding:5px 9px; border-radius:4px; cursor:pointer; margin-left:4px;" title="Delete Review">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -214,45 +247,62 @@
             let filtered = allReviewsCache.filter(r => {
                 let nameMatch = r.customerName && r.customerName.toLowerCase().includes(term);
                 let textMatch = r.comment && r.comment.toLowerCase().includes(term);
-                return nameMatch || textMatch;
+                let prodMatch = r.productName && r.productName.toLowerCase().includes(term);
+                return nameMatch || textMatch || prodMatch;
             });
             renderReviewsList(filtered);
         }
 
-        async function addReviewCloud() {
-            const name = document.getElementById('rev-name').value.trim();
-            const rating = parseInt(document.getElementById('rev-rating').value) || 5;
-            const comment = document.getElementById('rev-comment').value.trim();
-            const btn = document.getElementById('btn-save-review');
+        function openEditModal(reviewId) {
+            let rev = allReviewsCache.find(r => r.id === reviewId);
+            if (!rev) return;
 
-            if (!name || !comment) {
-                alert("Please provide both customer name and review feedback.");
-                return;
+            document.getElementById('edit-rev-id').value = reviewId;
+            document.getElementById('edit-rev-name').value = rev.customerName || "";
+            document.getElementById('edit-rev-rating').value = rev.rating || 5;
+            document.getElementById('edit-rev-comment').value = rev.comment || "";
+            
+            currentEditPhotoUrl = rev.photoUrl || "";
+            const imgBox = document.getElementById('edit-rev-img-preview');
+            if (currentEditPhotoUrl) {
+                imgBox.innerHTML = `<img src="${currentEditPhotoUrl}" style="width:70px; height:70px; object-fit:cover; border-radius:4px; border:1px solid #ccc;">`;
+            } else {
+                imgBox.innerHTML = `<span style="font-size:12px; color:#7f8c8d;">No image attached.</span>`;
             }
 
-            btn.disabled = true;
-            btn.innerText = "Saving...";
+            document.getElementById('edit-review-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-review-modal').style.display = 'none';
+        }
+
+        function removeReviewImage() {
+            currentEditPhotoUrl = "";
+            document.getElementById('edit-rev-img-preview').innerHTML = `<span style="font-size:12px; color:#e74c3c; font-weight:bold;">Image marked for removal.</span>`;
+        }
+
+        async function saveReviewEditsCloud() {
+            let id = document.getElementById('edit-rev-id').value;
+            let name = document.getElementById('edit-rev-name').value.trim();
+            let rating = parseInt(document.getElementById('edit-rev-rating').value);
+            let comment = document.getElementById('edit-rev-comment').value.trim();
+
+            if (!name || !comment) { alert("Name and comment cannot be empty."); return; }
 
             try {
-                await db.collection("reviews").add({
+                await db.collection("reviews").doc(id).update({
                     customerName: name,
                     rating: rating,
                     comment: comment,
-                    date: new Date().toLocaleDateString('en-GB'),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    photoUrl: currentEditPhotoUrl
                 });
 
-                alert("✅ Review posted successfully to store!");
-                document.getElementById('rev-name').value = "";
-                document.getElementById('rev-comment').value = "";
+                alert("✅ Review updated successfully!");
+                closeEditModal();
                 fetchReviewsCloud();
-
             } catch (e) {
-                console.error(e);
-                alert("Error saving review.");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Save Review";
+                alert("Failed to update review.");
             }
         }
 
