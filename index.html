@@ -69,7 +69,7 @@
         <button class="cat-pill-btn active" onclick="setMainCategoryFilter('all', this)">All</button>
     </div>
 
-    <!-- Dynamic Subcategory Row (Appears when a category is selected) -->
+    <!-- Dynamic Subcategory Row -->
     <div class="subcat-pill-row" id="dynamic-subcat-row"></div>
 
     <!-- Search & Prices Filter Bar -->
@@ -98,33 +98,93 @@
         <div class="pdm-card">
             <span class="pdm-close" onclick="closeProductDetailsModal()">&times;</span>
             
-            <!-- Left: Gallery -->
-            <div>
-                <img id="pdm-main-img" class="pdm-main-img" src="" alt="Product">
-                <div class="pdm-gallery" id="pdm-thumbs"></div>
-            </div>
+            <div class="pdm-layout-grid">
+                <!-- Left: Gallery with Click-to-Zoom -->
+                <div>
+                    <div class="pdm-image-box" onclick="zoomCurrentProductImage()">
+                        <img id="pdm-main-img" class="pdm-main-img" src="" alt="Product">
+                        <span class="pdm-zoom-hint"><i class="fas fa-search-plus"></i> Tap to Zoom</span>
+                    </div>
+                    <div class="pdm-gallery" id="pdm-thumbs"></div>
+                </div>
 
-            <!-- Right: Details -->
-            <div>
-                <span id="pdm-badge" style="background:#fff8eb; color:var(--midnight-plum); font-size:11px; padding:3px 8px; border-radius:12px; font-weight:bold; border:1px solid #F0C986;">Category</span>
-                <h2 id="pdm-title" style="margin: 8px 0; color:var(--midnight-plum); font-size:20px;">Product Title</h2>
-                <div style="font-size:22px; font-weight:800; color:var(--midnight-plum); margin-bottom:10px;">₹<span id="pdm-price">0</span></div>
-                
-                <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:15px;" id="pdm-desc">
-                    100% Handcrafted premium keepsake customized with love & precision.
-                </p>
+                <!-- Right: Details -->
+                <div>
+                    <span id="pdm-badge" style="background:#fff8eb; color:var(--midnight-plum); font-size:11px; padding:3px 8px; border-radius:12px; font-weight:bold; border:1px solid #F0C986;">Category</span>
+                    <h2 id="pdm-title" style="margin: 6px 0; color:var(--midnight-plum); font-size:20px;">Product Title</h2>
+                    
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span id="pdm-overall-stars" style="color:#f39c12; font-weight:bold; font-size:14px;">5.0 ★</span>
+                        <span id="pdm-review-count" style="font-size:12px; color:#7f8c8d;">(0 reviews)</span>
+                        <button onclick="shareDirectProduct(currentOpenProductId, event)" style="background:#f1f2f6; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; color:var(--midnight-plum); font-weight:bold;">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                    </div>
 
-                <div id="pdm-custom-field-container" style="margin-bottom:15px;"></div>
+                    <div style="font-size:22px; font-weight:800; color:var(--midnight-plum); margin-bottom:10px;">₹<span id="pdm-price">0</span></div>
+                    
+                    <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:15px;" id="pdm-desc">
+                        100% Handcrafted premium keepsake customized with love & precision.
+                    </p>
 
-                <div style="display:flex; gap:10px;">
-                    <button id="pdm-btn-add" style="flex:1; background:var(--midnight-plum); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">
-                        <i class="fas fa-shopping-cart"></i> Add to Cart
-                    </button>
-                    <button id="pdm-btn-buy" style="flex:1; background:var(--honey-dawn); color:var(--midnight-plum); border:none; padding:12px; border-radius:6px; font-weight:800; cursor:pointer;">
-                        <i class="fas fa-bolt"></i> Buy Now
-                    </button>
+                    <div id="pdm-custom-field-container" style="margin-bottom:15px;"></div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button id="pdm-btn-add" style="flex:1; background:var(--midnight-plum); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                        <button id="pdm-btn-buy" style="flex:1; background:var(--honey-dawn); color:var(--midnight-plum); border:none; padding:12px; border-radius:6px; font-weight:800; cursor:pointer;">
+                            <i class="fas fa-bolt"></i> Buy Now
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <!-- Customer Reviews with Image Gallery & Submission Box -->
+            <div class="product-reviews-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="color:var(--midnight-plum); font-size:16px; margin:0;"><i class="fas fa-star" style="color:#f39c12;"></i> Customer Reviews & Photos</h3>
+                    <button onclick="toggleAddReviewForm()" style="background:var(--midnight-plum); color:var(--honey-dawn); border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
+                        + Write a Review
+                    </button>
+                </div>
+
+                <!-- Write Review Form (Expandable) -->
+                <div id="product-write-review-box" style="display:none; background:#fff8eb; border:1px dashed var(--honey-dawn); padding:15px; border-radius:8px; margin-bottom:15px;">
+                    <h4 style="margin:0 0 8px 0; font-size:13px; color:var(--midnight-plum);">Submit Your Verified Feedback & Photo</h4>
+                    
+                    <div class="star-rating-selector" id="pdm-star-picker">
+                        <span onclick="setProductStarRating(1)">★</span>
+                        <span onclick="setProductStarRating(2)">★</span>
+                        <span onclick="setProductStarRating(3)">★</span>
+                        <span onclick="setProductStarRating(4)">★</span>
+                        <span onclick="setProductStarRating(5)">★</span>
+                    </div>
+
+                    <textarea id="pdm-review-text" rows="2" placeholder="How was the handcrafted quality and packaging?..." style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:12px; box-sizing:border-box; margin-bottom:8px;"></textarea>
+                    
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:11px; font-weight:bold; display:block; margin-bottom:3px;">Attach Real Product Photo (Image URL):</label>
+                        <input type="text" id="pdm-review-imgurl" placeholder="https://i.ibb.co/... or image link" style="width:100%; padding:7px; border:1px solid #ccc; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                    </div>
+
+                    <button onclick="submitProductReviewCloud()" id="btn-sub-prod-rev" style="background:#27ae60; color:#fff; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; font-size:12px; cursor:pointer;">
+                        Submit Review
+                    </button>
+                </div>
+
+                <!-- Reviews List Container -->
+                <div id="pdm-reviews-container">
+                    <p style="text-align:center; color:#7f8c8d; font-size:12px;">Loading reviews...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Zoom Lightbox Modal -->
+    <div id="image-zoom-modal" onclick="closeImageZoomModal()">
+        <div class="zoom-modal-content">
+            <img id="modal-zoomed-img" class="zoom-modal-img" src="" alt="Zoomed View">
         </div>
     </div>
 

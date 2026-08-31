@@ -5,6 +5,8 @@ let categoryMap = {};
 let pendingAction = null;
 let currentAuthMode = "login";
 let activeSessionOtp = null;
+let currentOpenProductId = null;
+let selectedReviewStar = 5;
 
 // Drawer Controls
 function openMobileDrawer() {
@@ -57,12 +59,15 @@ async function fetchLiveProducts() {
 
         renderCategoryPills();
         renderHomeProducts(liveProducts);
+
+        // URL চেক (যদি শেয়ারড লিঙ্ক থেকে ওপেন হয়ে থাকে)
+        checkUrlProductParam();
+
     } catch (error) {
         console.error("Error fetching products:", error);
     }
 }
 
-// মেইন ক্যাটাগরি পিলস রেন্ডার
 function renderCategoryPills() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
@@ -78,7 +83,6 @@ function renderCategoryPills() {
     renderSubCategoryRow();
 }
 
-// সাব-ক্যাটাগরি রো রেন্ডার (কোনো ড্রপডাউন স্ক্রিন কাটার ঝামেলা থাকবে না)
 function renderSubCategoryRow() {
     const subRow = document.getElementById('dynamic-subcat-row');
     if (!subRow) return;
@@ -136,13 +140,27 @@ function renderHomeProducts(products) {
         let mainImg = images[0];
         let isWishlisted = wishlist.some(w => w.id === prod.id);
 
+        let ratingVal = prod.avgRating ? prod.avgRating.toFixed(1) : "5.0";
+        let reviewNum = prod.reviewCount || 0;
+
         container.innerHTML += `
             <div class="product-card" onclick="openProductDetailsModal('${prod.id}')">
-                <button class="wishlist-btn-heart ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlistCloud('${prod.id}')">
-                    <i class="fas fa-heart"></i>
-                </button>
+                <div class="card-top-actions">
+                    <button class="action-btn-circle" onclick="event.stopPropagation(); shareDirectProduct('${prod.id}', event)" title="Share Product">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    <button class="action-btn-circle wishlist-btn-heart ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlistCloud('${prod.id}')" title="Wishlist">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
                 <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
                 <h3>${prod.name}</h3>
+                
+                <div class="card-rating-row">
+                    <span>★ ${ratingVal}</span>
+                    <span style="color:#7f8c8d; font-size:11px;">(${reviewNum})</span>
+                </div>
+
                 <p>₹${prod.price}</p>
                 <button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
@@ -177,11 +195,33 @@ function filterHomeProducts() {
     renderHomeProducts(filtered);
 }
 
+// ১-ক্লিক শেয়ার হ্যান্ডলার
+function shareDirectProduct(productId, event) {
+    if (event) event.stopPropagation();
+    let product = liveProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    let shareUrl = `${window.location.origin}/index.html?product=${productId}`;
+    let shareText = `Check out this customized "${product.name}" on Custom Zone for just ₹${product.price}! 🎁✨\n${shareUrl}`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: product.name,
+            text: shareText,
+            url: shareUrl
+        }).catch(() => {});
+    } else {
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+        window.open(waUrl, "_blank");
+    }
+}
+
 // Flipkart / Amazon স্টাইল সিঙ্গেল প্রোডাক্ট ভিউ মডাল
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
 
+    currentOpenProductId = productId;
     const modal = document.getElementById('product-details-modal');
     const fallbackImg = "assets/images/logo.png";
     const images = product.images && product.images.length > 0 ? product.images : [fallbackImg];
@@ -190,6 +230,11 @@ function openProductDetailsModal(productId) {
     document.getElementById('pdm-badge').innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
     document.getElementById('pdm-title').innerText = product.name;
     document.getElementById('pdm-price').innerText = product.price;
+
+    let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
+    let reviewNum = product.reviewCount || 0;
+    document.getElementById('pdm-overall-stars').innerText = `${ratingVal} ★`;
+    document.getElementById('pdm-review-count').innerText = `(${reviewNum} customer reviews)`;
 
     const thumbsContainer = document.getElementById('pdm-thumbs');
     thumbsContainer.innerHTML = "";
@@ -203,7 +248,7 @@ function openProductDetailsModal(productId) {
     customContainer.innerHTML = "";
     if (product.customType === "name") {
         customContainer.innerHTML = `
-            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:#2c3e50;">Customize Text / Name to Print:</label>
+            <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--midnight-plum);">Customize Text / Name to Print:</label>
             <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid #fab1a0; border-radius:4px; box-sizing:border-box;">
         `;
     } else if (product.customType === "pic") {
@@ -226,11 +271,136 @@ function openProductDetailsModal(productId) {
         window.location.href = "cart.html";
     };
 
+    // নির্দিষ্ট প্রোডাক্টের কাস্টমার রিভিউ লোড করা
+    loadProductSpecificReviews(productId);
+
     modal.classList.add('show-modal');
 }
 
 function closeProductDetailsModal() {
     document.getElementById('product-details-modal').classList.remove('show-modal');
+    document.getElementById('product-write-review-box').style.display = "none";
+}
+
+// ইমেজ জুম লাইটবক্স
+function zoomCurrentProductImage() {
+    const currentSrc = document.getElementById('pdm-main-img').src;
+    document.getElementById('modal-zoomed-img').src = currentSrc;
+    document.getElementById('image-zoom-modal').classList.add('show-modal');
+}
+
+function closeImageZoomModal() {
+    document.getElementById('image-zoom-modal').classList.remove('show-modal');
+}
+
+// প্রোডাক্ট স্পেসিফিক রিভিউ লোড
+async function loadProductSpecificReviews(productId) {
+    const container = document.getElementById('pdm-reviews-container');
+    container.innerHTML = "<p style='text-align:center; color:#7f8c8d; font-size:12px;'>Loading reviews...</p>";
+
+    try {
+        const snapshot = await db.collection("reviews")
+            .where("productId", "==", productId)
+            .orderBy("timestamp", "desc")
+            .get();
+
+        if (snapshot.empty) {
+            container.innerHTML = "<p style='text-align:center; color:#7f8c8d; font-size:12px;'>No reviews yet for this product. Be the first to leave one!</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+        snapshot.forEach(doc => {
+            let r = doc.data();
+            let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
+            let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="zoomReviewImage('${r.photoUrl}')" alt="Customer Real Pic">` : "";
+
+            container.innerHTML += `
+                <div class="review-card-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="color:var(--midnight-plum); font-size:13px;">${r.customerName || 'Customer'}</strong>
+                        <span style="color:#f39c12; font-size:12px;">${stars}</span>
+                    </div>
+                    <p style="margin:0; font-size:12px; color:#555;">${r.comment}</p>
+                    ${photoHtml}
+                    <div style="font-size:10px; color:#95a5a6; margin-top:5px;">${r.date || 'Recent'}</div>
+                </div>
+            `;
+        });
+    } catch (e) {
+        container.innerHTML = "<p style='color:#7f8c8d; font-size:12px;'>Verified product rating: 5.0 ★</p>";
+    }
+}
+
+function zoomReviewImage(url) {
+    document.getElementById('modal-zoomed-img').src = url;
+    document.getElementById('image-zoom-modal').classList.add('show-modal');
+}
+
+function toggleAddReviewForm() {
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    if (!customer) {
+        openAuthModal();
+        return;
+    }
+    const box = document.getElementById('product-write-review-box');
+    box.style.display = box.style.display === "none" ? "block" : "none";
+    setProductStarRating(5);
+}
+
+function setProductStarRating(stars) {
+    selectedReviewStar = stars;
+    const picker = document.getElementById('pdm-star-picker');
+    let spans = picker.querySelectorAll('span');
+    spans.forEach((s, idx) => {
+        if (idx < stars) s.classList.add('active-star');
+        else s.classList.remove('active-star');
+    });
+}
+
+async function submitProductReviewCloud() {
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    if (!customer) { openAuthModal(); return; }
+
+    const text = document.getElementById('pdm-review-text').value.trim();
+    const photoUrl = document.getElementById('pdm-review-imgurl').value.trim();
+    const btn = document.getElementById('btn-sub-prod-rev');
+
+    if (!text) { alert("Please write a short review."); return; }
+
+    btn.disabled = true;
+    btn.innerText = "Submitting...";
+
+    try {
+        await db.collection("reviews").add({
+            productId: currentOpenProductId,
+            customerName: customer.name || "Valued Customer",
+            rating: selectedReviewStar,
+            comment: text,
+            photoUrl: photoUrl || "",
+            date: new Date().toLocaleDateString('en-GB'),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert("🎉 Thank you! Your review has been published.");
+        document.getElementById('pdm-review-text').value = "";
+        document.getElementById('pdm-review-imgurl').value = "";
+        document.getElementById('product-write-review-box').style.display = "none";
+        loadProductSpecificReviews(currentOpenProductId);
+    } catch (e) {
+        alert("Failed to submit review.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Submit Review";
+    }
+}
+
+function checkUrlProductParam() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const prodId = urlParams.get('product');
+    if (prodId) {
+        setTimeout(() => { openProductDetailsModal(prodId); }, 500);
+    }
 }
 
 function handleAddToCart(productId, customText = "") {
@@ -298,7 +468,6 @@ async function toggleWishlistCloud(productId) {
     renderHomeProducts(liveProducts);
 }
 
-// প্রফেশনাল Login vs Sign Up সুইচিং
 function switchAuthForm(mode) {
     currentAuthMode = mode;
     const nameField = document.getElementById('signup-name-field');

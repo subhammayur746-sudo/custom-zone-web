@@ -30,7 +30,7 @@ body {
     min-height: 100vh;
 }
 
-/* Unified Universal Navbar */
+/* Header & Navbar */
 .navbar {
     background: var(--honey-dawn);
     color: var(--midnight-plum);
@@ -356,7 +356,7 @@ body {
     border-radius: 2px;
 }
 
-/* Product Cards */
+/* Product Cards & Floating Action Badges */
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -384,11 +384,17 @@ body {
     border-color: var(--honey-dawn);
 }
 
-.wishlist-btn-heart {
+.card-top-actions {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    gap: 6px;
+    z-index: 5;
+}
+
+.action-btn-circle {
+    background: rgba(255, 255, 255, 0.95);
     border: none;
     width: 32px;
     height: 32px;
@@ -397,10 +403,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #b2bec3;
-    font-size: 16px;
+    color: #576574;
+    font-size: 14px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    z-index: 5;
+    transition: 0.2s;
+}
+
+.action-btn-circle:hover {
+    transform: scale(1.08);
 }
 
 .wishlist-btn-heart.active {
@@ -425,6 +435,17 @@ body {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.card-rating-row {
+    font-size: 12px;
+    color: #f39c12;
+    margin-bottom: 6px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .product-card p {
@@ -452,8 +473,8 @@ body {
     color: var(--honey-dawn);
 }
 
-/* Modals */
-.popup-overlay, #auth-modal, #product-details-modal {
+/* Modals Overlay */
+.popup-overlay, #auth-modal, #product-details-modal, #image-zoom-modal {
     display: none;
     position: fixed;
     top: 0;
@@ -468,23 +489,28 @@ body {
     box-sizing: border-box;
 }
 
-.popup-overlay.show-popup, #auth-modal.show-modal, #product-details-modal.show-modal {
+.popup-overlay.show-popup, #auth-modal.show-modal, #product-details-modal.show-modal, #image-zoom-modal.show-modal {
     display: flex !important;
 }
 
+/* Product Detail Modal (With Reviews & Zoom Trigger) */
 .pdm-card {
     background: #fff;
     border-radius: 12px;
-    max-width: 800px;
+    max-width: 860px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
     padding: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.pdm-layout-grid {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
     gap: 22px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    margin-bottom: 25px;
 }
 
 .pdm-close {
@@ -495,6 +521,12 @@ body {
     cursor: pointer;
     color: #7f8c8d;
     font-weight: bold;
+    z-index: 10;
+}
+
+.pdm-image-box {
+    position: relative;
+    cursor: zoom-in;
 }
 
 .pdm-main-img {
@@ -503,6 +535,18 @@ body {
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid #eee;
+}
+
+.pdm-zoom-hint {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(4, 18, 63, 0.75);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    pointer-events: none;
 }
 
 .pdm-gallery {
@@ -521,6 +565,60 @@ body {
     cursor: pointer;
 }
 
+/* High-Res Image Zoom Lightbox */
+.zoom-modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.zoom-modal-img {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.5);
+    border: 3px solid var(--honey-dawn);
+}
+
+/* Reviews Box inside Details Modal */
+.product-reviews-section {
+    border-top: 2px solid #eee;
+    padding-top: 20px;
+}
+
+.review-card-item {
+    background: #fafbfc;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.review-card-item img.review-photo {
+    width: 65px;
+    height: 65px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-top: 8px;
+    cursor: zoom-in;
+    border: 1px solid #ddd;
+}
+
+.star-rating-selector {
+    font-size: 24px;
+    color: #ccc;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.star-rating-selector .active-star {
+    color: #f1c40f;
+}
+
+/* Auth Modal Card */
 .auth-card {
     background: #fff;
     padding: 25px 20px;
@@ -648,8 +746,11 @@ body {
     .search-wrapper, .price-filter-select {
         width: 100%;
     }
-    .pdm-card {
+    .pdm-layout-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    .pdm-card {
         padding: 16px;
     }
 }
