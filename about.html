@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Zone - About Us</title>
+    <title>About Us - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -15,53 +15,72 @@
 </head>
 <body>
 
+    <!-- Unified Navbar -->
     <header class="navbar">
-        <div class="logo-container">
-            <a href="index.html">
+        <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
+                <span class="brand-title">Custom Zone</span>
             </a>
-            <h1 class="brand-name">Custom Zone</h1>
         </div>
-        <nav class="nav-links">
+
+        <nav class="nav-menu-links">
             <a href="index.html">Home</a>
             <a href="about.html" class="active">About Us</a>
             <a href="contact.html">Contact Us</a>
             <a href="track-order.html">Track Order</a>
         </nav>
-        <div class="cart-icon">
-            <a href="cart.html">
+
+        <div class="nav-actions">
+            <span id="nav-user-slot-desktop">
+                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
+            </span>
+            <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count">0</span>
+                <span class="cart-badge cart-count">0</span>
             </a>
         </div>
     </header>
 
+    <!-- Mobile Drawer -->
+    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
+                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+            </div>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html" class="active"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
+            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
+            <div id="nav-user-slot-mobile" style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
+                <a href="javascript:void(0)" onclick="closeMobileDrawer(); openAuthModal();"><i class="fas fa-user"></i> Login / Sign Up</a>
+            </div>
+        </div>
+    </div>
+
     <main class="container">
         <h2 class="section-title">About Custom Zone</h2>
         
-        <div class="about-layout" style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); line-height: 1.8; color: #444;">
-            <div style="text-align: center; margin-bottom: 25px;">
-                <h3 style="font-size: 22px; color: #2c3e50; margin-bottom: 8px;">Welcome to Custom Zone!</h3>
-                <p style="font-size: 15px;">Your ultimate destination for trending, high-quality, and customized personalized products.</p>
-            </div>
+        <div style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: var(--shadow-soft); margin-bottom: 30px;">
+            <h3 style="color: var(--midnight-plum); margin-bottom: 12px;">Crafting Memories with Precision & Love ❤️</h3>
+            <p style="line-height: 1.7; color: #555; margin-bottom: 15px;">
+                Welcome to <strong>Custom Zone</strong>, your premier destination for handcrafted and customized gifts. Based in Liluah Chakpara, Howrah, we specialize in bringing personal touches to everyday keepsakes—from Spotify keychains and photo frames to resin crafts and engraved gifts.
+            </p>
+            <p style="line-height: 1.7; color: #555;">
+                Every item is crafted with 100% precision, subjected to strict quality checks, and safely delivered directly to your doorstep.
+            </p>
+        </div>
 
-            <!-- Live Review Counter -->
-            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 30px 0; text-align: center;">
-                <div style="background: #fdf2e9; padding: 20px 30px; border-radius: 8px; border: 1px solid #f8c471;">
-                    <h2 id="total-reviews-count" style="font-size: 32px; color: #e67e22; margin: 0;">0+</h2>
-                    <p style="margin: 5px 0 0 0; font-weight: 600;">Authentic Customer Reviews</p>
-                </div>
-                <div style="background: #eafaf1; padding: 20px 30px; border-radius: 8px; border: 1px solid #a9dfbf;">
-                    <h2 style="font-size: 32px; color: #27ae60; margin: 0;">4.9 / 5 ⭐</h2>
-                    <p style="margin: 5px 0 0 0; font-weight: 600;">Overall Happiness Rating</p>
-                </div>
-            </div>
-
-            <!-- Customer Reviews Section -->
-            <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 35px;"><i class="fas fa-comments" style="color:#e74c3c;"></i> Customer Testimonials</h3>
-            <div id="reviews-display-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px;">
-                <p style="color:#7f8c8d;">Loading live reviews from customers...</p>
-            </div>
+        <!-- Live Customer Reviews Section -->
+        <h2 class="section-title">Customer Reviews & Ratings</h2>
+        <div class="product-grid" id="public-reviews-grid">
+            <p style="text-align:center; color:#7f8c8d; grid-column:1/-1;">Loading genuine customer reviews...</p>
         </div>
     </main>
 
@@ -72,38 +91,34 @@
 
     <script src="js/main.js"></script>
     <script>
-        async function loadLiveReviews() {
-            const container = document.getElementById('reviews-display-grid');
-            const countEl = document.getElementById('total-reviews-count');
+        async function loadPublicReviews() {
+            const container = document.getElementById('public-reviews-grid');
             try {
-                const snapshot = await db.collection("reviews").orderBy("timestamp", "desc").get();
-                if(snapshot.empty) {
-                    container.innerHTML = "<p style='color:#7f8c8d;'>No reviews yet. Be the first to order and review!</p>";
+                const snapshot = await db.collection("reviews").orderBy("timestamp", "desc").limit(8).get();
+                if (snapshot.empty) {
+                    container.innerHTML = "<p style='text-align:center; color:#7f8c8d; grid-column:1/-1;'>No reviews yet. Be the first to review us!</p>";
                     return;
                 }
-
-                countEl.innerText = `${snapshot.size}+`;
                 container.innerHTML = "";
-
                 snapshot.forEach(doc => {
-                    let rev = doc.data();
-                    let stars = "⭐".repeat(rev.rating || 5);
+                    let r = doc.data();
+                    let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
                     container.innerHTML += `
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <strong>${rev.customerName || 'Happy Customer'}</strong>
-                                <span style="font-size:12px; color:#7f8c8d;">${rev.date || ''}</span>
+                        <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); border:1px solid #eee;">
+                            <div style="color:#f1c40f; font-size:16px; margin-bottom:6px;">${stars}</div>
+                            <p style="font-size:13px; color:#444; font-style:italic; margin-bottom:10px; min-height:45px;">"${r.comment || 'Amazing product quality!'}"</p>
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f2f6; padding-top:8px;">
+                                <strong style="color:var(--midnight-plum); font-size:13px;">${r.customerName || 'Verified Customer'}</strong>
+                                <small style="color:#95a5a6; font-size:11px;">${r.date || 'Recent'}</small>
                             </div>
-                            <div style="margin-bottom:6px; font-size:14px;">${stars}</div>
-                            <p style="margin:0; font-size:13px; color:#555; line-height:1.5;">"${rev.comment || 'Great product and quick delivery!'}"</p>
                         </div>
                     `;
                 });
             } catch(e) {
-                console.error(e);
+                container.innerHTML = "<p style='color:red; grid-column:1/-1; text-align:center;'>Error loading reviews.</p>";
             }
         }
-        window.addEventListener('DOMContentLoaded', loadLiveReviews);
+        window.addEventListener('DOMContentLoaded', loadPublicReviews);
     </script>
 </body>
 </html>

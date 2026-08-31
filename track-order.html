@@ -4,111 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Track Order - Custom Zone</title>
-    
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Firebase CDN Links -->
+    
+    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- Custom Firebase Config -->
     <script src="js/firebase-config.js"></script>
-    <link rel="icon" type="image/png" href="assets/images/logo.png">
 </head>
 <body>
 
-    <!-- Header / Navbar -->
+    <!-- Unified Navbar -->
     <header class="navbar">
-        <div class="logo-container">
-            <a href="index.html">
+        <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
+                <span class="brand-title">Custom Zone</span>
             </a>
-            <h1 class="brand-name">Custom Zone</h1>
         </div>
-        
-        <nav class="nav-links">
+
+        <nav class="nav-menu-links">
             <a href="index.html">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html">Contact Us</a>
             <a href="track-order.html" class="active">Track Order</a>
         </nav>
 
-        <div class="cart-icon">
-            <a href="cart.html">
+        <div class="nav-actions">
+            <span id="nav-user-slot-desktop">
+                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
+            </span>
+            <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
-                <span class="cart-count">0</span>
+                <span class="cart-badge cart-count">0</span>
             </a>
         </div>
     </header>
 
-    <!-- Track Order Container -->
-    <main class="container" style="min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px;">
-        <h2 class="section-title" style="margin-bottom: 20px;">Track Your Order</h2>
-        
-        <div style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 500px; width: 100%; text-align: center;">
-            <i class="fas fa-truck-fast" style="font-size: 45px; color: #2c3e50; margin-bottom: 15px;"></i>
-            <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">Enter your Order ID to check the current delivery status.</p>
-            
-            <input type="text" id="track-order-id" placeholder="e.g., CZ7753" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; text-align: center; text-transform: uppercase; font-weight: bold; margin-bottom: 15px;">
-            
-            <button onclick="trackOrderCloud()" style="background: #e74c3c; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-weight: 600; cursor: pointer; transition: 0.3s;">Track Status</button>
+    <!-- Mobile Drawer -->
+    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
+                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+            </div>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
+            <a href="track-order.html" class="active"><i class="fas fa-truck"></i> Track Order</a>
+            <div id="nav-user-slot-mobile" style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
+                <a href="javascript:void(0)" onclick="closeMobileDrawer(); openAuthModal();"><i class="fas fa-user"></i> Login / Sign Up</a>
+            </div>
+        </div>
+    </div>
 
-            <!-- Result Box -->
-            <div id="track-result" style="display: none; margin-top: 25px; text-align: left; padding: 15px; border-radius: 6px; background: #eafaf1; border-left: 4px solid #27ae60;">
-                <h4 style="margin: 0 0 8px 0; color: #2c3e50;">Tracking Details</h4>
-                <p style="margin: 3px 0; font-size: 14px; color: #555;">Order ID: <strong id="res-order-id" style="color: #27ae60;"></strong></p>
-                <p style="margin: 3px 0; font-size: 14px; color: #555;">Status: <strong id="res-status" style="color: #e74c3c;"></strong></p>
-                <p style="margin: 3px 0; font-size: 14px; color: #555;">Customer: <span id="res-name"></span></p>
-                <p style="margin: 3px 0; font-size: 14px; color: #555;">Order Date: <span id="res-date"></span></p>
+    <main class="container">
+        <h2 class="section-title">Track Your Live Order Status</h2>
+        
+        <div style="max-width: 550px; margin: 0 auto; background: #fff; padding: 30px 25px; border-radius: 12px; box-shadow: var(--shadow-soft); text-align: center;">
+            <i class="fas fa-shipping-fast" style="font-size: 40px; color: var(--midnight-plum); margin-bottom: 12px;"></i>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter your Order ID received on invoice to check live status.</p>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <input type="text" id="track-order-id" placeholder="e.g., CZ1024" style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-weight: bold; text-transform: uppercase; outline: none;">
+                <button onclick="trackOrderCloud()" id="btn-track" style="background: var(--midnight-plum); color: var(--honey-dawn); border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                    Track
+                </button>
+            </div>
+
+            <div id="track-result-box" style="display: none; text-align: left; background: #fdfefe; border: 1px solid #dcdde1; border-radius: 8px; padding: 18px; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px;">
+                    <strong id="res-order-id" style="color: var(--midnight-plum); font-size: 15px;"></strong>
+                    <span id="res-status-badge" style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white;"></span>
+                </div>
+                <p style="margin: 5px 0; font-size: 13px; color: #555;">Customer: <strong id="res-name">-</strong></p>
+                <p style="margin: 5px 0; font-size: 13px; color: #555;">Date: <strong id="res-date">-</strong></p>
+                <div style="margin-top: 10px; padding: 10px; background: #fafbfc; border-radius: 6px; font-size: 12px; color: #444;" id="res-items"></div>
             </div>
             
-            <p id="track-error" style="display: none; margin-top: 20px; color: #e74c3c; font-weight: bold; font-size: 14px;"></p>
+            <p id="track-error-msg" style="color: red; font-size: 13px; font-weight: bold; margin-top: 15px; display: none;"></p>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
         <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
     </footer>
 
+    <script src="js/main.js"></script>
     <script>
-        // Update Cart Count
-        let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
-        document.querySelector('.cart-count').innerText = cart.length;
-
         async function trackOrderCloud() {
-            const orderIdInput = document.getElementById('track-order-id').value.trim().toUpperCase();
-            const resultBox = document.getElementById('track-result');
-            const errorBox = document.getElementById('track-error');
+            let orderId = document.getElementById('track-order-id').value.trim().toUpperCase();
+            const resBox = document.getElementById('track-result-box');
+            const errMsg = document.getElementById('track-error-msg');
+            const btn = document.getElementById('btn-track');
 
-            if (!orderIdInput) {
-                alert("Please enter an Order ID.");
-                return;
-            }
+            if(!orderId) { alert("Please enter an Order ID."); return; }
 
-            resultBox.style.display = "none";
-            errorBox.style.display = "none";
+            resBox.style.display = "none";
+            errMsg.style.display = "none";
+            btn.disabled = true;
+            btn.innerText = "Tracking...";
 
             try {
-                const docRef = await db.collection("orders").doc(orderIdInput).get();
-
-                if (docRef.exists) {
-                    const data = docRef.data();
-                    document.getElementById('res-order-id').innerText = orderIdInput;
-                    document.getElementById('res-status').innerText = data.status || "Processing";
-                    document.getElementById('res-name').innerText = data.customerName || "N/A";
-                    document.getElementById('res-date').innerText = data.date || "N/A";
-
-                    resultBox.style.display = "block";
-                } else {
-                    errorBox.innerText = `❌ No order found with ID "${orderIdInput}". Please check the ID.`;
-                    errorBox.style.display = "block";
+                const doc = await db.collection("orders").doc(orderId).get();
+                if(!doc.exists) {
+                    errMsg.style.display = "block";
+                    errMsg.innerText = "❌ No order found with ID: " + orderId;
+                    return;
                 }
-            } catch (error) {
-                console.error("Error tracking order:", error);
-                errorBox.innerText = "Error fetching order details. Check your internet connection.";
-                errorBox.style.display = "block";
+
+                const ord = doc.data();
+                document.getElementById('res-order-id').innerText = "#" + orderId;
+                document.getElementById('res-name').innerText = ord.customerName || "Customer";
+                document.getElementById('res-date').innerText = ord.date || "N/A";
+                document.getElementById('res-items').innerText = ord.items || "-";
+
+                let badge = document.getElementById('res-status-badge');
+                badge.innerText = ord.status || "Processing";
+                
+                let bg = "#f39c12";
+                if(ord.status === "Delivered Successfully") bg = "#27ae60";
+                if(ord.status.includes("Shipped")) bg = "#2980b9";
+                if(ord.status.includes("Cancelled")) bg = "#e74c3c";
+                badge.style.background = bg;
+
+                resBox.style.display = "block";
+            } catch(e) {
+                errMsg.style.display = "block";
+                errMsg.innerText = "Error connecting to cloud.";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Track";
             }
         }
     </script>

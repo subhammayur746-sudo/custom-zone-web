@@ -3,60 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Zone - Contact Us</title>
+    <title>Contact Us - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
 </head>
 <body>
 
+    <!-- Unified Navbar -->
     <header class="navbar">
-        <div class="logo-container">
-            <a href="index.html"><img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img"></a>
-            <h1 class="brand-name">Custom Zone</h1>
+        <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <a href="index.html" class="logo-link">
+                <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
+                <span class="brand-title">Custom Zone</span>
+            </a>
         </div>
-        <nav class="nav-links">
+
+        <nav class="nav-menu-links">
             <a href="index.html">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html" class="active">Contact Us</a>
             <a href="track-order.html">Track Order</a>
         </nav>
-        <div class="cart-icon">
-            <a href="cart.html"><i class="fas fa-shopping-cart"></i><span class="cart-count">0</span></a>
+
+        <div class="nav-actions">
+            <span id="nav-user-slot-desktop">
+                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
+            </span>
+            <a href="cart.html" class="cart-icon-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge cart-count">0</span>
+            </a>
         </div>
     </header>
 
+    <!-- Mobile Drawer -->
+    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
+                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+            </div>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html" class="active"><i class="fas fa-phone-alt"></i> Contact Us</a>
+            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
+            <div id="nav-user-slot-mobile" style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
+                <a href="javascript:void(0)" onclick="closeMobileDrawer(); openAuthModal();"><i class="fas fa-user"></i> Login / Sign Up</a>
+            </div>
+        </div>
+    </div>
+
     <main class="container">
-        <h2 class="section-title">Contact Us</h2>
-        <div class="contact-layout" style="display: flex; gap: 30px; flex-wrap: wrap;">
-            
-            <div class="contact-info" style="flex: 1; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
-                <h3 style="margin-bottom: 20px; color: #2c3e50;">Get In Touch</h3>
-                <p style="margin-bottom: 15px; font-size: 16px;">
-                    <i class="fas fa-headset" style="color: #e74c3c; margin-right: 10px;"></i>
-                    <strong>24/7 Customer Support:</strong> +91 9038604483
+        <h2 class="section-title">Get in Touch with Us</h2>
+        
+        <div style="display:flex; gap:25px; flex-wrap:wrap;">
+            <!-- Contact Details Card -->
+            <div style="flex:1; min-width:300px; background:#fff; padding:25px; border-radius:12px; box-shadow:var(--shadow-soft);">
+                <h3 style="color:var(--midnight-plum); margin-bottom:15px;"><i class="fas fa-headset"></i> Contact Information</h3>
+                
+                <p style="margin:10px 0; color:#555;">
+                    <i class="fas fa-user" style="color:var(--midnight-plum); width:20px;"></i> Contact Person: <strong>Subham Mayur</strong>
                 </p>
-                <p style="margin-bottom: 15px; font-size: 16px;">
-                    <i class="fas fa-envelope" style="color: #e74c3c; margin-right: 10px;"></i>
-                    <strong>Email:</strong> support@customzone.com
+                <p style="margin:10px 0; color:#555;">
+                    <i class="fas fa-phone-alt" style="color:var(--midnight-plum); width:20px;"></i> Call Support: <strong>+91 9038604483</strong>
                 </p>
-                <p style="margin-bottom: 15px; font-size: 16px;">
-                    <i class="fas fa-map-marker-alt" style="color: #e74c3c; margin-right: 10px;"></i>
-                    <strong>Location:</strong> Liluah Chakpara, Howrah, West Bengal
+                <p style="margin:10px 0; color:#555;">
+                    <i class="fab fa-whatsapp" style="color:#25d366; width:20px;"></i> WhatsApp Orders: <strong>+91 6290407730</strong>
                 </p>
-                <p style="margin-bottom: 15px; font-size: 16px;">
-                    <i class="fas fa-user" style="color: #e74c3c; margin-right: 10px;"></i>
-                    <strong>Contact Person:</strong> SUBHAM MAYUR
+                <p style="margin:10px 0; color:#555;">
+                    <i class="fas fa-map-marker-alt" style="color:#e74c3c; width:20px;"></i> Workshop Location: <strong>Liluah Chakpara, Howrah, West Bengal</strong>
                 </p>
-                <p style="margin-top: 25px; font-size: 16px;">
-                    <a href="https://wa.me/916290407730" target="_blank" style="display: inline-block; background: #25D366; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold;">
+
+                <div style="margin-top:20px;">
+                    <a href="https://api.whatsapp.com/send?phone=916290407730" target="_blank" style="display:inline-block; width:100%; text-align:center; background:#25d366; color:#fff; padding:12px; border-radius:6px; font-weight:bold; text-decoration:none;">
                         <i class="fab fa-whatsapp"></i> Chat on WhatsApp
                     </a>
-                </p>
+                </div>
             </div>
 
-            <div class="map-container" style="flex: 1; min-width: 300px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14736.216301321743!2d88.3370!3d22.6235!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f89d6e53063fcd%3A0xcfd692e54e4c27a!2sChakpara%2C%20Liluah%2C%20Howrah%2C%20West%20Bengal!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" width="100%" height="100%" style="border:0; min-height: 300px;" allowfullscreen="" loading="lazy"></iframe>
+            <!-- Send Message Form -->
+            <div style="flex:1.2; min-width:300px; background:#fff; padding:25px; border-radius:12px; box-shadow:var(--shadow-soft);">
+                <h3 style="color:var(--midnight-plum); margin-bottom:15px;"><i class="fas fa-envelope"></i> Send an Inquiry</h3>
+                <div style="margin-bottom:12px;">
+                    <input type="text" id="inq-name" placeholder="Your Name" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:12px;">
+                    <input type="tel" id="inq-phone" placeholder="WhatsApp Phone Number" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <textarea id="inq-msg" rows="4" placeholder="Your inquiry message or customized request..." style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;"></textarea>
+                </div>
+                <button onclick="sendInquiryWhatsApp()" style="background:var(--midnight-plum); color:var(--honey-dawn); border:none; padding:12px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer;">Send Message</button>
             </div>
         </div>
     </main>
@@ -65,6 +113,23 @@
         <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
         <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
     </footer>
+
     <script src="js/main.js"></script>
+    <script>
+        function sendInquiryWhatsApp() {
+            const name = document.getElementById('inq-name').value.trim();
+            const phone = document.getElementById('inq-phone').value.trim();
+            const msg = document.getElementById('inq-msg').value.trim();
+
+            if(!name || !msg) { alert("Please enter your name and message."); return; }
+
+            let text = `*New Customer Inquiry - Custom Zone*\n\n` +
+                       `Name: ${name}\n` +
+                       `Phone: ${phone || 'N/A'}\n` +
+                       `Message: ${msg}`;
+
+            window.open(`https://api.whatsapp.com/send?phone=916290407730&text=${encodeURIComponent(text)}`, "_blank");
+        }
+    </script>
 </body>
 </html>
