@@ -13,48 +13,47 @@
 </head>
 <body>
 
-    <!-- Professional Clean Navbar -->
+    <!-- Professional Clean Header -->
     <header class="navbar">
-        <div class="nav-left-group">
-            <button class="mobile-menu-trigger" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
-            <a href="index.html" class="logo-container">
+        <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
-                <h1 class="brand-name">Custom Zone</h1>
+                <span class="brand-title">Custom Zone</span>
             </a>
         </div>
 
-        <!-- Desktop Navigation Links -->
-        <nav class="nav-desktop-links">
+        <!-- Desktop Navigation Menu -->
+        <nav class="nav-menu-links">
             <a href="index.html" class="active">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html">Contact Us</a>
             <a href="track-order.html">Track Order</a>
         </nav>
 
-        <div class="nav-right-group">
-            <span id="nav-user-slot-desktop" class="nav-desktop-links">
-                <a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>
+        <!-- Right Side Actions -->
+        <div class="nav-actions">
+            <span id="nav-user-slot-desktop">
+                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
             </span>
-            <div class="cart-icon">
-                <a href="cart.html">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span class="cart-count">0</span>
-                </a>
-            </div>
+            <a href="cart.html" class="cart-icon-btn">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-badge cart-count">0</span>
+            </a>
         </div>
     </header>
 
-    <!-- Mobile Navigation Drawer -->
+    <!-- Mobile Side Drawer -->
     <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
     <div class="mobile-drawer" id="mobile-drawer">
-        <div class="mobile-drawer-header">
+        <div class="drawer-header">
             <div style="display:flex; align-items:center; gap:8px;">
                 <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
                 <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
             </div>
             <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
         </div>
-        <div class="mobile-drawer-links">
+        <div class="drawer-links">
             <a href="index.html" class="active"><i class="fas fa-home"></i> Home</a>
             <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
             <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
@@ -70,7 +69,7 @@
         <button class="cat-pill-btn active" onclick="setMainCategoryFilter('all', this)">All</button>
     </div>
 
-    <!-- Dynamic Subcategory Row (Appears when category is clicked) -->
+    <!-- Dynamic Subcategory Row (Appears when a category is selected) -->
     <div class="subcat-pill-row" id="dynamic-subcat-row"></div>
 
     <!-- Search & Prices Filter Bar -->
@@ -99,16 +98,16 @@
         <div class="pdm-card">
             <span class="pdm-close" onclick="closeProductDetailsModal()">&times;</span>
             
-            <!-- Left: Images -->
+            <!-- Left: Gallery -->
             <div>
                 <img id="pdm-main-img" class="pdm-main-img" src="" alt="Product">
                 <div class="pdm-gallery" id="pdm-thumbs"></div>
             </div>
 
-            <!-- Right: Info -->
+            <!-- Right: Details -->
             <div>
                 <span id="pdm-badge" style="background:#fff8eb; color:var(--midnight-plum); font-size:11px; padding:3px 8px; border-radius:12px; font-weight:bold; border:1px solid #F0C986;">Category</span>
-                <h2 id="pdm-title" style="margin: 8px 0; color:var(--midnight-plum); font-size:19px;">Product Title</h2>
+                <h2 id="pdm-title" style="margin: 8px 0; color:var(--midnight-plum); font-size:20px;">Product Title</h2>
                 <div style="font-size:22px; font-weight:800; color:var(--midnight-plum); margin-bottom:10px;">₹<span id="pdm-price">0</span></div>
                 
                 <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:15px;" id="pdm-desc">
@@ -129,7 +128,7 @@
         </div>
     </div>
 
-    <!-- Professional Phone Login / Sign Up Modal -->
+    <!-- Phone Login / Sign Up Modal -->
     <div id="auth-modal">
         <div class="auth-card">
             <span class="close-btn" onclick="closeAuthModal()">&times;</span>
@@ -139,7 +138,7 @@
                 <button class="auth-nav-tab" id="tab-btn-signup" onclick="switchAuthForm('signup')">Sign Up</button>
             </div>
 
-            <!-- Step 1: Input -->
+            <!-- Step 1: Input Details -->
             <div id="auth-form-step-1">
                 <div id="signup-name-field" style="display:none; margin-bottom:12px; text-align:left;">
                     <label style="display:block; font-size:12px; font-weight:700; color:var(--midnight-plum); margin-bottom:4px;">Full Name *</label>
