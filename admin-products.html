@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Products - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
-    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase CDN -->
@@ -14,19 +13,28 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
         body { 
             display: flex; 
             margin: 0; 
-            background: #CAE8E8; 
-            font-family: 'Poppins', sans-serif; 
+            background: #f4f7f6; 
+            color: #2c3e50;
             flex-direction: column; 
             min-height: 100vh;
         }
 
-        /* Sidebar Styling */
+        /* Unified Admin Sidebar */
         .sidebar { 
             width: 250px; 
-            background: #111827; 
+            background: #2c3e50; 
             color: #fff; 
             height: 100vh; 
             position: fixed; 
@@ -39,17 +47,17 @@
         .sidebar-header { 
             padding: 20px; 
             text-align: center; 
-            border-bottom: 1px solid #1f2937; 
+            border-bottom: 1px solid #34495e; 
         }
         .sidebar-header h2 { 
-            color: #28469E; 
+            color: #e74c3c; 
             font-size: 22px; 
             margin: 0; 
             font-weight: 800; 
         }
         .sidebar a { 
             display: block; 
-            color: #9ca3af; 
+            color: #bdc3c7; 
             padding: 14px 22px; 
             text-decoration: none; 
             font-size: 14px; 
@@ -57,9 +65,9 @@
             transition: 0.2s;
         }
         .sidebar a:hover, .sidebar a.active { 
-            background: #1f2937; 
+            background: #34495e; 
             color: #fff; 
-            border-left-color: #28469E; 
+            border-left-color: #e74c3c; 
         }
         .sidebar a i { 
             margin-right: 12px; 
@@ -67,7 +75,7 @@
             text-align: center; 
         }
         .logout-btn { 
-            background: #dc2626 !important; 
+            background: #c0392b !important; 
             color: white !important; 
             margin-top: 20px; 
         }
@@ -81,24 +89,24 @@
         }
 
         .admin-card { 
-            background: #FFFFFF; 
+            background: #ffffff; 
             padding: 24px; 
-            border-radius: 10px; 
-            box-shadow: 0 4px 18px rgba(40, 70, 158, 0.08); 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06); 
             margin-bottom: 25px; 
-            border: 1px solid #B2D8D8; 
+            border: 1px solid #eee; 
         }
         .admin-card h3 { 
             margin-bottom: 18px; 
-            color: #28469E; 
-            border-bottom: 2px solid #EBF5F5; 
+            color: #2c3e50; 
+            border-bottom: 2px solid #eee; 
             padding-bottom: 10px; 
             font-size: 17px; 
         }
 
         .form-grid-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 15px;
             margin-bottom: 15px;
         }
@@ -111,84 +119,129 @@
             margin-bottom: 6px; 
             font-weight: 600; 
             font-size: 13px; 
-            color: #111827; 
+            color: #2c3e50; 
         }
         .form-group input, .form-group select, .form-group textarea { 
             width: 100%; 
             padding: 10px 12px; 
-            border: 1px solid #B2D8D8; 
-            border-radius: 6px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
             box-sizing: border-box; 
-            background: #FFFFFF; 
-            color: #111827; 
-            font-family: inherit; 
+            background: #fff; 
+            color: #2c3e50; 
             font-size: 13px;
         }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
-            border-color: #28469E; 
+            border-color: #3498db; 
             outline: none; 
-            box-shadow: 0 0 6px rgba(40, 70, 158, 0.2);
         }
 
         .btn-admin { 
-            background: #28469E; 
+            background: #27ae60; 
             color: #fff; 
             padding: 11px 24px; 
             border: none; 
-            border-radius: 6px; 
+            border-radius: 4px; 
             cursor: pointer; 
-            font-weight: 700; 
+            font-weight: 600; 
             font-size: 14px; 
             transition: 0.2s; 
         }
         .btn-admin:hover { 
-            background: #1E357A; 
+            background: #219150; 
         }
 
-        /* Variant Row Styling */
+        /* Image Upload Box & Thumbnails */
+        .upload-dropzone {
+            border: 2px dashed #bdc3c7;
+            background: #fafbfc;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .upload-dropzone:hover {
+            border-color: #3498db;
+            background: #f0f7fb;
+        }
+        .preview-thumbs-wrapper {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .thumb-preview-box {
+            position: relative;
+            width: 65px;
+            height: 65px;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+        .thumb-preview-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .thumb-preview-box .remove-thumb-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(231, 76, 60, 0.9);
+            color: #fff;
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Variant Row */
         .variant-item-box {
-            background: #EBF5F5;
-            border: 1px solid #B2D8D8;
+            background: #fafbfc;
+            border: 1px solid #e2e8f0;
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 10px;
         }
 
-        /* Responsive Table */
+        /* Table */
         .table-responsive-container {
             width: 100%;
             overflow-x: auto;
-            border: 1px solid #B2D8D8;
-            border-radius: 8px;
+            border: 1px solid #eee;
+            border-radius: 6px;
         }
-
         .admin-table {
             width: 100%;
             border-collapse: collapse;
             min-width: 750px;
             background: #fff;
         }
-
         .admin-table th {
-            background: #EBF5F5;
-            color: #28469E;
+            background: #f8f9fa;
+            color: #2c3e50;
             text-align: left;
             font-size: 13px;
             padding: 12px 14px;
-            border-bottom: 2px solid #B2D8D8;
+            border-bottom: 2px solid #eee;
         }
-
         .admin-table td {
             padding: 12px 14px;
-            border-bottom: 1px solid #EBF5F5;
+            border-bottom: 1px solid #eee;
             font-size: 13px;
-            color: #111827;
+            color: #2c3e50;
             vertical-align: middle;
         }
 
         .mobile-admin-header { 
             display: none; 
-            background: #111827; 
+            background: #2c3e50; 
             color: #fff; 
             padding: 12px 15px; 
             justify-content: space-between; 
@@ -206,7 +259,7 @@
 <body>
 
     <div class="mobile-admin-header">
-        <h3 style="margin:0; color:#28469E;">CZ Admin</h3>
+        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
         <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
     </div>
 
@@ -225,9 +278,9 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #28469E; margin-bottom: 20px; font-weight: 800;">Product Inventory & Options / Variants</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
 
-        <!-- Top Section: Add / Edit Product Form -->
+        <!-- Add / Edit Product Form (Top Section) -->
         <div class="admin-card">
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
@@ -282,32 +335,41 @@
                         <option value="pic">Photo Customization</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin:0;">
-                    <label>Main Image URLs (Comma-separated)</label>
-                    <input type="text" id="prod-images" placeholder="https://i.ibb.co/img1.jpg, https://i.ibb.co/img2.jpg">
+            </div>
+
+            <!-- Direct Photo Upload Box with Preview -->
+            <div class="form-group">
+                <label><i class="fas fa-images"></i> Product Photos (Direct Upload / Device Storage):</label>
+                <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:26px; color:#3498db; margin-bottom:6px;"></i>
+                    <p style="margin:0; font-size:13px; font-weight:600; color:#2c3e50;">Click here to upload product images from Phone/PC</p>
+                    <span style="font-size:11px; color:#7f8c8d;">Supported: JPG, PNG, WEBP (Multiple allowed)</span>
                 </div>
+                <input type="file" id="prod-file-input" accept="image/*" multiple onchange="handleDirectImageUpload(this)" style="display:none;">
+                
+                <div class="preview-thumbs-wrapper" id="image-previews-container"></div>
             </div>
 
             <!-- Admin Internal / Personal Note -->
-            <div class="form-group" style="background:#EBF5F5; border:1px solid #B2D8D8; padding:12px; border-radius:6px;">
-                <label style="color:#28469E; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
+            <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
+                <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
                 <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
-                <small style="color:#4B5563; font-size:11px;">This note is strictly for you/staff and will never be shown to customers.</small>
+                <small style="color:#7f8c8d; font-size:11px;">This note is strictly private for store management and never shown to customers.</small>
             </div>
 
-            <!-- Product Variants Section -->
-            <div style="background:#EBF5F5; border:2px dashed #28469E; padding:15px; border-radius:6px; margin-bottom:15px;">
+            <!-- Product Variants Section (Max 5) -->
+            <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <label style="font-weight:bold; color:#28469E; margin:0; cursor:pointer;">
+                    <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
                         <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options
                     </label>
-                    <span style="font-size:11px; background:#28469E; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
+                    <span style="font-size:11px; background:#2c3e50; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
                 </div>
 
                 <div id="variants-container" style="display:none;">
                     <div id="variant-items-list"></div>
                     
-                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#28469E; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
+                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
                         + Add Variant
                     </button>
                 </div>
@@ -315,15 +377,15 @@
 
             <div style="display:flex; gap:10px;">
                 <button class="btn-admin" id="btn-save-prod" onclick="saveProductCloud()">Save Product</button>
-                <button type="button" id="btn-cancel-edit" onclick="resetProductForm()" style="display:none; background:#9ca3af; color:#fff; border:none; padding:11px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancel</button>
+                <button type="button" id="btn-cancel-edit" onclick="resetProductForm()" style="display:none; background:#95a5a6; color:#fff; border:none; padding:11px 20px; border-radius:4px; cursor:pointer; font-weight:bold;">Cancel</button>
             </div>
         </div>
 
-        <!-- Bottom Section: Live Product Catalog Table -->
+        <!-- Live Product Catalog Table (Bottom Section) -->
         <div class="admin-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #EBF5F5; padding-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
-                <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category..." style="padding:8px 14px; border:1px solid #B2D8D8; border-radius:6px; font-size:12px; min-width:220px; background:#fff;">
+                <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:220px; background:#fff;">
             </div>
 
             <div class="table-responsive-container">
@@ -339,7 +401,7 @@
                         </tr>
                     </thead>
                     <tbody id="admin-product-table">
-                        <tr><td colspan="6" style="text-align:center; padding:20px; color:#4B5563;">Loading products from inventory...</td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding:20px; color:#7f8c8d;">Loading products from inventory...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -348,6 +410,7 @@
 
     <script>
         let allProductsCache = [];
+        let uploadedProductImages = []; // Stores base64 / URLs of images
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
         if (!loggedInUser) {
@@ -372,6 +435,63 @@
             }
         }
 
+        // Direct Multi-Image Processing & Compression
+        function handleDirectImageUpload(input) {
+            const files = Array.from(input.files);
+            if (!files.length) return;
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const maxDimension = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height && width > maxDimension) {
+                            height = Math.round((height * maxDimension) / width);
+                            width = maxDimension;
+                        } else if (height > maxDimension) {
+                            width = Math.round((width * maxDimension) / height);
+                            height = maxDimension;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                        uploadedProductImages.push(compressedBase64);
+                        renderImagePreviews();
+                    };
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = "";
+        }
+
+        function renderImagePreviews() {
+            const container = document.getElementById('image-previews-container');
+            container.innerHTML = "";
+            uploadedProductImages.forEach((src, idx) => {
+                container.innerHTML += `
+                    <div class="thumb-preview-box">
+                        <img src="${src}">
+                        <button type="button" class="remove-thumb-btn" onclick="removeUploadedImage(${idx})">✕</button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeUploadedImage(idx) {
+            uploadedProductImages.splice(idx, 1);
+            renderImagePreviews();
+        }
+
         function toggleVariantSection(isEnabled) {
             const box = document.getElementById('variants-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -380,7 +500,7 @@
             }
         }
 
-        function addVariantRow(name = "", type = "Color", price = "", img = "", isActive = true) {
+        function addVariantRow(name = "", type = "Color", price = "", img = "") {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
             
@@ -393,12 +513,12 @@
             div.className = 'variant-item-box';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <strong style="font-size:12px; color:#28469E;">Variant #${currentCount + 1}</strong>
-                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#dc2626; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
+                    <strong style="font-size:12px; color:#2c3e50;">Variant #${currentCount + 1}</strong>
+                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px;" required>
-                    <select class="var-type" style="padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px;">
+                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <select class="var-type" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
                         <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
                         <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
                         <option value="Design" ${type === 'Design' ? 'selected' : ''}>Design</option>
@@ -406,12 +526,49 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px;" required>
+                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                 </div>
-                <input type="text" placeholder="Variant Image URL (Optional)" value="${img}" class="var-img" style="width:100%; padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="file" accept="image/*" onchange="handleVariantImageUpload(this)" style="font-size:11px; flex:1;">
+                    <input type="hidden" class="var-img-data" value="${img}">
+                    <img src="${img || ''}" class="var-img-preview" style="width:32px; height:32px; object-fit:cover; border-radius:3px; border:1px solid #ccc; display:${img ? 'block' : 'none'};">
+                </div>
             `;
             list.appendChild(div);
             updateVariantAddButton();
+        }
+
+        function handleVariantImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const parent = input.parentElement;
+            const hiddenInput = parent.querySelector('.var-img-data');
+            const previewImg = parent.querySelector('.var-img-preview');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 500;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                    hiddenInput.value = compressed;
+                    previewImg.src = compressed;
+                    previewImg.style.display = 'block';
+                };
+            };
+            reader.readAsDataURL(file);
         }
 
         function updateVariantAddButton() {
@@ -429,7 +586,7 @@
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#4B5563;'>No products found.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No products found in inventory.</td></tr>";
                     return;
                 }
 
@@ -442,7 +599,7 @@
                 renderAdminProducts(allProductsCache);
             } catch(e) {
                 console.error(e);
-                tbody.innerHTML = "<tr><td colspan='6' style='color:#dc2626; text-align:center; padding:15px;'>Error loading inventory.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='color:#e74c3c; text-align:center; padding:15px;'>Error loading inventory.</td></tr>";
             }
         }
 
@@ -453,29 +610,29 @@
             products.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) 
-                    ? `<span style="background:#28469E; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:3px;">${p.variants.length} Variants</span>`
+                    ? `<span style="background:#2c3e50; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:3px;">${p.variants.length} Variants</span>`
                     : '';
                 
-                let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d97706; background:#fffbeb; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #fcd34d; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
+                let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d35400; background:#fffdfa; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #f9e3ba; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><img src="${img}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #B2D8D8;"></td>
+                        <td><img src="${img}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"></td>
                         <td>
-                            <strong style="color:#111827; font-size:14px;">${p.name}</strong>
+                            <strong style="color:#2c3e50; font-size:14px;">${p.name}</strong>
                             ${noteSnippet}
                         </td>
-                        <td><span style="background:#EBF5F5; color:#28469E; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
-                        <td><strong style="color:#28469E; font-size:14px;">₹${p.price}</strong><br>${variantBadge}</td>
+                        <td><span style="background:#f8f9fa; color:#2c3e50; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px; border:1px solid #eee;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
+                        <td><strong style="color:#27ae60; font-size:14px;">₹${p.price}</strong><br>${variantBadge}</td>
                         <td>
-                            <span style="background:${p.isActive !== false ? '#dcfce7' : '#fee2e2'}; color:${p.isActive !== false ? '#16A34A' : '#dc2626'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
+                            <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
                             </span>
                         </td>
                         <td style="white-space:nowrap;">
-                            <button onclick="editProduct('${p.id}')" style="background:#28469E; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
-                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#6b7280; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide Product"><i class="fas fa-eye-slash"></i></button>
-                            <button onclick="deleteProduct('${p.id}')" style="background:#dc2626; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>
+                            <button onclick="editProduct('${p.id}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
+                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#95a5a6; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide Product"><i class="fas fa-eye-slash"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -514,8 +671,11 @@
             document.getElementById('prod-sub-cat').value = prod.subCategory || "";
             document.getElementById('prod-price').value = prod.price || "";
             document.getElementById('prod-custom-type').value = prod.customType || "none";
-            document.getElementById('prod-images').value = prod.images ? prod.images.join(', ') : "";
             document.getElementById('prod-admin-note').value = prod.adminNote || "";
+
+            // Populate Images
+            uploadedProductImages = prod.images ? [...prod.images] : [];
+            renderImagePreviews();
 
             // Populate Variants
             const toggle = document.getElementById('toggle-variants');
@@ -526,7 +686,7 @@
                 toggle.checked = true;
                 toggleVariantSection(true);
                 prod.variants.forEach(v => {
-                    addVariantRow(v.name, v.type || "Color", v.price, v.image || "", v.isActive !== false);
+                    addVariantRow(v.name, v.type || "Color", v.price, v.image || "");
                 });
             } else {
                 toggle.checked = false;
@@ -546,8 +706,9 @@
             document.getElementById('prod-custom-main-cat').value = "";
             document.getElementById('prod-sub-cat').value = "";
             document.getElementById('prod-price').value = "";
-            document.getElementById('prod-images').value = "";
             document.getElementById('prod-admin-note').value = "";
+            uploadedProductImages = [];
+            renderImagePreviews();
             document.getElementById('toggle-variants').checked = false;
             document.getElementById('variant-items-list').innerHTML = "";
             toggleVariantSection(false);
@@ -566,22 +727,19 @@
             const subCat = document.getElementById('prod-sub-cat').value.trim();
             const price = parseInt(document.getElementById('prod-price').value) || 0;
             const customType = document.getElementById('prod-custom-type').value;
-            const imagesRaw = document.getElementById('prod-images').value.trim();
             const adminNote = document.getElementById('prod-admin-note').value.trim();
             const isVariantsEnabled = document.getElementById('toggle-variants').checked;
 
             if (!name || !price) { alert("Please provide product name and base price."); return; }
 
-            let images = imagesRaw ? imagesRaw.split(',').map(s => s.trim()).filter(s => s) : [];
             let variants = [];
-
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
                 rows.forEach(r => {
                     let vName = r.querySelector('.var-name').value.trim();
                     let vType = r.querySelector('.var-type').value;
                     let vPrice = parseInt(r.querySelector('.var-price').value) || price;
-                    let vImg = r.querySelector('.var-img').value.trim();
+                    let vImg = r.querySelector('.var-img-data').value.trim();
 
                     if (vName) {
                         variants.push({
@@ -601,7 +759,7 @@
                 subCategory: subCat,
                 price: price,
                 customType: customType,
-                images: images,
+                images: uploadedProductImages,
                 adminNote: adminNote,
                 hasVariants: isVariantsEnabled && variants.length > 0,
                 variants: variants.slice(0, 5),
