@@ -14,35 +14,35 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #FEFACD; font-family: 'Poppins', sans-serif; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header h2 { color: #5F4A8B; font-size: 22px; margin: 0; }
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
-        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #5F4A8B; }
+        body { display: flex; margin: 0; background: var(--bg-primary); font-family: 'Poppins', sans-serif; flex-direction: column; }
+        .sidebar { width: 250px; background: #1f2937; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #374151; }
+        .sidebar-header h2 { color: var(--blue-primary); font-size: 22px; margin: 0; font-weight: 800; }
+        .sidebar a { display: block; color: #9ca3af; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .sidebar a:hover, .sidebar a.active { background: #374151; color: #fff; border-left-color: var(--blue-primary); }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
+        .logout-btn { background: #dc2626 !important; color: white !important; margin-top: 20px; }
         
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: #F7F3C4; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(95, 74, 139, 0.08); margin-bottom: 25px; border: 1px solid #E8E2A7; }
-        .admin-card h3 { margin-bottom: 18px; color: #5F4A8B; border-bottom: 2px solid #E8E2A7; padding-bottom: 10px; font-size: 17px; }
+        .admin-card { background: var(--card-bg); padding: 22px; border-radius: 8px; box-shadow: var(--shadow-soft); margin-bottom: 25px; border: 1px solid var(--card-border); }
+        .admin-card h3 { margin-bottom: 18px; color: var(--blue-primary); border-bottom: 2px solid var(--card-border); padding-bottom: 10px; font-size: 17px; }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #171717; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #E8E2A7; border-radius: 4px; box-sizing: border-box; background: #FEFACD; color: #171717; }
-        .btn-admin { background: #5F4A8B; color: #fff; padding: 11px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; }
-        .btn-admin:hover { background: #4B3970; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-primary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 4px; box-sizing: border-box; background: var(--white); color: var(--text-primary); font-family: inherit; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue-primary); outline: none; }
+        .btn-admin { background: var(--blue-primary); color: #fff; padding: 11px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 700; font-size: 14px; transition: 0.2s; }
+        .btn-admin:hover { background: var(--blue-hover); }
 
-        /* Variant Row Styling in Admin */
+        /* Variant Box Styling */
         .variant-item-box {
-            background: #FEFACD;
-            border: 1px solid #E8E2A7;
+            background: var(--blue-light);
+            border: 1px solid var(--card-border);
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 10px;
-            position: relative;
         }
 
-        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
+        .mobile-admin-header { display: none; background: #1f2937; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -55,7 +55,7 @@
 <body>
 
     <div class="mobile-admin-header">
-        <h3 style="margin:0; color:#5F4A8B;">CZ Admin</h3>
+        <h3 style="margin:0; color:var(--blue-primary);">CZ Admin</h3>
         <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
     </div>
 
@@ -74,7 +74,7 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #5F4A8B; margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
+        <h2 style="color: var(--blue-primary); margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
 
         <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
             
@@ -89,17 +89,38 @@
                     <input type="text" id="prod-name" placeholder="e.g., Personalized Name Plate" required>
                 </div>
 
+                <!-- Main Category with Custom Manual Add -->
                 <div style="display:flex; gap:10px;">
                     <div class="form-group" style="flex:1;">
                         <label>Main Category *</label>
-                        <select id="prod-main-cat">
+                        <select id="prod-main-cat" onchange="handleMainCategoryChange(this.value)">
                             <option value="Handmade">Handmade</option>
                             <option value="Customized">Customized</option>
+                            <option value="Gift cards">Gift cards</option>
+                            <option value="CASUAL ITEM">CASUAL ITEM</option>
+                            <option value="__custom__">➕ + Add Custom Category...</option>
                         </select>
+                        <input type="text" id="prod-custom-main-cat" placeholder="Type new category name..." style="display:none; margin-top:6px;">
                     </div>
+
+                    <!-- Sub Category with Suggestions Datalist -->
                     <div class="form-group" style="flex:1;">
                         <label>Sub Category</label>
-                        <input type="text" id="prod-sub-cat" placeholder="e.g., Keychains, Frames">
+                        <input type="text" id="prod-sub-cat" list="subcat-default-list" placeholder="Choose or type...">
+                        <datalist id="subcat-default-list">
+                            <option value="Keychains">
+                            <option value="Frames">
+                            <option value="Mug">
+                            <option value="Hair Pin">
+                            <option value="Shirts">
+                            <option value="Resin Art">
+                            <option value="Shadow Box">
+                            <option value="Clocks">
+                            <option value="Wallets">
+                            <option value="Bottles">
+                            <option value="Gift Hampers">
+                            <option value="Desk Organizers">
+                        </datalist>
                     </div>
                 </div>
 
@@ -123,19 +144,26 @@
                     <textarea id="prod-images" rows="2" placeholder="https://i.ibb.co/img1.jpg, https://i.ibb.co/img2.jpg"></textarea>
                 </div>
 
-                <!-- 🛍️ Product Variants Section -->
-                <div style="background:#FEFACD; border:2px dashed #5F4A8B; padding:15px; border-radius:6px; margin-bottom:15px;">
+                <!-- Admin Internal / Personal Note Box -->
+                <div class="form-group" style="background:var(--blue-light); border:1px solid var(--card-border); padding:10px 12px; border-radius:6px;">
+                    <label style="color:var(--blue-primary);"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
+                    <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
+                    <small style="color:var(--text-muted); font-size:11px;">This note is strictly for you/staff and will never be shown to customers.</small>
+                </div>
+
+                <!-- Product Variants Section -->
+                <div style="background:var(--blue-light); border:2px dashed var(--blue-primary); padding:15px; border-radius:6px; margin-bottom:15px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <label style="font-weight:bold; color:#5F4A8B; margin:0; cursor:pointer;">
+                        <label style="font-weight:bold; color:var(--blue-primary); margin:0; cursor:pointer;">
                             <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options
                         </label>
-                        <span style="font-size:11px; background:#5F4A8B; color:#fff; padding:2px 6px; border-radius:4px;">Max 5 Variants</span>
+                        <span style="font-size:11px; background:var(--blue-primary); color:#fff; padding:2px 6px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
                     </div>
 
                     <div id="variants-container" style="display:none;">
                         <div id="variant-items-list"></div>
                         
-                        <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#5F4A8B; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
+                        <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:var(--blue-primary); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
                             + Add Variant
                         </button>
                     </div>
@@ -143,22 +171,22 @@
 
                 <div style="display:flex; gap:10px;">
                     <button class="btn-admin" id="btn-save-prod" onclick="saveProductCloud()">Save Product</button>
-                    <button type="button" id="btn-cancel-edit" onclick="resetProductForm()" style="display:none; background:#95a5a6; color:#fff; border:none; padding:11px; border-radius:4px; cursor:pointer; font-weight:bold;">Cancel</button>
+                    <button type="button" id="btn-cancel-edit" onclick="resetProductForm()" style="display:none; background:#9ca3af; color:#fff; border:none; padding:11px; border-radius:4px; cursor:pointer; font-weight:bold;">Cancel</button>
                 </div>
             </div>
 
             <!-- Right: Product List Table -->
             <div class="admin-card" style="flex: 1.8; min-width: 340px; overflow-x: auto;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #E8E2A7; padding-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:10px;">
                     <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
-                    <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product..." style="padding:6px 10px; border:1px solid #E8E2A7; border-radius:4px; font-size:12px; min-width:180px; background:#FEFACD;">
+                    <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product..." style="padding:6px 10px; border:1px solid var(--card-border); border-radius:4px; font-size:12px; min-width:180px; background:#fff;">
                 </div>
 
                 <table style="width:100%; border-collapse:collapse; min-width:600px;">
                     <thead>
-                        <tr style="background:#E8E2A7; text-align:left; font-size:13px;">
+                        <tr style="background:var(--blue-light); text-align:left; font-size:13px;">
                             <th style="padding:10px;">Image</th>
-                            <th style="padding:10px;">Product Name</th>
+                            <th style="padding:10px;">Product Name & Note</th>
                             <th style="padding:10px;">Category</th>
                             <th style="padding:10px;">Price / Variants</th>
                             <th style="padding:10px;">Status</th>
@@ -189,6 +217,17 @@
             window.location.href = "admin-login.html"; 
         }
 
+        function handleMainCategoryChange(val) {
+            const customInput = document.getElementById('prod-custom-main-cat');
+            if (val === '__custom__') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.value = '';
+            }
+        }
+
         function toggleVariantSection(isEnabled) {
             const box = document.getElementById('variants-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -210,12 +249,12 @@
             div.className = 'variant-item-box';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <strong style="font-size:12px; color:#5F4A8B;">Variant #${currentCount + 1}</strong>
-                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
+                    <strong style="font-size:12px; color:var(--blue-primary);">Variant #${currentCount + 1}</strong>
+                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#dc2626; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
-                    <select class="var-type" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px;" required>
+                    <select class="var-type" style="padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px;">
                         <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
                         <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
                         <option value="Design" ${type === 'Design' ? 'selected' : ''}>Design</option>
@@ -223,9 +262,9 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px;" required>
                 </div>
-                <input type="text" placeholder="Variant Image URL (Optional)" value="${img}" class="var-img" style="width:100%; padding:6px; border:1px solid #ccc; border-radius:4px; font-size:12px; box-sizing:border-box;">
+                <input type="text" placeholder="Variant Image URL (Optional)" value="${img}" class="var-img" style="width:100%; padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px; box-sizing:border-box;">
             `;
             list.appendChild(div);
             updateVariantAddButton();
@@ -270,24 +309,29 @@
             products.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) 
-                    ? `<span style="background:#5F4A8B; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:block; margin-top:2px;">${p.variants.length} Variants</span>`
+                    ? `<span style="background:var(--blue-primary); color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:block; margin-top:2px;">${p.variants.length} Variants</span>`
                     : '';
+                
+                let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d97706; background:#fffbeb; padding:2px 6px; border-radius:4px; margin-top:4px; border:1px dashed #fcd34d;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
 
                 tbody.innerHTML += `
-                    <tr style="border-bottom:1px solid #E8E2A7; font-size:13px;">
-                        <td style="padding:10px;"><img src="${img}" style="width:45px; height:45px; object-fit:cover; border-radius:4px;"></td>
-                        <td style="padding:10px;"><strong>${p.name}</strong></td>
-                        <td style="padding:10px;">${p.mainCategory} • ${p.subCategory || '-'}</td>
-                        <td style="padding:10px; font-weight:bold; color:#5F4A8B;">₹${p.price}${variantBadge}</td>
+                    <tr style="border-bottom:1px solid var(--card-border); font-size:13px;">
+                        <td style="padding:10px;"><img src="${img}" style="width:45px; height:45px; object-fit:cover; border-radius:4px; border:1px solid var(--card-border);"></td>
                         <td style="padding:10px;">
-                            <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">
+                            <strong>${p.name}</strong>
+                            ${noteSnippet}
+                        </td>
+                        <td style="padding:10px;">${p.mainCategory} • ${p.subCategory || '-'}</td>
+                        <td style="padding:10px; font-weight:bold; color:var(--blue-primary);">₹${p.price}${variantBadge}</td>
+                        <td style="padding:10px;">
+                            <span style="background:${p.isActive !== false ? '#dcfce7' : '#fee2e2'}; color:${p.isActive !== false ? 'var(--success-green)' : 'var(--danger-red)'}; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
                             </span>
                         </td>
-                        <td style="padding:10px;">
-                            <button onclick="editProduct('${p.id}')" style="background:#5F4A8B; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#95a5a6; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:3px;"><i class="fas fa-eye-slash"></i></button>
-                            <button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:3px;"><i class="fas fa-trash"></i></button>
+                        <td style="padding:10px; white-space:nowrap;">
+                            <button onclick="editProduct('${p.id}')" style="background:var(--blue-primary); color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#6b7280; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide"><i class="fas fa-eye-slash"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" style="background:var(--danger-red); color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -296,7 +340,7 @@
 
         function filterAdminProducts() {
             let term = document.getElementById('search-prod-input').value.toLowerCase().trim();
-            let filtered = allProductsCache.filter(p => p.name.toLowerCase().includes(term) || (p.subCategory && p.subCategory.toLowerCase().includes(term)));
+            let filtered = allProductsCache.filter(p => p.name.toLowerCase().includes(term) || (p.subCategory && p.subCategory.toLowerCase().includes(term)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(term)));
             renderAdminProducts(filtered);
         }
 
@@ -304,14 +348,30 @@
             let prod = allProductsCache.find(p => p.id === id);
             if (!prod) return;
 
-            document.getElementById('form-heading').innerText = "Edit Product";
+            document.getElementById('form-heading').innerHTML = `<i class="fas fa-edit"></i> Edit Product`;
             document.getElementById('prod-doc-id').value = prod.id;
             document.getElementById('prod-name').value = prod.name || "";
-            document.getElementById('prod-main-cat').value = prod.mainCategory || "Handmade";
+            
+            // Set Main Category
+            const mainCatSelect = document.getElementById('prod-main-cat');
+            const customCatInput = document.getElementById('prod-custom-main-cat');
+            let isPreset = ["Handmade", "Customized", "Gift cards", "CASUAL ITEM"].includes(prod.mainCategory);
+
+            if (isPreset) {
+                mainCatSelect.value = prod.mainCategory;
+                customCatInput.style.display = 'none';
+                customCatInput.value = '';
+            } else {
+                mainCatSelect.value = '__custom__';
+                customCatInput.style.display = 'block';
+                customCatInput.value = prod.mainCategory || "";
+            }
+
             document.getElementById('prod-sub-cat').value = prod.subCategory || "";
             document.getElementById('prod-price').value = prod.price || "";
             document.getElementById('prod-custom-type').value = prod.customType || "none";
             document.getElementById('prod-images').value = prod.images ? prod.images.join(', ') : "";
+            document.getElementById('prod-admin-note').value = prod.adminNote || "";
 
             // Populate Variants
             const toggle = document.getElementById('toggle-variants');
@@ -334,12 +394,16 @@
         }
 
         function resetProductForm() {
-            document.getElementById('form-heading').innerText = "Add New Product";
+            document.getElementById('form-heading').innerHTML = `<i class="fas fa-plus-circle"></i> Add New Product`;
             document.getElementById('prod-doc-id').value = "";
             document.getElementById('prod-name').value = "";
+            document.getElementById('prod-main-cat').value = "Handmade";
+            document.getElementById('prod-custom-main-cat').style.display = "none";
+            document.getElementById('prod-custom-main-cat').value = "";
             document.getElementById('prod-sub-cat').value = "";
             document.getElementById('prod-price').value = "";
             document.getElementById('prod-images').value = "";
+            document.getElementById('prod-admin-note').value = "";
             document.getElementById('toggle-variants').checked = false;
             document.getElementById('variant-items-list').innerHTML = "";
             toggleVariantSection(false);
@@ -349,11 +413,17 @@
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
-            const mainCat = document.getElementById('prod-main-cat').value;
+            
+            let mainCat = document.getElementById('prod-main-cat').value;
+            if (mainCat === '__custom__') {
+                mainCat = document.getElementById('prod-custom-main-cat').value.trim() || "Handmade";
+            }
+
             const subCat = document.getElementById('prod-sub-cat').value.trim();
             const price = parseInt(document.getElementById('prod-price').value) || 0;
             const customType = document.getElementById('prod-custom-type').value;
             const imagesRaw = document.getElementById('prod-images').value.trim();
+            const adminNote = document.getElementById('prod-admin-note').value.trim();
             const isVariantsEnabled = document.getElementById('toggle-variants').checked;
 
             if (!name || !price) { alert("Please provide product name and base price."); return; }
@@ -388,8 +458,9 @@
                 price: price,
                 customType: customType,
                 images: images,
+                adminNote: adminNote,
                 hasVariants: isVariantsEnabled && variants.length > 0,
-                variants: variants.slice(0, 5), // Guarantee Max 5
+                variants: variants.slice(0, 5),
                 isActive: true,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -401,10 +472,10 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
-                    alert("✅ Product updated successfully with options!");
+                    alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    alert("✅ New product added successfully with variants!");
+                    alert("✅ New product added successfully!");
                 }
                 resetProductForm();
                 fetchAdminProducts();
