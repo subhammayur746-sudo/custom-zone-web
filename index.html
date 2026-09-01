@@ -19,7 +19,10 @@
             <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
             <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
-                <span class="brand-title">Custom Zone</span>
+                <div class="brand-text-container">
+                    <span class="brand-title">Custom Zone</span>
+                    <span class="brand-tagline">You Imagine. We Customize.</span>
+                </div>
             </a>
         </div>
 
@@ -49,16 +52,19 @@
         <div class="drawer-header">
             <div style="display:flex; align-items:center; gap:8px;">
                 <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
-                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+                <div style="display:flex; flex-direction:column; line-height:1.1;">
+                    <strong style="color:var(--blue-primary); font-size:15px;">Custom Zone</strong>
+                    <small style="color:var(--text-muted); font-size:9.5px;">You Imagine. We Customize.</small>
+                </div>
             </div>
-            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--blue-primary);">&times;</span>
         </div>
         <div class="drawer-links">
             <a href="index.html" class="active"><i class="fas fa-home"></i> Home</a>
             <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
             <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
             <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
-            <div id="nav-user-slot-mobile" style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
+            <div id="nav-user-slot-mobile" style="border-top:1px solid var(--card-border); margin-top:8px; padding-top:8px;">
                 <a href="javascript:void(0)" onclick="closeMobileDrawer(); openAuthModal();"><i class="fas fa-user"></i> Login / Sign Up</a>
             </div>
         </div>
@@ -93,13 +99,13 @@
         <div class="product-grid" id="product-list"></div>
     </main>
 
-    <!-- Flipkart / Amazon Style Single Product Detail View Modal -->
+    <!-- Product Details Modal -->
     <div id="product-details-modal">
         <div class="pdm-card">
             <span class="pdm-close" onclick="closeProductDetailsModal()">&times;</span>
             
             <div class="pdm-layout-grid">
-                <!-- Left: Gallery with Click-to-Zoom -->
+                <!-- Left: Gallery -->
                 <div>
                     <div class="pdm-image-box" onclick="zoomCurrentProductImage()">
                         <img id="pdm-main-img" class="pdm-main-img" src="" alt="Product">
@@ -110,48 +116,47 @@
 
                 <!-- Right: Details -->
                 <div>
-                    <span id="pdm-badge" style="background:#fff8eb; color:var(--midnight-plum); font-size:11px; padding:3px 8px; border-radius:12px; font-weight:bold; border:1px solid #F0C986;">Category</span>
-                    <h2 id="pdm-title" style="margin: 6px 0; color:var(--midnight-plum); font-size:20px;">Product Title</h2>
+                    <span id="pdm-badge" style="background:var(--blue-light); color:var(--blue-primary); font-size:11px; padding:3px 8px; border-radius:12px; font-weight:bold; border:1px solid var(--card-border);">Category</span>
+                    <h2 id="pdm-title" style="margin: 6px 0; color:var(--blue-primary); font-size:20px;">Product Title</h2>
                     
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                         <span id="pdm-overall-stars" style="color:#f39c12; font-weight:bold; font-size:14px;">5.0 ★</span>
-                        <span id="pdm-review-count" style="font-size:12px; color:#7f8c8d;">(0 reviews)</span>
-                        <button onclick="shareDirectProduct(currentOpenProductId, event)" style="background:#f1f2f6; border:none; padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; color:var(--midnight-plum); font-weight:bold;">
+                        <span id="pdm-review-count" style="font-size:12px; color:var(--text-muted);">(0 reviews)</span>
+                        <button onclick="shareDirectProduct(currentOpenProductId, event)" style="background:var(--blue-light); border:1px solid var(--card-border); padding:4px 8px; border-radius:4px; font-size:11px; cursor:pointer; color:var(--blue-primary); font-weight:bold;">
                             <i class="fas fa-share-alt"></i> Share
                         </button>
                     </div>
 
-                    <div style="font-size:22px; font-weight:800; color:var(--midnight-plum); margin-bottom:10px;">₹<span id="pdm-price">0</span></div>
+                    <div style="font-size:22px; font-weight:800; color:var(--blue-primary); margin-bottom:10px;">₹<span id="pdm-price">0</span></div>
                     
-                    <p style="font-size:13px; color:#555; line-height:1.5; margin-bottom:15px;" id="pdm-desc">
+                    <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin-bottom:15px;" id="pdm-desc">
                         100% Handcrafted premium keepsake customized with love & precision.
                     </p>
 
                     <div id="pdm-custom-field-container" style="margin-bottom:15px;"></div>
 
                     <div style="display:flex; gap:10px;">
-                        <button id="pdm-btn-add" style="flex:1; background:var(--midnight-plum); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                        <button id="pdm-btn-add" style="flex:1; background:var(--blue-primary); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer;">
                             <i class="fas fa-shopping-cart"></i> Add to Cart
                         </button>
-                        <button id="pdm-btn-buy" style="flex:1; background:var(--honey-dawn); color:var(--midnight-plum); border:none; padding:12px; border-radius:6px; font-weight:800; cursor:pointer;">
+                        <button id="pdm-btn-buy" style="flex:1; background:var(--bg-primary); color:var(--blue-primary); border:1px solid var(--blue-primary); padding:12px; border-radius:6px; font-weight:800; cursor:pointer;">
                             <i class="fas fa-bolt"></i> Buy Now
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Customer Reviews with Image Gallery & Submission Box -->
+            <!-- Customer Reviews Section -->
             <div class="product-reviews-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="color:var(--midnight-plum); font-size:16px; margin:0;"><i class="fas fa-star" style="color:#f39c12;"></i> Customer Reviews & Photos</h3>
-                    <button onclick="toggleAddReviewForm()" style="background:var(--midnight-plum); color:var(--honey-dawn); border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
+                    <h3 style="color:var(--blue-primary); font-size:16px; margin:0;"><i class="fas fa-star" style="color:#f39c12;"></i> Customer Reviews & Photos</h3>
+                    <button onclick="toggleAddReviewForm()" style="background:var(--blue-primary); color:var(--white); border:none; padding:6px 12px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
                         + Write a Review
                     </button>
                 </div>
 
-                <!-- Write Review Form (Direct Photo Upload) -->
-                <div id="product-write-review-box" style="display:none; background:#fff8eb; border:1px dashed var(--honey-dawn); padding:15px; border-radius:8px; margin-bottom:15px;">
-                    <h4 style="margin:0 0 8px 0; font-size:13px; color:var(--midnight-plum);">Submit Your Verified Feedback & Photo</h4>
+                <div id="product-write-review-box" style="display:none; background:var(--blue-light); border:1px dashed var(--blue-primary); padding:15px; border-radius:8px; margin-bottom:15px;">
+                    <h4 style="margin:0 0 8px 0; font-size:13px; color:var(--blue-primary);">Submit Your Verified Feedback & Photo</h4>
                     
                     <div class="star-rating-selector" id="pdm-star-picker">
                         <span onclick="setProductStarRating(1)">★</span>
@@ -161,28 +166,26 @@
                         <span onclick="setProductStarRating(5)">★</span>
                     </div>
 
-                    <textarea id="pdm-review-text" rows="2" placeholder="How was the handcrafted quality and packaging?..." style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:12px; box-sizing:border-box; margin-bottom:10px;"></textarea>
+                    <textarea id="pdm-review-text" rows="2" placeholder="How was the handcrafted quality and packaging?..." style="width:100%; padding:8px; border:1px solid var(--card-border); border-radius:4px; font-size:12px; box-sizing:border-box; margin-bottom:10px; background:#fff;"></textarea>
                     
-                    <!-- Direct File Upload Button -->
                     <div style="margin-bottom:12px;">
-                        <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px; color:var(--midnight-plum);">
-                            <i class="fas fa-camera"></i> Upload Real Product Photo (Direct from Phone/PC):
+                        <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px; color:var(--blue-primary);">
+                            <i class="fas fa-camera"></i> Upload Real Product Photo:
                         </label>
                         <input type="file" id="pdm-review-file" accept="image/*" onchange="previewReviewImage(this)" style="font-size:12px;">
                         <div id="review-photo-preview-box" style="margin-top:8px; display:none;">
-                            <img id="review-photo-preview-img" src="" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:2px solid var(--honey-dawn);">
-                            <small style="color:#27ae60; font-weight:bold; display:block;">✓ Photo selected</small>
+                            <img id="review-photo-preview-img" src="" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:2px solid var(--blue-primary);">
+                            <small style="color:var(--success-green); font-weight:bold; display:block;">✓ Photo selected</small>
                         </div>
                     </div>
 
-                    <button onclick="submitProductReviewCloud()" id="btn-sub-prod-rev" style="background:#27ae60; color:#fff; border:none; padding:9px 18px; border-radius:4px; font-weight:bold; font-size:13px; cursor:pointer;">
+                    <button onclick="submitProductReviewCloud()" id="btn-sub-prod-rev" style="background:var(--success-green); color:#fff; border:none; padding:9px 18px; border-radius:4px; font-weight:bold; font-size:13px; cursor:pointer;">
                         Submit Review
                     </button>
                 </div>
 
-                <!-- Reviews List Container -->
                 <div id="pdm-reviews-container">
-                    <p style="text-align:center; color:#7f8c8d; font-size:12px;">Loading reviews...</p>
+                    <p style="text-align:center; color:var(--text-muted); font-size:12px;">Loading reviews...</p>
                 </div>
             </div>
         </div>
@@ -205,51 +208,49 @@
                 <button class="auth-nav-tab" id="tab-btn-signup" onclick="switchAuthForm('signup')">Sign Up</button>
             </div>
 
-            <!-- Step 1: Input Details -->
             <div id="auth-form-step-1">
                 <div id="signup-name-field" style="display:none; margin-bottom:12px; text-align:left;">
-                    <label style="display:block; font-size:12px; font-weight:700; color:var(--midnight-plum); margin-bottom:4px;">Full Name *</label>
-                    <input type="text" id="auth-user-name" placeholder="Enter your full name" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:14px; box-sizing:border-box;">
+                    <label style="display:block; font-size:12px; font-weight:700; color:var(--blue-primary); margin-bottom:4px;">Full Name *</label>
+                    <input type="text" id="auth-user-name" placeholder="Enter your full name" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; font-size:14px; box-sizing:border-box;">
                 </div>
 
                 <div style="margin-bottom:15px; text-align:left;">
-                    <label style="display:block; font-size:12px; font-weight:700; color:var(--midnight-plum); margin-bottom:4px;">10-Digit WhatsApp Phone *</label>
-                    <input type="tel" id="auth-user-phone" placeholder="e.g., 9876543210" maxlength="10" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:14px; box-sizing:border-box;">
+                    <label style="display:block; font-size:12px; font-weight:700; color:var(--blue-primary); margin-bottom:4px;">10-Digit WhatsApp Phone *</label>
+                    <input type="tel" id="auth-user-phone" placeholder="e.g., 9876543210" maxlength="10" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; font-size:14px; box-sizing:border-box;">
                 </div>
 
-                <button onclick="requestOtpAction()" id="btn-request-otp" style="width:100%; padding:12px; background:var(--midnight-plum); color:var(--honey-dawn); border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
+                <button onclick="requestOtpAction()" id="btn-request-otp" style="width:100%; padding:12px; background:var(--blue-primary); color:var(--white); border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
                     <i class="fas fa-shield-alt"></i> Get Verification Code
                 </button>
             </div>
 
-            <!-- Step 2: Verification Badge -->
             <div id="auth-form-step-2" style="display:none;">
-                <div style="background:#eafaf1; border:1px solid #27ae60; padding:12px; border-radius:8px; margin-bottom:15px; text-align:left;">
+                <div style="background:var(--blue-light); border:1px solid var(--blue-primary); padding:12px; border-radius:8px; margin-bottom:15px; text-align:left;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:11px; font-weight:bold; color:#27ae60;"><i class="fab fa-whatsapp"></i> Instant Verification Code</span>
-                        <span style="font-size:10px; background:#27ae60; color:white; padding:1px 5px; border-radius:3px;">Auto Generated</span>
+                        <span style="font-size:11px; font-weight:bold; color:var(--blue-primary);"><i class="fab fa-whatsapp"></i> Instant Verification Code</span>
+                        <span style="font-size:10px; background:var(--blue-primary); color:white; padding:1px 5px; border-radius:3px;">Auto Generated</span>
                     </div>
-                    <div style="font-size:12px; color:#2c3e50; margin-top:5px;">
+                    <div style="font-size:12px; color:var(--text-primary); margin-top:5px;">
                         Code for <strong id="hint-display-phone"></strong> is:
                     </div>
                     <div style="text-align:center; margin:8px 0;">
-                        <span id="hint-display-otp" style="font-size:24px; font-weight:900; letter-spacing:6px; color:#3B163A; background:#fff; padding:4px 15px; border-radius:6px; border:1px dashed #27ae60; display:inline-block;">----</span>
+                        <span id="hint-display-otp" style="font-size:24px; font-weight:900; letter-spacing:6px; color:var(--blue-primary); background:#fff; padding:4px 15px; border-radius:6px; border:1px dashed var(--blue-primary); display:inline-block;">----</span>
                     </div>
                 </div>
 
                 <div style="margin-bottom:15px; text-align:left;">
-                    <label style="display:block; font-size:12px; font-weight:700; color:var(--midnight-plum); margin-bottom:4px;">Enter 4-Digit Code</label>
-                    <input type="number" id="entered-otp-input" placeholder="••••" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; text-align:center; font-size:18px; letter-spacing:4px; font-weight:bold; box-sizing:border-box;">
+                    <label style="display:block; font-size:12px; font-weight:700; color:var(--blue-primary); margin-bottom:4px;">Enter 4-Digit Code</label>
+                    <input type="number" id="entered-otp-input" placeholder="••••" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; text-align:center; font-size:18px; letter-spacing:4px; font-weight:bold; box-sizing:border-box;">
                 </div>
 
-                <button onclick="verifyAndAuthenticateUser()" id="btn-submit-otp" style="width:100%; padding:12px; background:var(--midnight-plum); color:var(--honey-dawn); border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
+                <button onclick="verifyAndAuthenticateUser()" id="btn-submit-otp" style="width:100%; padding:12px; background:var(--blue-primary); color:var(--white); border:none; border-radius:6px; font-weight:bold; font-size:14px; cursor:pointer;">
                     <i class="fas fa-check-circle"></i> Verify & Proceed
                 </button>
 
-                <p style="margin-top:10px;"><a href="javascript:void(0)" onclick="backToStepOne()" style="font-size:12px; color:var(--midnight-plum); font-weight:bold; text-decoration:none;">Change Phone Number</a></p>
+                <p style="margin-top:10px;"><a href="javascript:void(0)" onclick="backToStepOne()" style="font-size:12px; color:var(--blue-primary); font-weight:bold; text-decoration:none;">Change Phone Number</a></p>
             </div>
 
-            <p id="auth-error-msg" style="color:red; font-size:12px; margin-top:10px; font-weight:bold; display:none;"></p>
+            <p id="auth-error-msg" style="color:var(--danger-red); font-size:12px; margin-top:10px; font-weight:bold; display:none;"></p>
         </div>
     </div>
 
@@ -258,9 +259,9 @@
         <div class="popup-content">
             <span class="close-btn" onclick="closePopup()">&times;</span>
             <img id="promo-img-display" src="" alt="Promotion" style="display: none;">
-            <h3 id="promo-title-text" style="color: #3B163A; margin-bottom: 8px;"></h3>
-            <p id="promo-desc-text" style="color: #636e72; font-size: 13px; margin-bottom: 15px;"></p>
-            <button onclick="closePopup()" style="background:#3B163A; color:#F0C986; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Explore Now</button>
+            <h3 id="promo-title-text" style="color: var(--blue-primary); margin-bottom: 8px;"></h3>
+            <p id="promo-desc-text" style="color: var(--text-muted); font-size: 13px; margin-bottom: 15px;"></p>
+            <button onclick="closePopup()" style="background:var(--blue-primary); color:var(--white); border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">Explore Now</button>
         </div>
     </div>
 
