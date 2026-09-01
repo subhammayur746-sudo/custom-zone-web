@@ -14,35 +14,186 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: var(--bg-primary); font-family: 'Poppins', sans-serif; flex-direction: column; }
-        .sidebar { width: 250px; background: #1f2937; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #374151; }
-        .sidebar-header h2 { color: var(--blue-primary); font-size: 22px; margin: 0; font-weight: 800; }
-        .sidebar a { display: block; color: #9ca3af; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
-        .sidebar a:hover, .sidebar a.active { background: #374151; color: #fff; border-left-color: var(--blue-primary); }
-        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .logout-btn { background: #dc2626 !important; color: white !important; margin-top: 20px; }
-        
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: var(--card-bg); padding: 22px; border-radius: 8px; box-shadow: var(--shadow-soft); margin-bottom: 25px; border: 1px solid var(--card-border); }
-        .admin-card h3 { margin-bottom: 18px; color: var(--blue-primary); border-bottom: 2px solid var(--card-border); padding-bottom: 10px; font-size: 17px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-primary); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 4px; box-sizing: border-box; background: var(--white); color: var(--text-primary); font-family: inherit; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue-primary); outline: none; }
-        .btn-admin { background: var(--blue-primary); color: #fff; padding: 11px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 700; font-size: 14px; transition: 0.2s; }
-        .btn-admin:hover { background: var(--blue-hover); }
+        body { 
+            display: flex; 
+            margin: 0; 
+            background: #CAE8E8; 
+            font-family: 'Poppins', sans-serif; 
+            flex-direction: column; 
+            min-height: 100vh;
+        }
 
-        /* Variant Box Styling */
+        /* Sidebar Styling */
+        .sidebar { 
+            width: 250px; 
+            background: #111827; 
+            color: #fff; 
+            height: 100vh; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: 100; 
+            transition: 0.3s; 
+            overflow-y: auto;
+        }
+        .sidebar-header { 
+            padding: 20px; 
+            text-align: center; 
+            border-bottom: 1px solid #1f2937; 
+        }
+        .sidebar-header h2 { 
+            color: #28469E; 
+            font-size: 22px; 
+            margin: 0; 
+            font-weight: 800; 
+        }
+        .sidebar a { 
+            display: block; 
+            color: #9ca3af; 
+            padding: 14px 22px; 
+            text-decoration: none; 
+            font-size: 14px; 
+            border-left: 4px solid transparent; 
+            transition: 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active { 
+            background: #1f2937; 
+            color: #fff; 
+            border-left-color: #28469E; 
+        }
+        .sidebar a i { 
+            margin-right: 12px; 
+            width: 18px; 
+            text-align: center; 
+        }
+        .logout-btn { 
+            background: #dc2626 !important; 
+            color: white !important; 
+            margin-top: 20px; 
+        }
+        
+        /* Main Layout */
+        .main-content { 
+            margin-left: 250px; 
+            padding: 25px; 
+            width: calc(100% - 250px); 
+            box-sizing: border-box; 
+        }
+
+        .admin-card { 
+            background: #FFFFFF; 
+            padding: 24px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 18px rgba(40, 70, 158, 0.08); 
+            margin-bottom: 25px; 
+            border: 1px solid #B2D8D8; 
+        }
+        .admin-card h3 { 
+            margin-bottom: 18px; 
+            color: #28469E; 
+            border-bottom: 2px solid #EBF5F5; 
+            padding-bottom: 10px; 
+            font-size: 17px; 
+        }
+
+        .form-grid-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            font-size: 13px; 
+            color: #111827; 
+        }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; 
+            padding: 10px 12px; 
+            border: 1px solid #B2D8D8; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            background: #FFFFFF; 
+            color: #111827; 
+            font-family: inherit; 
+            font-size: 13px;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+            border-color: #28469E; 
+            outline: none; 
+            box-shadow: 0 0 6px rgba(40, 70, 158, 0.2);
+        }
+
+        .btn-admin { 
+            background: #28469E; 
+            color: #fff; 
+            padding: 11px 24px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 14px; 
+            transition: 0.2s; 
+        }
+        .btn-admin:hover { 
+            background: #1E357A; 
+        }
+
+        /* Variant Row Styling */
         .variant-item-box {
-            background: var(--blue-light);
-            border: 1px solid var(--card-border);
+            background: #EBF5F5;
+            border: 1px solid #B2D8D8;
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 10px;
         }
 
-        .mobile-admin-header { display: none; background: #1f2937; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
+        /* Responsive Table */
+        .table-responsive-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #B2D8D8;
+            border-radius: 8px;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+            background: #fff;
+        }
+
+        .admin-table th {
+            background: #EBF5F5;
+            color: #28469E;
+            text-align: left;
+            font-size: 13px;
+            padding: 12px 14px;
+            border-bottom: 2px solid #B2D8D8;
+        }
+
+        .admin-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #EBF5F5;
+            font-size: 13px;
+            color: #111827;
+            vertical-align: middle;
+        }
+
+        .mobile-admin-header { 
+            display: none; 
+            background: #111827; 
+            color: #fff; 
+            padding: 12px 15px; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -55,7 +206,7 @@
 <body>
 
     <div class="mobile-admin-header">
-        <h3 style="margin:0; color:var(--blue-primary);">CZ Admin</h3>
+        <h3 style="margin:0; color:#28469E;">CZ Admin</h3>
         <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
     </div>
 
@@ -74,131 +225,124 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: var(--blue-primary); margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
+        <h2 style="color: #28469E; margin-bottom: 20px; font-weight: 800;">Product Inventory & Options / Variants</h2>
 
-        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+        <!-- Top Section: Add / Edit Product Form -->
+        <div class="admin-card">
+            <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
-            <!-- Left: Add/Edit Product Form -->
-            <div class="admin-card" style="flex: 1.2; min-width: 320px;">
-                <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
-                
-                <input type="hidden" id="prod-doc-id">
+            <input type="hidden" id="prod-doc-id">
 
-                <div class="form-group">
+            <div class="form-grid-row">
+                <div class="form-group" style="margin:0;">
                     <label>Product Name *</label>
                     <input type="text" id="prod-name" placeholder="e.g., Personalized Name Plate" required>
                 </div>
-
-                <!-- Main Category with Custom Manual Add -->
-                <div style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Main Category *</label>
-                        <select id="prod-main-cat" onchange="handleMainCategoryChange(this.value)">
-                            <option value="Handmade">Handmade</option>
-                            <option value="Customized">Customized</option>
-                            <option value="Gift cards">Gift cards</option>
-                            <option value="CASUAL ITEM">CASUAL ITEM</option>
-                            <option value="__custom__">➕ + Add Custom Category...</option>
-                        </select>
-                        <input type="text" id="prod-custom-main-cat" placeholder="Type new category name..." style="display:none; margin-top:6px;">
-                    </div>
-
-                    <!-- Sub Category with Suggestions Datalist -->
-                    <div class="form-group" style="flex:1;">
-                        <label>Sub Category</label>
-                        <input type="text" id="prod-sub-cat" list="subcat-default-list" placeholder="Choose or type...">
-                        <datalist id="subcat-default-list">
-                            <option value="Keychains">
-                            <option value="Frames">
-                            <option value="Mug">
-                            <option value="Hair Pin">
-                            <option value="Shirts">
-                            <option value="Resin Art">
-                            <option value="Shadow Box">
-                            <option value="Clocks">
-                            <option value="Wallets">
-                            <option value="Bottles">
-                            <option value="Gift Hampers">
-                            <option value="Desk Organizers">
-                        </datalist>
-                    </div>
+                <div class="form-group" style="margin:0;">
+                    <label>Main Category *</label>
+                    <select id="prod-main-cat" onchange="handleMainCategoryChange(this.value)">
+                        <option value="Handmade">Handmade</option>
+                        <option value="Customized">Customized</option>
+                        <option value="Gift cards">Gift cards</option>
+                        <option value="CASUAL ITEM">CASUAL ITEM</option>
+                        <option value="__custom__">➕ + Add Custom Category...</option>
+                    </select>
+                    <input type="text" id="prod-custom-main-cat" placeholder="Type new category name..." style="display:none; margin-top:6px;">
                 </div>
-
-                <div style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Base Price (₹) *</label>
-                        <input type="number" id="prod-price" placeholder="499" required>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>Customization Type</label>
-                        <select id="prod-custom-type">
-                            <option value="none">No Customization (Standard)</option>
-                            <option value="name">Text / Name Customization</option>
-                            <option value="pic">Photo Customization</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Main Image URLs (Comma-separated)</label>
-                    <textarea id="prod-images" rows="2" placeholder="https://i.ibb.co/img1.jpg, https://i.ibb.co/img2.jpg"></textarea>
-                </div>
-
-                <!-- Admin Internal / Personal Note Box -->
-                <div class="form-group" style="background:var(--blue-light); border:1px solid var(--card-border); padding:10px 12px; border-radius:6px;">
-                    <label style="color:var(--blue-primary);"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
-                    <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
-                    <small style="color:var(--text-muted); font-size:11px;">This note is strictly for you/staff and will never be shown to customers.</small>
-                </div>
-
-                <!-- Product Variants Section -->
-                <div style="background:var(--blue-light); border:2px dashed var(--blue-primary); padding:15px; border-radius:6px; margin-bottom:15px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <label style="font-weight:bold; color:var(--blue-primary); margin:0; cursor:pointer;">
-                            <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options
-                        </label>
-                        <span style="font-size:11px; background:var(--blue-primary); color:#fff; padding:2px 6px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
-                    </div>
-
-                    <div id="variants-container" style="display:none;">
-                        <div id="variant-items-list"></div>
-                        
-                        <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:var(--blue-primary); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
-                            + Add Variant
-                        </button>
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-admin" id="btn-save-prod" onclick="saveProductCloud()">Save Product</button>
-                    <button type="button" id="btn-cancel-edit" onclick="resetProductForm()" style="display:none; background:#9ca3af; color:#fff; border:none; padding:11px; border-radius:4px; cursor:pointer; font-weight:bold;">Cancel</button>
+                <div class="form-group" style="margin:0;">
+                    <label>Sub Category</label>
+                    <input type="text" id="prod-sub-cat" list="subcat-default-list" placeholder="Choose or type...">
+                    <datalist id="subcat-default-list">
+                        <option value="Keychains">
+                        <option value="Frames">
+                        <option value="Mug">
+                        <option value="Hair Pin">
+                        <option value="Shirts">
+                        <option value="Resin Art">
+                        <option value="Shadow Box">
+                        <option value="Clocks">
+                        <option value="Wallets">
+                        <option value="Bottles">
+                        <option value="Gift Hampers">
+                        <option value="Desk Organizers">
+                    </datalist>
                 </div>
             </div>
 
-            <!-- Right: Product List Table -->
-            <div class="admin-card" style="flex: 1.8; min-width: 340px; overflow-x: auto;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:10px;">
-                    <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
-                    <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product..." style="padding:6px 10px; border:1px solid var(--card-border); border-radius:4px; font-size:12px; min-width:180px; background:#fff;">
+            <div class="form-grid-row">
+                <div class="form-group" style="margin:0;">
+                    <label>Base Price (₹) *</label>
+                    <input type="number" id="prod-price" placeholder="499" required>
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label>Customization Type</label>
+                    <select id="prod-custom-type">
+                        <option value="none">No Customization (Standard)</option>
+                        <option value="name">Text / Name Customization</option>
+                        <option value="pic">Photo Customization</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label>Main Image URLs (Comma-separated)</label>
+                    <input type="text" id="prod-images" placeholder="https://i.ibb.co/img1.jpg, https://i.ibb.co/img2.jpg">
+                </div>
+            </div>
+
+            <!-- Admin Internal / Personal Note -->
+            <div class="form-group" style="background:#EBF5F5; border:1px solid #B2D8D8; padding:12px; border-radius:6px;">
+                <label style="color:#28469E; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
+                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
+                <small style="color:#4B5563; font-size:11px;">This note is strictly for you/staff and will never be shown to customers.</small>
+            </div>
+
+            <!-- Product Variants Section -->
+            <div style="background:#EBF5F5; border:2px dashed #28469E; padding:15px; border-radius:6px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <label style="font-weight:bold; color:#28469E; margin:0; cursor:pointer;">
+                        <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options
+                    </label>
+                    <span style="font-size:11px; background:#28469E; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
                 </div>
 
-                <table style="width:100%; border-collapse:collapse; min-width:600px;">
+                <div id="variants-container" style="display:none;">
+                    <div id="variant-items-list"></div>
+                    
+                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#28469E; color:#fff; border:none; padding:6px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
+                        + Add Variant
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn-admin" id="btn-save-prod" onclick="saveProductCloud()">Save Product</button>
+                <button type="button" id="btn-cancel-edit" onclick="resetProductForm()" style="display:none; background:#9ca3af; color:#fff; border:none; padding:11px 20px; border-radius:6px; cursor:pointer; font-weight:bold;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Bottom Section: Live Product Catalog Table -->
+        <div class="admin-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #EBF5F5; padding-bottom:10px;">
+                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
+                <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category..." style="padding:8px 14px; border:1px solid #B2D8D8; border-radius:6px; font-size:12px; min-width:220px; background:#fff;">
+            </div>
+
+            <div class="table-responsive-container">
+                <table class="admin-table">
                     <thead>
-                        <tr style="background:var(--blue-light); text-align:left; font-size:13px;">
-                            <th style="padding:10px;">Image</th>
-                            <th style="padding:10px;">Product Name & Note</th>
-                            <th style="padding:10px;">Category</th>
-                            <th style="padding:10px;">Price / Variants</th>
-                            <th style="padding:10px;">Status</th>
-                            <th style="padding:10px;">Action</th>
+                        <tr>
+                            <th style="width:70px;">Image</th>
+                            <th>Product Details & Admin Note</th>
+                            <th>Category</th>
+                            <th>Price / Variants</th>
+                            <th>Status</th>
+                            <th style="width:120px;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="admin-product-table">
-                        <tr><td colspan="6" style="text-align:center; padding:15px;">Loading products...</td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding:20px; color:#4B5563;">Loading products from inventory...</td></tr>
                     </tbody>
                 </table>
             </div>
-
         </div>
     </div>
 
@@ -249,12 +393,12 @@
             div.className = 'variant-item-box';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <strong style="font-size:12px; color:var(--blue-primary);">Variant #${currentCount + 1}</strong>
+                    <strong style="font-size:12px; color:#28469E;">Variant #${currentCount + 1}</strong>
                     <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#dc2626; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px;" required>
-                    <select class="var-type" style="padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px;">
+                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px;" required>
+                    <select class="var-type" style="padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px;">
                         <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
                         <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
                         <option value="Design" ${type === 'Design' ? 'selected' : ''}>Design</option>
@@ -262,9 +406,9 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px;" required>
+                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px;" required>
                 </div>
-                <input type="text" placeholder="Variant Image URL (Optional)" value="${img}" class="var-img" style="width:100%; padding:6px; border:1px solid var(--card-border); border-radius:4px; font-size:12px; box-sizing:border-box;">
+                <input type="text" placeholder="Variant Image URL (Optional)" value="${img}" class="var-img" style="width:100%; padding:6px 10px; border:1px solid #B2D8D8; border-radius:4px; font-size:12px; box-sizing:border-box;">
             `;
             list.appendChild(div);
             updateVariantAddButton();
@@ -285,7 +429,7 @@
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px;'>No products found.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#4B5563;'>No products found.</td></tr>";
                     return;
                 }
 
@@ -298,7 +442,7 @@
                 renderAdminProducts(allProductsCache);
             } catch(e) {
                 console.error(e);
-                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading inventory.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='color:#dc2626; text-align:center; padding:15px;'>Error loading inventory.</td></tr>";
             }
         }
 
@@ -309,29 +453,29 @@
             products.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) 
-                    ? `<span style="background:var(--blue-primary); color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:block; margin-top:2px;">${p.variants.length} Variants</span>`
+                    ? `<span style="background:#28469E; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:3px;">${p.variants.length} Variants</span>`
                     : '';
                 
-                let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d97706; background:#fffbeb; padding:2px 6px; border-radius:4px; margin-top:4px; border:1px dashed #fcd34d;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
+                let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d97706; background:#fffbeb; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #fcd34d; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
 
                 tbody.innerHTML += `
-                    <tr style="border-bottom:1px solid var(--card-border); font-size:13px;">
-                        <td style="padding:10px;"><img src="${img}" style="width:45px; height:45px; object-fit:cover; border-radius:4px; border:1px solid var(--card-border);"></td>
-                        <td style="padding:10px;">
-                            <strong>${p.name}</strong>
+                    <tr>
+                        <td><img src="${img}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #B2D8D8;"></td>
+                        <td>
+                            <strong style="color:#111827; font-size:14px;">${p.name}</strong>
                             ${noteSnippet}
                         </td>
-                        <td style="padding:10px;">${p.mainCategory} • ${p.subCategory || '-'}</td>
-                        <td style="padding:10px; font-weight:bold; color:var(--blue-primary);">₹${p.price}${variantBadge}</td>
-                        <td style="padding:10px;">
-                            <span style="background:${p.isActive !== false ? '#dcfce7' : '#fee2e2'}; color:${p.isActive !== false ? 'var(--success-green)' : 'var(--danger-red)'}; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">
+                        <td><span style="background:#EBF5F5; color:#28469E; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
+                        <td><strong style="color:#28469E; font-size:14px;">₹${p.price}</strong><br>${variantBadge}</td>
+                        <td>
+                            <span style="background:${p.isActive !== false ? '#dcfce7' : '#fee2e2'}; color:${p.isActive !== false ? '#16A34A' : '#dc2626'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
                             </span>
                         </td>
-                        <td style="padding:10px; white-space:nowrap;">
-                            <button onclick="editProduct('${p.id}')" style="background:var(--blue-primary); color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;" title="Edit"><i class="fas fa-edit"></i></button>
-                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#6b7280; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide"><i class="fas fa-eye-slash"></i></button>
-                            <button onclick="deleteProduct('${p.id}')" style="background:var(--danger-red); color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete"><i class="fas fa-trash"></i></button>
+                        <td style="white-space:nowrap;">
+                            <button onclick="editProduct('${p.id}')" style="background:#28469E; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
+                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#6b7280; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide Product"><i class="fas fa-eye-slash"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" style="background:#dc2626; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
