@@ -1,5 +1,5 @@
 let liveProducts = [];
-let allReviewsMap = {}; // Product ID -> Array of Reviews
+let allReviewsMap = {};
 let selectedMainCategory = "all";
 let selectedSubCategory = "all";
 let categoryMap = {};
@@ -7,6 +7,7 @@ let pendingAction = null;
 let currentAuthMode = "login";
 let activeSessionOtp = null;
 let currentOpenProductId = null;
+let currentSelectedVariant = null; // বর্তমান সিলেক্টেড ভ্যারিয়েন্ট অবজেক্ট
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
@@ -30,10 +31,9 @@ async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
     
-    container.innerHTML = "<p style='text-align:center; width:100%; color:#7f8c8d; grid-column: 1/-1;'><i class='fas fa-spinner fa-spin'></i> Loading products...</p>";
+    container.innerHTML = "<p style='text-align:center; width:100%; color:#595959; grid-column: 1/-1;'><i class='fas fa-spinner fa-spin'></i> Loading products...</p>";
     
     try {
-        // ১. সমস্ত রিভিউ ফেচ করে প্রোডাক্ট অনুযায়ী ম্যাপিং করা
         const revSnapshot = await db.collection("reviews").get();
         allReviewsMap = {};
         revSnapshot.forEach(doc => {
@@ -47,7 +47,6 @@ async function fetchLiveProducts() {
             }
         });
 
-        // ২. প্রোডাক্ট ফেচ করা
         const snapshot = await db.collection("products").where("isActive", "==", true).get();
         liveProducts = [];
         categoryMap = { "Handmade": new Set(), "Customized": new Set() };
@@ -76,7 +75,6 @@ async function fetchLiveProducts() {
                 categoryMap[mainCatFormatted].add(prod.subCategory.trim());
             }
 
-            // রিয়েল-টাইম গড় রেটিং ও রিভিউ সংখ্যা হিসাব
             let prodReviews = allReviewsMap[prod.id] || [];
             if (prodReviews.length > 0) {
                 let totalScore = prodReviews.reduce((sum, r) => sum + (parseInt(r.rating) || 5), 0);
@@ -96,7 +94,7 @@ async function fetchLiveProducts() {
 
     } catch (error) {
         console.error("Error fetching products & reviews:", error);
-        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products from cloud.</p>";
+        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products.</p>";
     }
 }
 
@@ -162,7 +160,7 @@ function renderHomeProducts(products) {
     container.innerHTML = "";
 
     if (products.length === 0) {
-        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#7f8c8d; padding:25px;'>No products found matching your criteria.</p>";
+        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#595959; padding:25px;'>No products found matching your search or budget.</p>";
         return;
     }
 
@@ -177,6 +175,9 @@ function renderHomeProducts(products) {
 
         let ratingVal = prod.avgRating ? prod.avgRating.toFixed(1) : "5.0";
         let reviewNum = prod.reviewCount || 0;
+        
+        let hasVariants = prod.hasVariants && Array.isArray(prod.variants) && prod.variants.length > 0;
+        let priceDisplay = hasVariants ? `₹${prod.variants[0].price}+` : `₹${prod.price}`;
 
         container.innerHTML += `
             <div class="product-card" onclick="openProductDetailsModal('${prod.id}')">
@@ -193,10 +194,10 @@ function renderHomeProducts(products) {
                 
                 <div class="card-rating-row">
                     <span>★ ${ratingVal}</span>
-                    <span style="color:#7f8c8d; font-size:11px;">(${reviewNum} ${reviewNum === 1 ? 'review' : 'reviews'})</span>
+                    <span style="color:#595959; font-size:11px;">(${reviewNum} ${reviewNum === 1 ? 'review' : 'reviews'})</span>
                 </div>
 
-                <p>₹${prod.price}</p>
+                <p>${priceDisplay}</p>
                 <button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
@@ -219,6 +220,10 @@ function filterHomeProducts() {
 
         let matchBudget = true;
         let price = parseInt(prod.price) || 0;
+        if (prod.hasVariants && prod.variants && prod.variants.length > 0) {
+            price = parseInt(prod.variants[0].price) || price;
+        }
+
         if (budgetVal === "199") matchBudget = price <= 199;
         else if (budgetVal === "299") matchBudget = price <= 299;
         else if (budgetVal === "499") matchBudget = price <= 499;
@@ -237,7 +242,7 @@ function shareDirectProduct(productId, event) {
     if (!product) return;
 
     let shareUrl = `${window.location.origin}/index.html?product=${productId}`;
-    let shareText = `Check out this customized "${product.name}" on Custom Zone for just ₹${product.price}! 🎁✨\n${shareUrl}`;
+    let shareText = `Check out this customized "${product.name}" on Custom Zone! 🎁✨\n${shareUrl}`;
 
     if (navigator.share) {
         navigator.share({
@@ -251,12 +256,13 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// Product Details Modal
+// 🛍️ Product Details Modal with Dynamic Variants
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
 
     currentOpenProductId = productId;
+    currentSelectedVariant = null;
     const modal = document.getElementById('product-details-modal');
     if (!modal) return;
 
@@ -273,7 +279,37 @@ function openProductDetailsModal(productId) {
     if (mainImgEl) mainImgEl.src = images[0];
     if (badgeEl) badgeEl.innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
     if (titleEl) titleEl.innerText = product.name;
-    if (priceEl) priceEl.innerText = product.price;
+
+    // Check Variants
+    const customContainer = document.getElementById('pdm-custom-field-container');
+    if (customContainer) customContainer.innerHTML = "";
+
+    let hasActiveVariants = product.hasVariants && Array.isArray(product.variants) && product.variants.filter(v => v.isActive !== false).length > 0;
+    
+    if (hasActiveVariants) {
+        let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5); // Max 5 Variants
+        currentSelectedVariant = activeVariants[0]; // Default select 1st variant
+        if (priceEl) priceEl.innerText = currentSelectedVariant.price;
+
+        let variantHtml = `
+            <div class="pdm-variant-wrapper">
+                <div class="pdm-variant-title">
+                    <span><i class="fas fa-layer-group"></i> Select Your Option:</span>
+                    <strong id="pdm-selected-var-text" style="color:var(--violet-primary);">${currentSelectedVariant.name} (₹${currentSelectedVariant.price})</strong>
+                </div>
+                <div class="pdm-variant-pills">
+                    ${activeVariants.map((v, i) => `
+                        <button type="button" class="pdm-variant-btn ${i === 0 ? 'active' : ''}" onclick="selectProductVariant('${v.name}', ${v.price}, '${v.image || ''}', this)">
+                            ${v.name} • ₹${v.price}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        if (customContainer) customContainer.innerHTML += variantHtml;
+    } else {
+        if (priceEl) priceEl.innerText = product.price;
+    }
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
@@ -290,19 +326,22 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    const customContainer = document.getElementById('pdm-custom-field-container');
+    // Customization Type Input
     if (customContainer) {
-        customContainer.innerHTML = "";
         if (product.customType === "name") {
-            customContainer.innerHTML = `
-                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--midnight-plum);">Customize Text / Name to Print:</label>
-                <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid #fab1a0; border-radius:4px; box-sizing:border-box;">
+            customContainer.innerHTML += `
+                <div style="margin-top:10px;">
+                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--violet-primary);">Customize Text / Name to Print:</label>
+                    <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:var(--card-bg); color:var(--text-primary);">
+                </div>
             `;
         } else if (product.customType === "pic") {
-            customContainer.innerHTML = `
-                <p style="font-size:12px; color:#e74c3c; background:#fff5f5; padding:8px; border-radius:4px; border:1px dashed #e74c3c;">
-                    📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
-                </p>
+            customContainer.innerHTML += `
+                <div style="margin-top:10px;">
+                    <p style="font-size:12px; color:var(--violet-primary); background:var(--card-bg); padding:8px; border-radius:4px; border:1px dashed var(--violet-primary);">
+                        📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
+                    </p>
+                </div>
             `;
         }
     }
@@ -313,7 +352,7 @@ function openProductDetailsModal(productId) {
     if (btnAdd) {
         btnAdd.onclick = () => {
             let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-            handleAddToCart(product.id, customVal);
+            handleAddToCart(product.id, customVal, currentSelectedVariant);
             closeProductDetailsModal();
         };
     }
@@ -321,13 +360,35 @@ function openProductDetailsModal(productId) {
     if (btnBuy) {
         btnBuy.onclick = () => {
             let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-            handleAddToCart(product.id, customVal);
+            handleAddToCart(product.id, customVal, currentSelectedVariant);
             window.location.href = "cart.html";
         };
     }
 
     loadProductSpecificReviews(productId);
     modal.classList.add('show-modal');
+}
+
+// ভ্যারিয়েন্ট সিলেকশন লজিক
+function selectProductVariant(varName, varPrice, varImg, btnEl) {
+    currentSelectedVariant = { name: varName, price: varPrice, image: varImg };
+    
+    // বাটন অ্যাক্টিভ ক্লাস আপডেট
+    const allBtns = document.querySelectorAll('.pdm-variant-btn');
+    allBtns.forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    // দাম ও টেক্সট আপডেট
+    const priceEl = document.getElementById('pdm-price');
+    const varText = document.getElementById('pdm-selected-var-text');
+    if (priceEl) priceEl.innerText = varPrice;
+    if (varText) varText.innerText = `${varName} (₹${varPrice})`;
+
+    // ভ্যারিয়েন্টের নিজস্ব ছবি থাকলে প্রিভিউ ইমেজে তা সেট করা
+    if (varImg && varImg.trim() !== "") {
+        const mainImgEl = document.getElementById('pdm-main-img');
+        if (mainImgEl) mainImgEl.src = varImg;
+    }
 }
 
 function closeProductDetailsModal() {
@@ -353,11 +414,11 @@ function closeImageZoomModal() {
     if (zoomModal) zoomModal.classList.remove('show-modal');
 }
 
-// Product Specific Reviews (ইনডেক্স ঝামেলা ছাড়া ১০০% ফিক্সড)
+// Reviews Engine
 async function loadProductSpecificReviews(productId) {
     const container = document.getElementById('pdm-reviews-container');
     if (!container) return;
-    container.innerHTML = "<p style='text-align:center; color:#7f8c8d; font-size:12px;'>Loading reviews...</p>";
+    container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>Loading reviews...</p>";
 
     try {
         const snapshot = await db.collection("reviews")
@@ -365,7 +426,7 @@ async function loadProductSpecificReviews(productId) {
             .get();
 
         if (snapshot.empty) {
-            container.innerHTML = "<p style='text-align:center; color:#7f8c8d; font-size:12px;'>No reviews yet for this product. Be the first to leave one!</p>";
+            container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>No reviews yet for this product. Be the first to leave one!</p>";
             return;
         }
 
@@ -376,7 +437,6 @@ async function loadProductSpecificReviews(productId) {
             reviews.push(r);
         });
 
-        // ক্লায়েন্ট-সাইডে তারিখ অনুযায়ী সাজানো
         reviews.sort((a, b) => {
             let timeA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
             let timeB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
@@ -391,19 +451,19 @@ async function loadProductSpecificReviews(productId) {
             container.innerHTML += `
                 <div class="review-card-item">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <strong style="color:var(--midnight-plum); font-size:13px;">${r.customerName || 'Customer'}</strong>
+                        <strong style="color:var(--violet-primary); font-size:13px;">${r.customerName || 'Customer'}</strong>
                         <span style="color:#f39c12; font-size:12px;">${stars}</span>
                     </div>
-                    <p style="margin:0; font-size:12px; color:#555;">${r.comment || ''}</p>
+                    <p style="margin:0; font-size:12px; color:var(--text-primary);">${r.comment || ''}</p>
                     ${photoHtml}
-                    <div style="font-size:10px; color:#95a5a6; margin-top:5px;">${r.date || 'Recent'}</div>
+                    <div style="font-size:10px; color:#595959; margin-top:5px;">${r.date || 'Recent'}</div>
                 </div>
             `;
         });
 
     } catch (e) {
         console.error("Error loading product reviews:", e);
-        container.innerHTML = "<p style='color:#7f8c8d; font-size:12px;'>Verified product rating: 5.0 ★</p>";
+        container.innerHTML = "<p style='color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
     }
 }
 
@@ -440,7 +500,6 @@ function setProductStarRating(stars) {
     });
 }
 
-// Photo Compression & Upload Preview
 function previewReviewImage(input) {
     const file = input.files[0];
     const previewBox = document.getElementById('review-photo-preview-box');
@@ -483,7 +542,6 @@ function previewReviewImage(input) {
     reader.readAsDataURL(file);
 }
 
-// Submit Review to Firebase & Refresh Counts
 async function submitProductReviewCloud() {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) { openAuthModal(); return; }
@@ -525,7 +583,6 @@ async function submitProductReviewCloud() {
         const writeBox = document.getElementById('product-write-review-box');
         if (writeBox) writeBox.style.display = "none";
         
-        // রিভিউ সাবমিট হওয়ার সাথে সাথে প্রোডাক্ট লিস্ট ও মোডাল রিফ্রেশ
         await fetchLiveProducts();
         if (currentOpenProductId) {
             openProductDetailsModal(currentOpenProductId);
@@ -550,11 +607,11 @@ function checkUrlProductParam() {
     }
 }
 
-// Cart & Wishlist Actions
-function handleAddToCart(productId, customText = "") {
+// 🛍️ Cart Action with Selected Variant Details
+function handleAddToCart(productId, customText = "", selectedVariant = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
-        pendingAction = { type: 'cart', id: productId, text: customText };
+        pendingAction = { type: 'cart', id: productId, text: customText, variant: selectedVariant };
         openAuthModal();
         return;
     }
@@ -562,18 +619,30 @@ function handleAddToCart(productId, customText = "") {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
     
+    // যদি ভ্যারিয়েন্ট পাস না হয়ে থাকে তবে ডিফল্ট প্রথম ভ্যারিয়েন্ট নেওয়া
+    if (!selectedVariant && product.hasVariants && product.variants && product.variants.length > 0) {
+        selectedVariant = product.variants[0];
+    }
+
+    let finalPrice = selectedVariant ? selectedVariant.price : product.price;
+    let finalImg = (selectedVariant && selectedVariant.image) ? selectedVariant.image : (product.images ? product.images[0] : 'assets/images/logo.png');
+    let variantName = selectedVariant ? selectedVariant.name : "";
+
     let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
     cart.push({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: finalPrice,
+        variantName: variantName,
+        image: finalImg,
         customType: product.customType,
-        userText: customText 
+        userText: customText,
+        quantity: 1
     });
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert(`✅ ${product.name} added to cart!`);
+    alert(`✅ ${product.name} ${variantName ? `(${variantName})` : ''} added to cart!`);
 }
 
 async function toggleWishlistCloud(productId) {
@@ -785,7 +854,7 @@ async function verifyAndAuthenticateUser() {
         alert(`🎉 Welcome ${customerData.name}! Logged in successfully.`);
 
         if (pendingAction) {
-            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id, pendingAction.text || "");
+            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null);
             if (pendingAction.type === 'wishlist') toggleWishlistCloud(pendingAction.id);
             pendingAction = null;
         }
