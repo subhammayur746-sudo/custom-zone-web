@@ -15,13 +15,16 @@
 </head>
 <body>
 
-    <!-- Unified Clean Navbar -->
+    <!-- Unified Navbar with Tagline -->
     <header class="navbar">
         <div class="nav-brand-section">
             <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
             <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
-                <span class="brand-title">Custom Zone</span>
+                <div class="brand-text-container">
+                    <span class="brand-title">Custom Zone</span>
+                    <span class="brand-tagline">You Imagine. We Customize.</span>
+                </div>
             </a>
         </div>
 
@@ -34,7 +37,7 @@
 
         <div class="nav-actions">
             <span id="nav-user-slot-desktop">
-                <a href="javascript:void(0)" onclick="logoutCustomer()" class="btn-nav-login" style="background:#e74c3c; color:#fff !important;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="javascript:void(0)" onclick="logoutCustomer()" class="btn-nav-login" style="background:var(--danger-red);"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </span>
             <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
@@ -43,50 +46,53 @@
         </div>
     </header>
 
-    <!-- Mobile Side Drawer -->
+    <!-- Mobile Drawer -->
     <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
     <div class="mobile-drawer" id="mobile-drawer">
         <div class="drawer-header">
             <div style="display:flex; align-items:center; gap:8px;">
                 <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
-                <strong style="color:var(--midnight-plum); font-size:16px;">Custom Zone</strong>
+                <div style="display:flex; flex-direction:column; line-height:1.1;">
+                    <strong style="color:var(--blue-primary); font-size:15px;">Custom Zone</strong>
+                    <small style="color:var(--text-muted); font-size:9.5px;">You Imagine. We Customize.</small>
+                </div>
             </div>
-            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--midnight-plum);">&times;</span>
+            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--blue-primary);">&times;</span>
         </div>
         <div class="drawer-links">
             <a href="index.html"><i class="fas fa-home"></i> Home</a>
             <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
             <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
             <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
-            <div style="border-top:1px solid #eee; margin-top:8px; padding-top:8px;">
-                <a href="javascript:void(0)" onclick="logoutCustomer()" style="color:#e74c3c;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <div style="border-top:1px solid var(--card-border); margin-top:8px; padding-top:8px;">
+                <a href="javascript:void(0)" onclick="logoutCustomer()" style="color:var(--danger-red); font-weight:bold; display:block; padding:12px 22px; text-decoration:none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </div>
     </div>
 
     <main class="container">
         <!-- Profile Banner -->
-        <div style="background:#fff; padding:22px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid var(--honey-dawn);">
+        <div style="background:var(--white); padding:22px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid var(--blue-primary); border:1px solid var(--card-border);">
             <div>
-                <h2 style="color:var(--midnight-plum); margin:0;" id="user-display-name">Welcome!</h2>
-                <p style="color:#7f8c8d; margin:6px 0 0 0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
+                <h2 style="color:var(--blue-primary); margin:0;" id="user-display-name">Welcome!</h2>
+                <p style="color:var(--text-muted); margin:6px 0 0 0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
             </div>
-            <button onclick="logoutCustomer()" style="background:#e74c3c; color:#fff; border:none; padding:9px 18px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
+            <button onclick="logoutCustomer()" style="background:var(--danger-red); color:#fff; border:none; padding:9px 18px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
         </div>
 
         <!-- Saved Wishlist Section -->
-        <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:25px;">
-            <h3 style="color:var(--midnight-plum); margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:8px;"><i class="fas fa-heart" style="color:#e74c3c;"></i> My Saved Wishlist (Synced across devices)</h3>
+        <div style="background:var(--white); padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:25px; border:1px solid var(--card-border);">
+            <h3 style="color:var(--blue-primary); margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:8px;"><i class="fas fa-heart" style="color:var(--danger-red);"></i> My Saved Wishlist (Synced across devices)</h3>
             <div class="product-grid" id="wishlist-container">
-                <p style="text-align:center; color:#7f8c8d; grid-column:1/-1;">Loading your saved wishlist...</p>
+                <p style="text-align:center; color:var(--text-muted); grid-column:1/-1;">Loading your saved wishlist...</p>
             </div>
         </div>
 
         <!-- Orders History Section -->
-        <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:var(--shadow-soft);">
-            <h3 style="color:var(--midnight-plum); margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:8px;"><i class="fas fa-shopping-bag"></i> My Previous Orders</h3>
+        <div style="background:var(--white); padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); border:1px solid var(--card-border);">
+            <h3 style="color:var(--blue-primary); margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:8px;"><i class="fas fa-shopping-bag"></i> My Previous Orders</h3>
             <div id="orders-history-container">
-                <p style="text-align:center; color:#7f8c8d;">Fetching order history...</p>
+                <p style="text-align:center; color:var(--text-muted);">Fetching order history...</p>
             </div>
         </div>
     </main>
@@ -138,7 +144,7 @@
         function renderWishlistDOM(wishlist) {
             const container = document.getElementById('wishlist-container');
             if(wishlist.length === 0) {
-                container.innerHTML = "<p style='text-align:center; color:#7f8c8d; grid-column:1/-1; padding:20px;'>Your wishlist is empty.</p>";
+                container.innerHTML = "<p style='text-align:center; color:var(--text-muted); grid-column:1/-1; padding:20px;'>Your wishlist is empty.</p>";
                 return;
             }
 
@@ -151,7 +157,7 @@
                         <p>₹${prod.price}</p>
                         <div style="display:flex; gap:6px;">
                             <button class="btn-cart-action" onclick="moveWishlistToCart('${prod.id}', ${index})"><i class="fas fa-shopping-cart"></i> Move to Cart</button>
-                            <button onclick="removeWishlistItemCloud(${index})" style="background:#e74c3c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                            <button onclick="removeWishlistItemCloud(${index})" style="background:var(--danger-red); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -196,26 +202,26 @@
                 });
 
                 if(myOrders.length === 0) {
-                    container.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>No past orders found for this phone number.</p>";
+                    container.innerHTML = "<p style='text-align:center; color:var(--text-muted); padding:20px;'>No past orders found for this phone number.</p>";
                     return;
                 }
 
                 let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
                 myOrders.forEach(ord => {
                     let badgeBg = "#f39c12";
-                    if(ord.status === "Delivered Successfully") badgeBg = "#27ae60";
-                    if(ord.status.includes("Shipped")) badgeBg = "#2980b9";
+                    if(ord.status === "Delivered Successfully") badgeBg = "var(--success-green)";
+                    if(ord.status.includes("Shipped")) badgeBg = "var(--blue-primary)";
 
                     html += `
-                        <div style="border:1px solid #eee; padding:15px; border-radius:8px; background:#fafbfc;">
+                        <div style="border:1px solid var(--card-border); padding:15px; border-radius:8px; background:var(--blue-light);">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <strong style="color:var(--midnight-plum); font-size:15px;">Order #${ord.id}</strong>
+                                <strong style="color:var(--blue-primary); font-size:15px;">Order #${ord.id}</strong>
                                 <span style="background:${badgeBg}; color:white; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold;">${ord.status}</span>
                             </div>
-                            <p style="font-size:13px; color:#555; margin:4px 0;"><pre style="font-family:inherit; font-size:12px; white-space:pre-wrap;">${ord.items}</pre></p>
+                            <p style="font-size:13px; color:var(--text-muted); margin:4px 0;"><pre style="font-family:inherit; font-size:12px; white-space:pre-wrap; color:var(--text-primary);">${ord.items}</pre></p>
                             <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:13px;">
-                                <span>Date: <strong>${ord.date || 'N/A'}</strong></span>
-                                <span style="font-weight:bold; color:#27ae60;">Total: ₹${ord.totalAmount}</span>
+                                <span style="color:var(--text-muted);">Date: <strong style="color:var(--text-primary);">${ord.date || 'N/A'}</strong></span>
+                                <span style="font-weight:bold; color:var(--success-green);">Total: ₹${ord.totalAmount}</span>
                             </div>
                         </div>
                     `;
@@ -223,7 +229,7 @@
                 html += `</div>`;
                 container.innerHTML = html;
             } catch(e) {
-                container.innerHTML = "<p style='color:red;'>Failed to load orders.</p>";
+                container.innerHTML = "<p style='color:var(--danger-red);'>Failed to load orders.</p>";
             }
         }
     </script>
