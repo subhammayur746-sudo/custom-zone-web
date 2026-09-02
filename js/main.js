@@ -8,6 +8,8 @@ let currentAuthMode = "login";
 let activeSessionOtp = null;
 let currentOpenProductId = null;
 let currentSelectedVariant = null;
+let currentSelectedQty = 1;
+let currentApplicablePrice = 0;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
@@ -25,7 +27,6 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Fetch Live Products & Reviews
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -150,7 +151,6 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// Render Products Grid
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -174,7 +174,6 @@ function renderHomeProducts(products) {
         let reviewNum = prod.reviewCount || 0;
         
         let hasVariants = prod.hasVariants && Array.isArray(prod.variants) && prod.variants.length > 0;
-        
         let actualPrice = parseInt(prod.actualPrice) || 0;
         let sellingPrice = parseInt(prod.discountPrice || prod.price) || 0;
 
@@ -186,7 +185,6 @@ function renderHomeProducts(products) {
             effectiveSellingPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : sellingPrice;
             displayPriceText = `₹${effectiveSellingPrice}+`;
 
-            // ভ্যারিয়েন্টের নিজস্ব actualPrice থাকলে তা নেওয়া
             let variantActuals = prod.variants.map(v => parseInt(v.actualPrice) || actualPrice).filter(p => p > 0);
             if (variantActuals.length > 0) actualPrice = Math.max(...variantActuals);
         } else {
@@ -219,7 +217,11 @@ function renderHomeProducts(products) {
                         <i class="fas fa-heart"></i>
                     </button>
                 </div>
-                <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
+                
+                <div class="product-card-img-wrap">
+                    <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
+                </div>
+
                 <h3>${prod.name}</h3>
                 
                 <div class="card-rating-row">
@@ -286,12 +288,11 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// Helper: Modal Price & Discount Render Function (Clean & No Duplicates)
+// Clean Modal Price Render Helper
 function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     const priceContainer = document.getElementById('pdm-price-box');
     if (!priceContainer) return;
 
-    // ভ্যারিয়েন্টের নিজস্ব actualPrice থাকলে তা প্রাধান্য পাবে, নইলে মূল প্রোডাক্টের actualPrice
     let actualPrice = currentActualPrice !== null ? parseInt(currentActualPrice) : (parseInt(product.actualPrice) || 0);
     let sellingPrice = parseInt(currentPrice) || 0;
     
@@ -311,6 +312,18 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
+// Calculate Quantity Package Price
+function calculateQuantityPrice(product, qty, basePrice) {
+    if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
+        let sortedTiers = [...product.qtyTiers].sort((a, b) => b.minQty - a.minQty);
+        let matchedTier = sortedTiers.find(t => qty >= t.minQty);
+        if (matchedTier) {
+            return parseInt(matchedTier.price);
+        }
+    }
+    return basePrice;
+}
+
 // Product Details Modal
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
@@ -318,6 +331,7 @@ function openProductDetailsModal(productId) {
 
     currentOpenProductId = productId;
     currentSelectedVariant = null;
+    currentSelectedQty = 1;
     const modal = document.getElementById('product-details-modal');
     if (!modal) return;
 
@@ -339,14 +353,15 @@ function openProductDetailsModal(productId) {
 
     let hasActiveVariants = product.hasVariants && Array.isArray(product.variants) && product.variants.filter(v => v.isActive !== false).length > 0;
     
-    let defaultPrice = parseInt(product.discountPrice || product.price) || 0;
-    let defaultActualPrice = parseInt(product.actualPrice) || 0;
+    let basePrice = parseInt(product.discountPrice || product.price) || 0;
+    let baseActualPrice = parseInt(product.actualPrice) || 0;
 
+    // 1. Render Variants if available
     if (hasActiveVariants) {
         let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5);
         currentSelectedVariant = activeVariants[0];
-        defaultPrice = parseInt(currentSelectedVariant.price) || defaultPrice;
-        defaultActualPrice = parseInt(currentSelectedVariant.actualPrice) || defaultActualPrice;
+        basePrice = parseInt(currentSelectedVariant.price) || basePrice;
+        baseActualPrice = parseInt(currentSelectedVariant.actualPrice) || baseActualPrice;
 
         let variantHtml = `
             <div class="pdm-variant-wrapper">
@@ -366,8 +381,35 @@ function openProductDetailsModal(productId) {
         if (customContainer) customContainer.innerHTML += variantHtml;
     }
 
-    // ক্লিন প্রাইস রেন্ডার
-    updateModalPriceBox(product, defaultPrice, defaultActualPrice);
+    // 2. Render Quantity-Based Package Pricing Pills
+    if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
+        let sortedTiers = [...product.qtyTiers].sort((a, b) => a.minQty - b.minQty);
+        
+        let qtyHtml = `
+            <div class="pdm-qty-tier-wrapper">
+                <div class="pdm-qty-tier-title">
+                    <span><i class="fas fa-boxes"></i> Package Quantity & Bulk Price:</span>
+                    <span style="font-size:11px; color:#16a34a; font-weight:700;">Direct Package Price</span>
+                </div>
+                <div class="pdm-qty-pills">
+                    ${sortedTiers.map((t, idx) => `
+                        <button type="button" class="pdm-qty-pill-btn ${idx === 0 ? 'active' : ''}" onclick="selectProductQtyTier(${t.minQty}, ${t.price}, this)">
+                            ${t.minQty} PC${t.minQty > 1 ? 'S' : ''} → ₹${t.price}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        if (customContainer) customContainer.innerHTML += qtyHtml;
+
+        currentSelectedQty = sortedTiers[0].minQty;
+        currentApplicablePrice = parseInt(sortedTiers[0].price);
+    } else {
+        currentSelectedQty = 1;
+        currentApplicablePrice = basePrice;
+    }
+
+    updateModalPriceBox(product, currentApplicablePrice, baseActualPrice);
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
@@ -409,7 +451,7 @@ function openProductDetailsModal(productId) {
     if (btnAdd) {
         btnAdd.onclick = () => {
             let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-            handleAddToCart(product.id, customVal, currentSelectedVariant);
+            handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice);
             closeProductDetailsModal();
         };
     }
@@ -417,7 +459,7 @@ function openProductDetailsModal(productId) {
     if (btnBuy) {
         btnBuy.onclick = () => {
             let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-            handleAddToCart(product.id, customVal, currentSelectedVariant);
+            handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice);
             window.location.href = "cart.html";
         };
     }
@@ -426,7 +468,20 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
-// ভ্যারিয়েন্ট সিলেকশনে ডিসকাউন্ট ও দাম পরিবর্তন (ক্লিন লজিক)
+function selectProductQtyTier(qty, tierPackagePrice, btnEl) {
+    currentSelectedQty = parseInt(qty);
+    currentApplicablePrice = parseInt(tierPackagePrice);
+
+    const allQtyBtns = document.querySelectorAll('.pdm-qty-pill-btn');
+    allQtyBtns.forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    let product = liveProducts.find(p => p.id === currentOpenProductId);
+    if (product) {
+        updateModalPriceBox(product, currentApplicablePrice);
+    }
+}
+
 function selectProductVariant(varName, varPrice, varActualPrice, varImg, btnEl) {
     currentSelectedVariant = { 
         name: varName, 
@@ -444,7 +499,8 @@ function selectProductVariant(varName, varPrice, varActualPrice, varImg, btnEl) 
 
     let product = liveProducts.find(p => p.id === currentOpenProductId);
     if (product) {
-        updateModalPriceBox(product, varPrice, varActualPrice ? parseInt(varActualPrice) : null);
+        currentApplicablePrice = calculateQuantityPrice(product, currentSelectedQty, varPrice);
+        updateModalPriceBox(product, currentApplicablePrice, varActualPrice ? parseInt(varActualPrice) : null);
     }
 
     if (varImg && varImg.trim() !== "") {
@@ -667,10 +723,10 @@ function checkUrlProductParam() {
     }
 }
 
-function handleAddToCart(productId, customText = "", selectedVariant = null) {
+function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
-        pendingAction = { type: 'cart', id: productId, text: customText, variant: selectedVariant };
+        pendingAction = { type: 'cart', id: productId, text: customText, variant: selectedVariant, qty: selectedQty, price: packagePrice };
         openAuthModal();
         return;
     }
@@ -682,9 +738,11 @@ function handleAddToCart(productId, customText = "", selectedVariant = null) {
         selectedVariant = product.variants[0];
     }
 
-    let finalPrice = selectedVariant 
+    let baseSelling = selectedVariant 
         ? selectedVariant.price 
         : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
+
+    let finalPackagePrice = packagePrice !== null ? packagePrice : calculateQuantityPrice(product, selectedQty, baseSelling);
 
     let finalImg = (selectedVariant && selectedVariant.image) 
         ? selectedVariant.image 
@@ -696,17 +754,17 @@ function handleAddToCart(productId, customText = "", selectedVariant = null) {
     cart.push({
         id: product.id,
         name: product.name,
-        price: finalPrice,
+        price: finalPackagePrice,
         variantName: variantName,
         image: finalImg,
         customType: product.customType,
         userText: customText,
-        quantity: 1
+        quantity: selectedQty
     });
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert(`✅ ${product.name} ${variantName ? `(${variantName})` : ''} added to cart!`);
+    alert(`✅ ${product.name} (${selectedQty} PCS package - ₹${finalPackagePrice}) added to cart!`);
 }
 
 async function toggleWishlistCloud(productId) {
@@ -917,7 +975,7 @@ async function verifyAndAuthenticateUser() {
         alert(`🎉 Welcome ${customerData.name}! Logged in successfully.`);
 
         if (pendingAction) {
-            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null);
+            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null);
             if (pendingAction.type === 'wishlist') toggleWishlistCloud(pendingAction.id);
             pendingAction = null;
         }

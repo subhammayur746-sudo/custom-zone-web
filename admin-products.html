@@ -199,7 +199,7 @@
             justify-content: center;
         }
 
-        .variant-item-box {
+        .variant-item-box, .qty-tier-item-box {
             background: #fafbfc;
             border: 1px solid #e2e8f0;
             padding: 12px;
@@ -318,7 +318,7 @@
                 </div>
             </div>
 
-            <!-- Base Discount Pricing Section -->
+            <!-- Pricing / Discount Section -->
             <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
                     <label>Actual Price / MRP (₹) *</label>
@@ -360,7 +360,7 @@
                 <small style="color:#7f8c8d; font-size:11px;">This note is strictly private for store management and never shown to customers.</small>
             </div>
 
-            <!-- Product Variants Section with Separate MRP & Discount -->
+            <!-- Product Variants Section -->
             <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
@@ -374,6 +374,27 @@
                     
                     <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
                         + Add Variant
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quantity-Based / Bulk Package Pricing Section -->
+            <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
+                        <input type="checkbox" id="toggle-qty-pricing" onchange="toggleQtyPricingSection(this.checked)"> Enable Quantity-Based / Bulk Package Pricing
+                    </label>
+                    <span style="font-size:11px; background:#16a34a; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Package Price Tiers</span>
+                </div>
+                <small style="color:#4b5563; font-size:12px; display:block; margin-bottom:8px;">
+                    * উদাহরণ: ৩ পিসের প্যাকেজ প্রাইস ₹249 হলে কাস্টমার ৩ পিস নিলে মোট দাম ₹249 ধার্য হবে।
+                </small>
+
+                <div id="qty-pricing-container" style="display:none;">
+                    <div id="qty-tier-items-list"></div>
+                    
+                    <button type="button" onclick="addQtyTierRow()" id="btn-add-qty-tier" style="background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
+                        + Add Quantity Tier
                     </button>
                 </div>
             </div>
@@ -398,7 +419,7 @@
                             <th style="width:70px;">Image</th>
                             <th>Product Details & Admin Note</th>
                             <th>Category</th>
-                            <th>Pricing / Discount</th>
+                            <th>Pricing / Tiers</th>
                             <th>Status</th>
                             <th style="width:120px;">Action</th>
                         </tr>
@@ -520,7 +541,6 @@
             }
         }
 
-        // ভ্যারিয়েন্ট রো উইথ সেপারেট MRP (Actual Price) এবং Selling Price
         function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "") {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
@@ -538,7 +558,7 @@
                     <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                    <input type="text" placeholder="Option Name (e.g. Black)" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <input type="text" placeholder="Option Name" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     <select class="var-type" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
                         <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
                         <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
@@ -547,7 +567,7 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="MRP / Actual (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" title="Optional Strikethrough MRP">
+                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" title="Optional Strikethrough MRP">
                     <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required title="Selling Price">
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -600,6 +620,37 @@
             if (btn) btn.style.display = count >= 5 ? 'none' : 'inline-block';
         }
 
+        function toggleQtyPricingSection(isEnabled) {
+            const box = document.getElementById('qty-pricing-container');
+            box.style.display = isEnabled ? 'block' : 'none';
+            if (isEnabled && document.querySelectorAll('.qty-tier-item-box').length === 0) {
+                addQtyTierRow(1, document.getElementById('prod-discount-price').value || 109);
+                addQtyTierRow(3, 249);
+            }
+        }
+
+        function addQtyTierRow(minQty = "", packagePrice = "") {
+            const list = document.getElementById('qty-tier-items-list');
+            const div = document.createElement('div');
+            div.className = 'qty-tier-item-box';
+            div.innerHTML = `
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="flex:1;">
+                        <label style="font-size:11px; font-weight:bold;">Minimum Quantity (PCS):</label>
+                        <input type="number" min="1" placeholder="e.g., 3" value="${minQty}" class="qty-min-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    </div>
+                    <div style="flex:1.5;">
+                        <label style="font-size:11px; font-weight:bold;">Direct Package Price (₹):</label>
+                        <input type="number" min="1" placeholder="e.g., 249 for 3 pcs" value="${packagePrice}" class="qty-price-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    </div>
+                    <div style="padding-top:16px;">
+                        <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:7px 10px; border-radius:4px; font-size:11px; cursor:pointer;">✕</button>
+                    </div>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
         async function fetchAdminProducts() {
             const tbody = document.getElementById('admin-product-table');
             try {
@@ -631,8 +682,13 @@
 
             products.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
+                
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) 
-                    ? `<span style="background:#2c3e50; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:3px;">${p.variants.length} Variants</span>`
+                    ? `<span style="background:#2c3e50; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.variants.length} Variants</span>`
+                    : '';
+
+                let qtyBadge = (p.hasQtyPricing && p.qtyTiers && p.qtyTiers.length > 0)
+                    ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.qtyTiers.length} Qty Tiers</span>`
                     : '';
                 
                 let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d35400; background:#fffdfa; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #f9e3ba; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
@@ -655,13 +711,17 @@
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><img src="${img}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"></td>
+                        <td>
+                            <div style="width:48px; height:48px; background:#f8fafc; border:1px solid #ddd; border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                                <img src="${img}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                            </div>
+                        </td>
                         <td>
                             <strong style="color:#2c3e50; font-size:14px;">${p.name}</strong>
                             ${noteSnippet}
                         </td>
                         <td><span style="background:#f8f9fa; color:#2c3e50; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px; border:1px solid #eee;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
-                        <td>${pricingHtml}<br>${variantBadge}</td>
+                        <td>${pricingHtml}<br>${variantBadge} ${qtyBadge}</td>
                         <td>
                             <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
@@ -706,8 +766,6 @@
             }
 
             document.getElementById('prod-sub-cat').value = prod.subCategory || "";
-            
-            // Set Pricing
             document.getElementById('prod-actual-price').value = prod.actualPrice || prod.price || "";
             document.getElementById('prod-discount-price').value = prod.discountPrice || prod.price || "";
             calculateLiveDiscountPercentage();
@@ -718,6 +776,7 @@
             uploadedProductImages = prod.images ? [...prod.images] : [];
             renderImagePreviews();
 
+            // Populate Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -726,11 +785,27 @@
                 toggle.checked = true;
                 toggleVariantSection(true);
                 prod.variants.forEach(v => {
-                    addVariantRow(v.name, v.type || "Color", v.price, v.actualPrice || prod.actualPrice || "", v.image || "");
+                    addVariantRow(v.name, v.type || "Color", v.price, v.actualPrice || "", v.image || "");
                 });
             } else {
                 toggle.checked = false;
                 toggleVariantSection(false);
+            }
+
+            // Populate Quantity Tiers
+            const toggleQty = document.getElementById('toggle-qty-pricing');
+            const qtyList = document.getElementById('qty-tier-items-list');
+            qtyList.innerHTML = "";
+
+            if (prod.hasQtyPricing && Array.isArray(prod.qtyTiers) && prod.qtyTiers.length > 0) {
+                toggleQty.checked = true;
+                document.getElementById('qty-pricing-container').style.display = 'block';
+                prod.qtyTiers.forEach(t => {
+                    addQtyTierRow(t.minQty, t.price);
+                });
+            } else {
+                toggleQty.checked = false;
+                document.getElementById('qty-pricing-container').style.display = 'none';
             }
 
             document.getElementById('btn-cancel-edit').style.display = "inline-block";
@@ -754,6 +829,11 @@
             document.getElementById('toggle-variants').checked = false;
             document.getElementById('variant-items-list').innerHTML = "";
             toggleVariantSection(false);
+
+            document.getElementById('toggle-qty-pricing').checked = false;
+            document.getElementById('qty-tier-items-list').innerHTML = "";
+            document.getElementById('qty-pricing-container').style.display = 'none';
+
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
@@ -772,11 +852,13 @@
             const customType = document.getElementById('prod-custom-type').value;
             const adminNote = document.getElementById('prod-admin-note').value.trim();
             const isVariantsEnabled = document.getElementById('toggle-variants').checked;
+            const isQtyPricingEnabled = document.getElementById('toggle-qty-pricing').checked;
 
             if (!name) { alert("Please provide product name."); return; }
             if (actualPrice <= 0 || discountPrice <= 0) { alert("Both Actual Price and Discount Price must be greater than 0."); return; }
             if (discountPrice > actualPrice) { alert("Discount Price cannot be greater than Actual Price."); return; }
 
+            // Process Variants
             let variants = [];
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
@@ -800,6 +882,19 @@
                 });
             }
 
+            // Process Quantity Tiers
+            let qtyTiers = [];
+            if (isQtyPricingEnabled) {
+                const qtyRows = document.querySelectorAll('.qty-tier-item-box');
+                qtyRows.forEach(r => {
+                    let minQ = parseInt(r.querySelector('.qty-min-val').value) || 1;
+                    let pkgPrice = parseInt(r.querySelector('.qty-price-val').value) || discountPrice;
+                    if (minQ > 0 && pkgPrice > 0) {
+                        qtyTiers.push({ minQty: minQ, price: pkgPrice });
+                    }
+                });
+            }
+
             const prodPayload = {
                 name: name,
                 mainCategory: mainCat,
@@ -812,6 +907,8 @@
                 adminNote: adminNote,
                 hasVariants: isVariantsEnabled && variants.length > 0,
                 variants: variants.slice(0, 5),
+                hasQtyPricing: isQtyPricingEnabled && qtyTiers.length > 0,
+                qtyTiers: qtyTiers,
                 isActive: true,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };

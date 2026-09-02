@@ -384,7 +384,7 @@ body {
     border-radius: 2px;
 }
 
-/* Product Cards */
+/* Product Cards & Image Container Fix */
 .product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -447,12 +447,33 @@ body {
     color: var(--danger-red) !important;
 }
 
-.product-card img {
+/* Perfect-Fit Image Wrap */
+.product-card-img-wrap {
     width: 100%;
     height: 180px;
-    object-fit: cover;
-    border-radius: 6px;
-    margin-bottom: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+}
+
+.product-card-img-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    transition: transform 0.25s ease;
+}
+
+.product-card:hover .product-card-img-wrap img {
+    transform: scale(1.04);
 }
 
 .product-card h3 {
@@ -478,11 +499,41 @@ body {
     gap: 4px;
 }
 
-.product-card p {
+/* Product Pricing & Discount Styles */
+.price-display-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.original-price-strike {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.sale-price-highlight {
     color: var(--blue-primary);
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 800;
+}
+
+.discount-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 12px;
     margin-bottom: 8px;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    letter-spacing: 0.3px;
 }
 
 .product-card button.btn-cart-action {
@@ -600,7 +651,7 @@ body {
     cursor: pointer;
 }
 
-/* Product Variants Styles in Popup */
+/* Product Variants & Quantity Tier Wrappers in Popup */
 .pdm-variant-wrapper {
     margin-bottom: 14px;
     padding: 10px;
@@ -647,6 +698,57 @@ body {
 .pdm-variant-btn.active {
     background: var(--blue-primary);
     color: var(--white);
+    border-color: var(--blue-primary);
+    box-shadow: 0 2px 6px var(--blue-glow);
+}
+
+.pdm-qty-tier-wrapper {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: var(--blue-light);
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+}
+
+.pdm-qty-tier-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue-primary);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pdm-qty-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pdm-qty-pill-btn {
+    background: #FFFFFF;
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pdm-qty-pill-btn:hover {
+    border-color: var(--blue-primary);
+    color: var(--blue-primary);
+}
+
+.pdm-qty-pill-btn.active {
+    background: var(--blue-primary);
+    color: #FFFFFF;
     border-color: var(--blue-primary);
     box-shadow: 0 2px 6px var(--blue-glow);
 }
@@ -908,7 +1010,7 @@ body {
     .subcat-pill-row { justify-content: flex-start; }
     .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .product-card { padding: 8px; }
-    .product-card img { height: 140px; }
+    .product-card-img-wrap { height: 140px; }
     .filter-control-bar { flex-direction: column; gap: 8px; }
     .search-wrapper, .price-filter-select { width: 100%; }
     .pdm-layout-grid { grid-template-columns: 1fr; gap: 15px; }
@@ -916,40 +1018,4 @@ body {
     .cart-layout { flex-direction: column; }
     .cart-item-img { width: 55px; height: 55px; }
     .cart-item-title { font-size: 13px; }
-}
-/* Product Discount & Strike Price Display */
-.price-display-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    flex-wrap: wrap;
-}
-
-.original-price-strike {
-    font-size: 14px;
-    color: var(--text-muted);
-    text-decoration: line-through;
-    font-weight: 500;
-}
-
-.sale-price-highlight {
-    color: var(--blue-primary);
-    font-size: 19px;
-    font-weight: 800;
-}
-
-.discount-badge-pill {
-    display: inline-flex;
-    align-items: center;
-    background: #fee2e2;
-    color: #dc2626;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 2px 8px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    border: 1px solid rgba(220, 38, 38, 0.2);
-    letter-spacing: 0.3px;
 }
