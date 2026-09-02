@@ -150,7 +150,7 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// Render Products Grid with Discount Pricing
+// Render Products Grid (Standard & Variant Products with Full Discount Support)
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -175,25 +175,35 @@ function renderHomeProducts(products) {
         
         let hasVariants = prod.hasVariants && Array.isArray(prod.variants) && prod.variants.length > 0;
         
-        // ডিসকাউন্ট ক্যালকুলেশন
         let actualPrice = parseInt(prod.actualPrice) || 0;
-        let discountPrice = parseInt(prod.discountPrice || prod.price) || 0;
-        let hasDiscount = actualPrice > 0 && discountPrice > 0 && discountPrice < actualPrice;
-        let discountPct = hasDiscount ? Math.round(((actualPrice - discountPrice) / actualPrice) * 100) : 0;
+        let sellingPrice = parseInt(prod.discountPrice || prod.price) || 0;
+
+        let displayPriceText = "";
+        let effectiveSellingPrice = sellingPrice;
+
+        if (hasVariants) {
+            // ভ্যারিয়েন্টগুলোর মধ্য থেকে সর্বনিম্ন প্রাইজ বের করা
+            let variantPrices = prod.variants.map(v => parseInt(v.price) || sellingPrice).filter(p => p > 0);
+            effectiveSellingPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : sellingPrice;
+            displayPriceText = `₹${effectiveSellingPrice}+`;
+        } else {
+            displayPriceText = `₹${sellingPrice}`;
+        }
+
+        let hasDiscount = actualPrice > 0 && effectiveSellingPrice > 0 && effectiveSellingPrice < actualPrice;
+        let discountPct = hasDiscount ? Math.round(((actualPrice - effectiveSellingPrice) / actualPrice) * 100) : 0;
 
         let priceHtml = "";
-        if (hasVariants) {
-            priceHtml = `<p class="sale-price-highlight">₹${prod.variants[0].price}+</p>`;
-        } else if (hasDiscount) {
+        if (hasDiscount) {
             priceHtml = `
                 <div class="price-display-wrapper">
                     <span class="original-price-strike">₹${actualPrice}</span>
-                    <span class="sale-price-highlight">₹${discountPrice}</span>
+                    <span class="sale-price-highlight">${displayPriceText}</span>
                 </div>
                 <div><span class="discount-badge-pill">🔥 ${discountPct}% OFF</span></div>
             `;
         } else {
-            priceHtml = `<p class="sale-price-highlight">₹${discountPrice || prod.price}</p>`;
+            priceHtml = `<p class="sale-price-highlight" style="margin-bottom:8px;">${displayPriceText}</p>`;
         }
 
         container.innerHTML += `
@@ -273,7 +283,30 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// Product Details Modal with Discount Rendering
+// Helper: Modal Price & Discount Render Function
+function updateModalPriceBox(product, currentPrice) {
+    const priceContainer = document.getElementById('pdm-price-box') || document.getElementById('pdm-price')?.parentElement;
+    if (!priceContainer) return;
+
+    let actualPrice = parseInt(product.actualPrice) || 0;
+    let sellingPrice = parseInt(currentPrice) || 0;
+    let hasDiscount = actualPrice > 0 && sellingPrice > 0 && sellingPrice < actualPrice;
+    let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
+
+    if (hasDiscount) {
+        priceContainer.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
+                <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
+                <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
+            </div>
+        `;
+    } else {
+        priceContainer.innerHTML = `<div style="font-size:24px; font-weight:800; color:var(--blue-primary); margin-bottom:10px;">₹<span id="pdm-price">${sellingPrice}</span></div>`;
+    }
+}
+
+// Product Details Modal
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
@@ -301,17 +334,12 @@ function openProductDetailsModal(productId) {
 
     let hasActiveVariants = product.hasVariants && Array.isArray(product.variants) && product.variants.filter(v => v.isActive !== false).length > 0;
     
-    // ডিসকাউন্ট এলিমেন্ট হ্যান্ডলার
-    const priceParent = document.getElementById('pdm-price').parentElement;
-    let actualPrice = parseInt(product.actualPrice) || 0;
-    let sellingPrice = parseInt(product.discountPrice || product.price) || 0;
-    let hasDiscount = !hasActiveVariants && actualPrice > 0 && sellingPrice > 0 && sellingPrice < actualPrice;
-    let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
+    let defaultPrice = parseInt(product.discountPrice || product.price) || 0;
 
     if (hasActiveVariants) {
         let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5);
         currentSelectedVariant = activeVariants[0];
-        priceParent.innerHTML = `₹<span id="pdm-price">${currentSelectedVariant.price}</span>`;
+        defaultPrice = parseInt(currentSelectedVariant.price) || defaultPrice;
 
         let variantHtml = `
             <div class="pdm-variant-wrapper">
@@ -329,17 +357,10 @@ function openProductDetailsModal(productId) {
             </div>
         `;
         if (customContainer) customContainer.innerHTML += variantHtml;
-    } else if (hasDiscount) {
-        priceParent.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
-                <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
-                <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
-            </div>
-        `;
-    } else {
-        priceParent.innerHTML = `₹<span id="pdm-price">${sellingPrice || product.price}</span>`;
     }
+
+    // দাম ও ডিসকাউন্ট রেন্ডার
+    updateModalPriceBox(product, defaultPrice);
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
@@ -398,6 +419,7 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
+// ভ্যারিয়েন্ট সিলেকশনে ডিসকাউন্ট ও দাম অটো-আপডেট
 function selectProductVariant(varName, varPrice, varImg, btnEl) {
     currentSelectedVariant = { name: varName, price: varPrice, image: varImg };
     
@@ -405,10 +427,14 @@ function selectProductVariant(varName, varPrice, varImg, btnEl) {
     allBtns.forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 
-    const priceEl = document.getElementById('pdm-price');
     const varText = document.getElementById('pdm-selected-var-text');
-    if (priceEl) priceEl.innerText = varPrice;
     if (varText) varText.innerText = `${varName} (₹${varPrice})`;
+
+    // নির্বাচিত ভ্যারিয়েন্টের প্রাইস অনুযায়ী স্ট্রিকথ্রু ও পার্সেন্টেজ আপডেট
+    let product = liveProducts.find(p => p.id === currentOpenProductId);
+    if (product) {
+        updateModalPriceBox(product, varPrice);
+    }
 
     if (varImg && varImg.trim() !== "") {
         const mainImgEl = document.getElementById('pdm-main-img');
@@ -630,7 +656,7 @@ function checkUrlProductParam() {
     }
 }
 
-// Cart Action with Discount Price Compatibility
+// Cart Action with Variant Compatibility
 function handleAddToCart(productId, customText = "", selectedVariant = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
@@ -646,7 +672,6 @@ function handleAddToCart(productId, customText = "", selectedVariant = null) {
         selectedVariant = product.variants[0];
     }
 
-    // ভ্যারিয়েন্ট না থাকলে ডিসকাউন্ট প্রাইসকে কার্যকারী প্রাইস হিসেবে কার্টে পাঠানো
     let finalPrice = selectedVariant 
         ? selectedVariant.price 
         : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
