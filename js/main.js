@@ -7,11 +7,10 @@ let pendingAction = null;
 let currentAuthMode = "login";
 let activeSessionOtp = null;
 let currentOpenProductId = null;
-let currentSelectedVariant = null; // বর্তমান সিলেক্টেড ভ্যারিয়েন্ট অবজেক্ট
+let currentSelectedVariant = null;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
-// Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -26,7 +25,7 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Fetch Live Products & Reviews from Firebase
+// Fetch Live Products & Reviews
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -98,7 +97,6 @@ async function fetchLiveProducts() {
     }
 }
 
-// Category Pills
 function renderCategoryPills() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
@@ -114,7 +112,6 @@ function renderCategoryPills() {
     renderSubCategoryRow();
 }
 
-// Subcategory Pills
 function renderSubCategoryRow() {
     const subRow = document.getElementById('dynamic-subcat-row');
     if (!subRow) return;
@@ -153,7 +150,7 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// Render Products Grid
+// Render Products Grid with Discount Pricing
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -177,7 +174,27 @@ function renderHomeProducts(products) {
         let reviewNum = prod.reviewCount || 0;
         
         let hasVariants = prod.hasVariants && Array.isArray(prod.variants) && prod.variants.length > 0;
-        let priceDisplay = hasVariants ? `₹${prod.variants[0].price}+` : `₹${prod.price}`;
+        
+        // ডিসকাউন্ট ক্যালকুলেশন
+        let actualPrice = parseInt(prod.actualPrice) || 0;
+        let discountPrice = parseInt(prod.discountPrice || prod.price) || 0;
+        let hasDiscount = actualPrice > 0 && discountPrice > 0 && discountPrice < actualPrice;
+        let discountPct = hasDiscount ? Math.round(((actualPrice - discountPrice) / actualPrice) * 100) : 0;
+
+        let priceHtml = "";
+        if (hasVariants) {
+            priceHtml = `<p class="sale-price-highlight">₹${prod.variants[0].price}+</p>`;
+        } else if (hasDiscount) {
+            priceHtml = `
+                <div class="price-display-wrapper">
+                    <span class="original-price-strike">₹${actualPrice}</span>
+                    <span class="sale-price-highlight">₹${discountPrice}</span>
+                </div>
+                <div><span class="discount-badge-pill">🔥 ${discountPct}% OFF</span></div>
+            `;
+        } else {
+            priceHtml = `<p class="sale-price-highlight">₹${discountPrice || prod.price}</p>`;
+        }
 
         container.innerHTML += `
             <div class="product-card" onclick="openProductDetailsModal('${prod.id}')">
@@ -197,7 +214,8 @@ function renderHomeProducts(products) {
                     <span style="color:#595959; font-size:11px;">(${reviewNum} ${reviewNum === 1 ? 'review' : 'reviews'})</span>
                 </div>
 
-                <p>${priceDisplay}</p>
+                ${priceHtml}
+
                 <button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')">
                     <i class="fas fa-shopping-cart"></i> Add to Cart
                 </button>
@@ -219,7 +237,7 @@ function filterHomeProducts() {
         let matchSubCat = (selectedSubCategory === "all") || (prod.subCategory === selectedSubCategory);
 
         let matchBudget = true;
-        let price = parseInt(prod.price) || 0;
+        let price = parseInt(prod.discountPrice || prod.price) || 0;
         if (prod.hasVariants && prod.variants && prod.variants.length > 0) {
             price = parseInt(prod.variants[0].price) || price;
         }
@@ -235,7 +253,6 @@ function filterHomeProducts() {
     renderHomeProducts(filtered);
 }
 
-// 1-Click Product Sharing
 function shareDirectProduct(productId, event) {
     if (event) event.stopPropagation();
     let product = liveProducts.find(p => p.id === productId);
@@ -256,7 +273,7 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// 🛍️ Product Details Modal with Dynamic Variants
+// Product Details Modal with Discount Rendering
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
@@ -272,7 +289,6 @@ function openProductDetailsModal(productId) {
     const mainImgEl = document.getElementById('pdm-main-img');
     const badgeEl = document.getElementById('pdm-badge');
     const titleEl = document.getElementById('pdm-title');
-    const priceEl = document.getElementById('pdm-price');
     const starsEl = document.getElementById('pdm-overall-stars');
     const revCountEl = document.getElementById('pdm-review-count');
 
@@ -280,22 +296,28 @@ function openProductDetailsModal(productId) {
     if (badgeEl) badgeEl.innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
     if (titleEl) titleEl.innerText = product.name;
 
-    // Check Variants
     const customContainer = document.getElementById('pdm-custom-field-container');
     if (customContainer) customContainer.innerHTML = "";
 
     let hasActiveVariants = product.hasVariants && Array.isArray(product.variants) && product.variants.filter(v => v.isActive !== false).length > 0;
     
+    // ডিসকাউন্ট এলিমেন্ট হ্যান্ডলার
+    const priceParent = document.getElementById('pdm-price').parentElement;
+    let actualPrice = parseInt(product.actualPrice) || 0;
+    let sellingPrice = parseInt(product.discountPrice || product.price) || 0;
+    let hasDiscount = !hasActiveVariants && actualPrice > 0 && sellingPrice > 0 && sellingPrice < actualPrice;
+    let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
+
     if (hasActiveVariants) {
-        let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5); // Max 5 Variants
-        currentSelectedVariant = activeVariants[0]; // Default select 1st variant
-        if (priceEl) priceEl.innerText = currentSelectedVariant.price;
+        let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5);
+        currentSelectedVariant = activeVariants[0];
+        priceParent.innerHTML = `₹<span id="pdm-price">${currentSelectedVariant.price}</span>`;
 
         let variantHtml = `
             <div class="pdm-variant-wrapper">
                 <div class="pdm-variant-title">
                     <span><i class="fas fa-layer-group"></i> Select Your Option:</span>
-                    <strong id="pdm-selected-var-text" style="color:var(--violet-primary);">${currentSelectedVariant.name} (₹${currentSelectedVariant.price})</strong>
+                    <strong id="pdm-selected-var-text" style="color:var(--blue-primary);">${currentSelectedVariant.name} (₹${currentSelectedVariant.price})</strong>
                 </div>
                 <div class="pdm-variant-pills">
                     ${activeVariants.map((v, i) => `
@@ -307,8 +329,16 @@ function openProductDetailsModal(productId) {
             </div>
         `;
         if (customContainer) customContainer.innerHTML += variantHtml;
+    } else if (hasDiscount) {
+        priceParent.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
+                <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
+                <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
+            </div>
+        `;
     } else {
-        if (priceEl) priceEl.innerText = product.price;
+        priceParent.innerHTML = `₹<span id="pdm-price">${sellingPrice || product.price}</span>`;
     }
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
@@ -326,19 +356,18 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    // Customization Type Input
     if (customContainer) {
         if (product.customType === "name") {
             customContainer.innerHTML += `
                 <div style="margin-top:10px;">
-                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--violet-primary);">Customize Text / Name to Print:</label>
-                    <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:var(--card-bg); color:var(--text-primary);">
+                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label>
+                    <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);">
                 </div>
             `;
         } else if (product.customType === "pic") {
             customContainer.innerHTML += `
                 <div style="margin-top:10px;">
-                    <p style="font-size:12px; color:var(--violet-primary); background:var(--card-bg); padding:8px; border-radius:4px; border:1px dashed var(--violet-primary);">
+                    <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
                         📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
                     </p>
                 </div>
@@ -369,22 +398,18 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
-// ভ্যারিয়েন্ট সিলেকশন লজিক
 function selectProductVariant(varName, varPrice, varImg, btnEl) {
     currentSelectedVariant = { name: varName, price: varPrice, image: varImg };
     
-    // বাটন অ্যাক্টিভ ক্লাস আপডেট
     const allBtns = document.querySelectorAll('.pdm-variant-btn');
     allBtns.forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 
-    // দাম ও টেক্সট আপডেট
     const priceEl = document.getElementById('pdm-price');
     const varText = document.getElementById('pdm-selected-var-text');
     if (priceEl) priceEl.innerText = varPrice;
     if (varText) varText.innerText = `${varName} (₹${varPrice})`;
 
-    // ভ্যারিয়েন্টের নিজস্ব ছবি থাকলে প্রিভিউ ইমেজে তা সেট করা
     if (varImg && varImg.trim() !== "") {
         const mainImgEl = document.getElementById('pdm-main-img');
         if (mainImgEl) mainImgEl.src = varImg;
@@ -398,7 +423,6 @@ function closeProductDetailsModal() {
     if (writeBox) writeBox.style.display = "none";
 }
 
-// Lightbox Zoom
 function zoomCurrentProductImage() {
     const mainImg = document.getElementById('pdm-main-img');
     const modalZoomImg = document.getElementById('modal-zoomed-img');
@@ -414,7 +438,6 @@ function closeImageZoomModal() {
     if (zoomModal) zoomModal.classList.remove('show-modal');
 }
 
-// Reviews Engine
 async function loadProductSpecificReviews(productId) {
     const container = document.getElementById('pdm-reviews-container');
     if (!container) return;
@@ -451,7 +474,7 @@ async function loadProductSpecificReviews(productId) {
             container.innerHTML += `
                 <div class="review-card-item">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <strong style="color:var(--violet-primary); font-size:13px;">${r.customerName || 'Customer'}</strong>
+                        <strong style="color:var(--blue-primary); font-size:13px;">${r.customerName || 'Customer'}</strong>
                         <span style="color:#f39c12; font-size:12px;">${stars}</span>
                     </div>
                     <p style="margin:0; font-size:12px; color:var(--text-primary);">${r.comment || ''}</p>
@@ -607,7 +630,7 @@ function checkUrlProductParam() {
     }
 }
 
-// 🛍️ Cart Action with Selected Variant Details
+// Cart Action with Discount Price Compatibility
 function handleAddToCart(productId, customText = "", selectedVariant = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
@@ -619,13 +642,19 @@ function handleAddToCart(productId, customText = "", selectedVariant = null) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
     
-    // যদি ভ্যারিয়েন্ট পাস না হয়ে থাকে তবে ডিফল্ট প্রথম ভ্যারিয়েন্ট নেওয়া
     if (!selectedVariant && product.hasVariants && product.variants && product.variants.length > 0) {
         selectedVariant = product.variants[0];
     }
 
-    let finalPrice = selectedVariant ? selectedVariant.price : product.price;
-    let finalImg = (selectedVariant && selectedVariant.image) ? selectedVariant.image : (product.images ? product.images[0] : 'assets/images/logo.png');
+    // ভ্যারিয়েন্ট না থাকলে ডিসকাউন্ট প্রাইসকে কার্যকারী প্রাইস হিসেবে কার্টে পাঠানো
+    let finalPrice = selectedVariant 
+        ? selectedVariant.price 
+        : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
+
+    let finalImg = (selectedVariant && selectedVariant.image) 
+        ? selectedVariant.image 
+        : (product.images ? product.images[0] : 'assets/images/logo.png');
+        
     let variantName = selectedVariant ? selectedVariant.name : "";
 
     let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
@@ -666,7 +695,7 @@ async function toggleWishlistCloud(productId) {
         wishlist.push({
             id: product.id,
             name: product.name,
-            price: product.price,
+            price: product.discountPrice || product.price,
             image: product.images ? product.images[0] : 'assets/images/logo.png',
             customType: product.customType
         });
@@ -685,7 +714,6 @@ async function toggleWishlistCloud(productId) {
     renderHomeProducts(liveProducts);
 }
 
-// Auth Handlers
 function switchAuthForm(mode) {
     currentAuthMode = mode;
     const nameField = document.getElementById('signup-name-field');

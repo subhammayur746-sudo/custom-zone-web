@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Products - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Firebase CDN -->
@@ -151,7 +152,7 @@
             background: #219150; 
         }
 
-        /* Image Upload Box & Thumbnails */
+        /* Direct Image Dropzone */
         .upload-dropzone {
             border: 2px dashed #bdc3c7;
             background: #fafbfc;
@@ -201,7 +202,6 @@
             justify-content: center;
         }
 
-        /* Variant Row */
         .variant-item-box {
             background: #fafbfc;
             border: 1px solid #e2e8f0;
@@ -210,7 +210,6 @@
             margin-bottom: 10px;
         }
 
-        /* Table */
         .table-responsive-container {
             width: 100%;
             overflow-x: auto;
@@ -280,7 +279,7 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
 
-        <!-- Add / Edit Product Form (Top Section) -->
+        <!-- Top Section: Add / Edit Product Form -->
         <div class="admin-card">
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
@@ -322,10 +321,17 @@
                 </div>
             </div>
 
-            <div class="form-grid-row">
+            <!-- Discount Pricing Section -->
+            <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
-                    <label>Base Price (₹) *</label>
-                    <input type="number" id="prod-price" placeholder="499" required>
+                    <label>Actual Price / MRP (₹) *</label>
+                    <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 1000" min="1" required>
+                    <small style="color:#7f8c8d; font-size:11px;">Original price (Will show strikethrough: <span style="text-decoration:line-through;">₹1000</span>)</small>
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label>Discount / Selling Price (₹) *</label>
+                    <input type="number" id="prod-discount-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 750" min="1" required>
+                    <small style="color:#27ae60; font-size:11px; font-weight:bold;" id="live-discount-preview">No discount applied</small>
                 </div>
                 <div class="form-group" style="margin:0;">
                     <label>Customization Type</label>
@@ -338,11 +344,11 @@
             </div>
 
             <!-- Direct Photo Upload Box with Preview -->
-            <div class="form-group">
-                <label><i class="fas fa-images"></i> Product Photos (Direct Upload / Device Storage):</label>
+            <div class="form-group" style="margin-top:15px;">
+                <label><i class="fas fa-images"></i> Product Photos (Direct Upload from Device):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
                     <i class="fas fa-cloud-upload-alt" style="font-size:26px; color:#3498db; margin-bottom:6px;"></i>
-                    <p style="margin:0; font-size:13px; font-weight:600; color:#2c3e50;">Click here to upload product images from Phone/PC</p>
+                    <p style="margin:0; font-size:13px; font-weight:600; color:#2c3e50;">Click here to select images from Phone/PC</p>
                     <span style="font-size:11px; color:#7f8c8d;">Supported: JPG, PNG, WEBP (Multiple allowed)</span>
                 </div>
                 <input type="file" id="prod-file-input" accept="image/*" multiple onchange="handleDirectImageUpload(this)" style="display:none;">
@@ -395,7 +401,7 @@
                             <th style="width:70px;">Image</th>
                             <th>Product Details & Admin Note</th>
                             <th>Category</th>
-                            <th>Price / Variants</th>
+                            <th>Pricing / Discount</th>
                             <th>Status</th>
                             <th style="width:120px;">Action</th>
                         </tr>
@@ -410,7 +416,7 @@
 
     <script>
         let allProductsCache = [];
-        let uploadedProductImages = []; // Stores base64 / URLs of images
+        let uploadedProductImages = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
         if (!loggedInUser) {
@@ -432,6 +438,25 @@
             } else {
                 customInput.style.display = 'none';
                 customInput.value = '';
+            }
+        }
+
+        // Live Discount Percentage Calculation
+        function calculateLiveDiscountPercentage() {
+            const actual = parseFloat(document.getElementById('prod-actual-price').value) || 0;
+            const discount = parseFloat(document.getElementById('prod-discount-price').value) || 0;
+            const previewEl = document.getElementById('live-discount-preview');
+
+            if (actual > 0 && discount > 0 && discount < actual) {
+                const pct = Math.round(((actual - discount) / actual) * 100);
+                previewEl.style.color = "#dc2626";
+                previewEl.innerText = `🔥 ${pct}% Discount applied (Save ₹${Math.round(actual - discount)})`;
+            } else if (actual > 0 && discount > actual) {
+                previewEl.style.color = "#dc2626";
+                previewEl.innerText = `⚠️ Selling price cannot be higher than Actual Price!`;
+            } else {
+                previewEl.style.color = "#27ae60";
+                previewEl.innerText = `Regular price (No discount)`;
             }
         }
 
@@ -615,6 +640,22 @@
                 
                 let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d35400; background:#fffdfa; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #f9e3ba; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
 
+                let actualPrice = parseInt(p.actualPrice) || 0;
+                let discountPrice = parseInt(p.discountPrice || p.price) || 0;
+                let hasDiscount = actualPrice > 0 && discountPrice > 0 && discountPrice < actualPrice;
+                let pct = hasDiscount ? Math.round(((actualPrice - discountPrice) / actualPrice) * 100) : 0;
+
+                let pricingHtml = "";
+                if (hasDiscount) {
+                    pricingHtml = `
+                        <span style="color:#7f8c8d; text-decoration:line-through; font-size:12px;">₹${actualPrice}</span>
+                        <strong style="color:#27ae60; font-size:14px; margin-left:4px;">₹${discountPrice}</strong>
+                        <span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:bold; padding:1px 6px; border-radius:10px; display:inline-block; margin-left:3px;">🔥 ${pct}% OFF</span>
+                    `;
+                } else {
+                    pricingHtml = `<strong style="color:#27ae60; font-size:14px;">₹${discountPrice || p.price}</strong>`;
+                }
+
                 tbody.innerHTML += `
                     <tr>
                         <td><img src="${img}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"></td>
@@ -623,7 +664,7 @@
                             ${noteSnippet}
                         </td>
                         <td><span style="background:#f8f9fa; color:#2c3e50; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px; border:1px solid #eee;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
-                        <td><strong style="color:#27ae60; font-size:14px;">₹${p.price}</strong><br>${variantBadge}</td>
+                        <td>${pricingHtml}<br>${variantBadge}</td>
                         <td>
                             <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
@@ -653,7 +694,6 @@
             document.getElementById('prod-doc-id').value = prod.id;
             document.getElementById('prod-name').value = prod.name || "";
             
-            // Set Main Category
             const mainCatSelect = document.getElementById('prod-main-cat');
             const customCatInput = document.getElementById('prod-custom-main-cat');
             let isPreset = ["Handmade", "Customized", "Gift cards", "CASUAL ITEM"].includes(prod.mainCategory);
@@ -669,15 +709,18 @@
             }
 
             document.getElementById('prod-sub-cat').value = prod.subCategory || "";
-            document.getElementById('prod-price').value = prod.price || "";
+            
+            // Set Pricing
+            document.getElementById('prod-actual-price').value = prod.actualPrice || prod.price || "";
+            document.getElementById('prod-discount-price').value = prod.discountPrice || prod.price || "";
+            calculateLiveDiscountPercentage();
+
             document.getElementById('prod-custom-type').value = prod.customType || "none";
             document.getElementById('prod-admin-note').value = prod.adminNote || "";
 
-            // Populate Images
             uploadedProductImages = prod.images ? [...prod.images] : [];
             renderImagePreviews();
 
-            // Populate Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -705,7 +748,9 @@
             document.getElementById('prod-custom-main-cat').style.display = "none";
             document.getElementById('prod-custom-main-cat').value = "";
             document.getElementById('prod-sub-cat').value = "";
-            document.getElementById('prod-price').value = "";
+            document.getElementById('prod-actual-price').value = "";
+            document.getElementById('prod-discount-price').value = "";
+            document.getElementById('live-discount-preview').innerText = "No discount applied";
             document.getElementById('prod-admin-note').value = "";
             uploadedProductImages = [];
             renderImagePreviews();
@@ -725,12 +770,16 @@
             }
 
             const subCat = document.getElementById('prod-sub-cat').value.trim();
-            const price = parseInt(document.getElementById('prod-price').value) || 0;
+            const actualPrice = parseInt(document.getElementById('prod-actual-price').value) || 0;
+            const discountPrice = parseInt(document.getElementById('prod-discount-price').value) || 0;
             const customType = document.getElementById('prod-custom-type').value;
             const adminNote = document.getElementById('prod-admin-note').value.trim();
             const isVariantsEnabled = document.getElementById('toggle-variants').checked;
 
-            if (!name || !price) { alert("Please provide product name and base price."); return; }
+            // Form Validations
+            if (!name) { alert("Please provide product name."); return; }
+            if (actualPrice <= 0 || discountPrice <= 0) { alert("Both Actual Price and Discount Price must be greater than 0."); return; }
+            if (discountPrice > actualPrice) { alert("Discount Price cannot be greater than Actual Price."); return; }
 
             let variants = [];
             if (isVariantsEnabled) {
@@ -738,7 +787,7 @@
                 rows.forEach(r => {
                     let vName = r.querySelector('.var-name').value.trim();
                     let vType = r.querySelector('.var-type').value;
-                    let vPrice = parseInt(r.querySelector('.var-price').value) || price;
+                    let vPrice = parseInt(r.querySelector('.var-price').value) || discountPrice;
                     let vImg = r.querySelector('.var-img-data').value.trim();
 
                     if (vName) {
@@ -757,7 +806,9 @@
                 name: name,
                 mainCategory: mainCat,
                 subCategory: subCat,
-                price: price,
+                actualPrice: actualPrice,
+                discountPrice: discountPrice,
+                price: discountPrice, // backward compatibility
                 customType: customType,
                 images: uploadedProductImages,
                 adminNote: adminNote,
@@ -774,10 +825,10 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
-                    alert("✅ Product updated successfully!");
+                    alert("✅ Product updated successfully with discount pricing!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    alert("✅ New product added successfully!");
+                    alert("✅ New product added successfully with discount pricing!");
                 }
                 resetProductForm();
                 fetchAdminProducts();
