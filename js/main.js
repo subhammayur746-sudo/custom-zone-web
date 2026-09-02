@@ -150,7 +150,7 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// Render Products Grid (Standard & Variant Products with Full Discount Support)
+// Render Products Grid
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -182,10 +182,13 @@ function renderHomeProducts(products) {
         let effectiveSellingPrice = sellingPrice;
 
         if (hasVariants) {
-            // ভ্যারিয়েন্টগুলোর মধ্য থেকে সর্বনিম্ন প্রাইজ বের করা
             let variantPrices = prod.variants.map(v => parseInt(v.price) || sellingPrice).filter(p => p > 0);
             effectiveSellingPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : sellingPrice;
             displayPriceText = `₹${effectiveSellingPrice}+`;
+
+            // ভ্যারিয়েন্টের নিজস্ব actualPrice থাকলে তা নেওয়া
+            let variantActuals = prod.variants.map(v => parseInt(v.actualPrice) || actualPrice).filter(p => p > 0);
+            if (variantActuals.length > 0) actualPrice = Math.max(...variantActuals);
         } else {
             displayPriceText = `₹${sellingPrice}`;
         }
@@ -283,26 +286,28 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// Helper: Modal Price & Discount Render Function
-function updateModalPriceBox(product, currentPrice) {
-    const priceContainer = document.getElementById('pdm-price-box') || document.getElementById('pdm-price')?.parentElement;
+// Helper: Modal Price & Discount Render Function (Clean & No Duplicates)
+function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
+    const priceContainer = document.getElementById('pdm-price-box');
     if (!priceContainer) return;
 
-    let actualPrice = parseInt(product.actualPrice) || 0;
+    // ভ্যারিয়েন্টের নিজস্ব actualPrice থাকলে তা প্রাধান্য পাবে, নইলে মূল প্রোডাক্টের actualPrice
+    let actualPrice = currentActualPrice !== null ? parseInt(currentActualPrice) : (parseInt(product.actualPrice) || 0);
     let sellingPrice = parseInt(currentPrice) || 0;
+    
     let hasDiscount = actualPrice > 0 && sellingPrice > 0 && sellingPrice < actualPrice;
     let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
 
     if (hasDiscount) {
         priceContainer.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
                 <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
                 <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
                 <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
             </div>
         `;
     } else {
-        priceContainer.innerHTML = `<div style="font-size:24px; font-weight:800; color:var(--blue-primary); margin-bottom:10px;">₹<span id="pdm-price">${sellingPrice}</span></div>`;
+        priceContainer.innerHTML = `<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></div>`;
     }
 }
 
@@ -335,11 +340,13 @@ function openProductDetailsModal(productId) {
     let hasActiveVariants = product.hasVariants && Array.isArray(product.variants) && product.variants.filter(v => v.isActive !== false).length > 0;
     
     let defaultPrice = parseInt(product.discountPrice || product.price) || 0;
+    let defaultActualPrice = parseInt(product.actualPrice) || 0;
 
     if (hasActiveVariants) {
         let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5);
         currentSelectedVariant = activeVariants[0];
         defaultPrice = parseInt(currentSelectedVariant.price) || defaultPrice;
+        defaultActualPrice = parseInt(currentSelectedVariant.actualPrice) || defaultActualPrice;
 
         let variantHtml = `
             <div class="pdm-variant-wrapper">
@@ -349,7 +356,7 @@ function openProductDetailsModal(productId) {
                 </div>
                 <div class="pdm-variant-pills">
                     ${activeVariants.map((v, i) => `
-                        <button type="button" class="pdm-variant-btn ${i === 0 ? 'active' : ''}" onclick="selectProductVariant('${v.name}', ${v.price}, '${v.image || ''}', this)">
+                        <button type="button" class="pdm-variant-btn ${i === 0 ? 'active' : ''}" onclick="selectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice || ''}', '${v.image || ''}', this)">
                             ${v.name} • ₹${v.price}
                         </button>
                     `).join('')}
@@ -359,8 +366,8 @@ function openProductDetailsModal(productId) {
         if (customContainer) customContainer.innerHTML += variantHtml;
     }
 
-    // দাম ও ডিসকাউন্ট রেন্ডার
-    updateModalPriceBox(product, defaultPrice);
+    // ক্লিন প্রাইস রেন্ডার
+    updateModalPriceBox(product, defaultPrice, defaultActualPrice);
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
@@ -419,9 +426,14 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
-// ভ্যারিয়েন্ট সিলেকশনে ডিসকাউন্ট ও দাম অটো-আপডেট
-function selectProductVariant(varName, varPrice, varImg, btnEl) {
-    currentSelectedVariant = { name: varName, price: varPrice, image: varImg };
+// ভ্যারিয়েন্ট সিলেকশনে ডিসকাউন্ট ও দাম পরিবর্তন (ক্লিন লজিক)
+function selectProductVariant(varName, varPrice, varActualPrice, varImg, btnEl) {
+    currentSelectedVariant = { 
+        name: varName, 
+        price: varPrice, 
+        actualPrice: varActualPrice ? parseInt(varActualPrice) : null,
+        image: varImg 
+    };
     
     const allBtns = document.querySelectorAll('.pdm-variant-btn');
     allBtns.forEach(b => b.classList.remove('active'));
@@ -430,10 +442,9 @@ function selectProductVariant(varName, varPrice, varImg, btnEl) {
     const varText = document.getElementById('pdm-selected-var-text');
     if (varText) varText.innerText = `${varName} (₹${varPrice})`;
 
-    // নির্বাচিত ভ্যারিয়েন্টের প্রাইস অনুযায়ী স্ট্রিকথ্রু ও পার্সেন্টেজ আপডেট
     let product = liveProducts.find(p => p.id === currentOpenProductId);
     if (product) {
-        updateModalPriceBox(product, varPrice);
+        updateModalPriceBox(product, varPrice, varActualPrice ? parseInt(varActualPrice) : null);
     }
 
     if (varImg && varImg.trim() !== "") {
@@ -656,7 +667,6 @@ function checkUrlProductParam() {
     }
 }
 
-// Cart Action with Variant Compatibility
 function handleAddToCart(productId, customText = "", selectedVariant = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {

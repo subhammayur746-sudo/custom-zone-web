@@ -32,7 +32,6 @@
             min-height: 100vh;
         }
 
-        /* Unified Admin Sidebar */
         .sidebar { 
             width: 250px; 
             background: #2c3e50; 
@@ -81,7 +80,6 @@
             margin-top: 20px; 
         }
         
-        /* Main Layout */
         .main-content { 
             margin-left: 250px; 
             padding: 25px; 
@@ -152,7 +150,6 @@
             background: #219150; 
         }
 
-        /* Direct Image Dropzone */
         .upload-dropzone {
             border: 2px dashed #bdc3c7;
             background: #fafbfc;
@@ -279,7 +276,7 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
 
-        <!-- Top Section: Add / Edit Product Form -->
+        <!-- Add / Edit Product Form -->
         <div class="admin-card">
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
@@ -321,16 +318,16 @@
                 </div>
             </div>
 
-            <!-- Discount Pricing Section -->
+            <!-- Base Discount Pricing Section -->
             <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
                     <label>Actual Price / MRP (₹) *</label>
-                    <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 1000" min="1" required>
-                    <small style="color:#7f8c8d; font-size:11px;">Original price (Will show strikethrough: <span style="text-decoration:line-through;">₹1000</span>)</small>
+                    <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 289" min="1" required>
+                    <small style="color:#7f8c8d; font-size:11px;">Original Price (Will show strikethrough: <span style="text-decoration:line-through;">₹289</span>)</small>
                 </div>
                 <div class="form-group" style="margin:0;">
                     <label>Discount / Selling Price (₹) *</label>
-                    <input type="number" id="prod-discount-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 750" min="1" required>
+                    <input type="number" id="prod-discount-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 249" min="1" required>
                     <small style="color:#27ae60; font-size:11px; font-weight:bold;" id="live-discount-preview">No discount applied</small>
                 </div>
                 <div class="form-group" style="margin:0;">
@@ -343,7 +340,7 @@
                 </div>
             </div>
 
-            <!-- Direct Photo Upload Box with Preview -->
+            <!-- Direct Photo Upload -->
             <div class="form-group" style="margin-top:15px;">
                 <label><i class="fas fa-images"></i> Product Photos (Direct Upload from Device):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
@@ -356,14 +353,14 @@
                 <div class="preview-thumbs-wrapper" id="image-previews-container"></div>
             </div>
 
-            <!-- Admin Internal / Personal Note -->
+            <!-- Admin Internal Note -->
             <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
                 <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
                 <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
                 <small style="color:#7f8c8d; font-size:11px;">This note is strictly private for store management and never shown to customers.</small>
             </div>
 
-            <!-- Product Variants Section (Max 5) -->
+            <!-- Product Variants Section with Separate MRP & Discount -->
             <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
@@ -387,7 +384,7 @@
             </div>
         </div>
 
-        <!-- Live Product Catalog Table (Bottom Section) -->
+        <!-- Live Product Catalog Table -->
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
@@ -441,7 +438,6 @@
             }
         }
 
-        // Live Discount Percentage Calculation
         function calculateLiveDiscountPercentage() {
             const actual = parseFloat(document.getElementById('prod-actual-price').value) || 0;
             const discount = parseFloat(document.getElementById('prod-discount-price').value) || 0;
@@ -460,7 +456,6 @@
             }
         }
 
-        // Direct Multi-Image Processing & Compression
         function handleDirectImageUpload(input) {
             const files = Array.from(input.files);
             if (!files.length) return;
@@ -525,7 +520,8 @@
             }
         }
 
-        function addVariantRow(name = "", type = "Color", price = "", img = "") {
+        // ভ্যারিয়েন্ট রো উইথ সেপারেট MRP (Actual Price) এবং Selling Price
+        function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "") {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
             
@@ -541,8 +537,8 @@
                     <strong style="font-size:12px; color:#2c3e50;">Variant #${currentCount + 1}</strong>
                     <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                    <input type="text" placeholder="Option Name (e.g., Black)" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
+                    <input type="text" placeholder="Option Name (e.g. Black)" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     <select class="var-type" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
                         <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
                         <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
@@ -551,7 +547,8 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <input type="number" placeholder="MRP / Actual (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" title="Optional Strikethrough MRP">
+                    <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required title="Selling Price">
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <input type="file" accept="image/*" onchange="handleVariantImageUpload(this)" style="font-size:11px; flex:1;">
@@ -729,7 +726,7 @@
                 toggle.checked = true;
                 toggleVariantSection(true);
                 prod.variants.forEach(v => {
-                    addVariantRow(v.name, v.type || "Color", v.price, v.image || "");
+                    addVariantRow(v.name, v.type || "Color", v.price, v.actualPrice || prod.actualPrice || "", v.image || "");
                 });
             } else {
                 toggle.checked = false;
@@ -776,7 +773,6 @@
             const adminNote = document.getElementById('prod-admin-note').value.trim();
             const isVariantsEnabled = document.getElementById('toggle-variants').checked;
 
-            // Form Validations
             if (!name) { alert("Please provide product name."); return; }
             if (actualPrice <= 0 || discountPrice <= 0) { alert("Both Actual Price and Discount Price must be greater than 0."); return; }
             if (discountPrice > actualPrice) { alert("Discount Price cannot be greater than Actual Price."); return; }
@@ -787,6 +783,7 @@
                 rows.forEach(r => {
                     let vName = r.querySelector('.var-name').value.trim();
                     let vType = r.querySelector('.var-type').value;
+                    let vActual = parseInt(r.querySelector('.var-actual-price').value) || actualPrice;
                     let vPrice = parseInt(r.querySelector('.var-price').value) || discountPrice;
                     let vImg = r.querySelector('.var-img-data').value.trim();
 
@@ -794,6 +791,7 @@
                         variants.push({
                             name: vName,
                             type: vType,
+                            actualPrice: vActual,
                             price: vPrice,
                             image: vImg,
                             isActive: true
@@ -808,7 +806,7 @@
                 subCategory: subCat,
                 actualPrice: actualPrice,
                 discountPrice: discountPrice,
-                price: discountPrice, // backward compatibility
+                price: discountPrice,
                 customType: customType,
                 images: uploadedProductImages,
                 adminNote: adminNote,
@@ -825,10 +823,10 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
-                    alert("✅ Product updated successfully with discount pricing!");
+                    alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    alert("✅ New product added successfully with discount pricing!");
+                    alert("✅ New product added successfully!");
                 }
                 resetProductForm();
                 fetchAdminProducts();
