@@ -14,15 +14,30 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; min-height: 100vh; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
+
+        /* Sidebar Styling */
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
-        .sidebar a i { margin-right: 12px; width: 18px; }
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
+
+        /* Main Content Layout */
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
+        
+        /* Mobile Top Navbar */
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
+        .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 850px; }
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
         
@@ -32,13 +47,33 @@
         .btn-wa { background: #25d366; color: #fff; }
         .btn-del { background: #e74c3c; color: #fff; }
         .btn-dis { background: #bdc3c7; color: #7f8c8d; cursor: not-allowed; }
+
+        /* Mobile Breakpoint */
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .admin-card { padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Unified 100% Matching Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
+    <!-- Mobile Header -->
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
+    <!-- Unified Sidebar -->
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
         <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" class="active" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
@@ -52,12 +87,12 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Payment Verification & All Customer Orders</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Payment Verification & All Orders</h2>
 
         <!-- Step 1: Unverified Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px;">
-                <h3 style="color:#d35400; margin:0;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify WhatsApp Screenshot & Mark Paid)</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot & Mark Paid)</h3>
                 <span id="pending-count-badge" style="background:#fef3c7; color:#b45309; font-weight:bold; padding:3px 10px; border-radius:12px; font-size:12px;">0 Pending</span>
             </div>
             <table class="admin-table">
@@ -79,8 +114,8 @@
         <!-- Step 2: All Confirmed Orders -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <h3 style="color:#27ae60; margin:0;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders (Past & New Records)</h3>
-                <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Phone..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:260px;">
+                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders (Past & New Records)</h3>
+                <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Phone..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
             </div>
             
             <table class="admin-table">
@@ -126,14 +161,20 @@
             }
         }
 
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+
         function adminLogout() {
             localStorage.removeItem('cz_logged_in_user');
             window.location.href = "admin-login.html";
         }
 
         function isMainAdminUser() {
-            if (!loggedInAdmin) return false;
-            return (loggedInAdmin.role !== 'staff');
+            return (loggedInAdmin && loggedInAdmin.role !== 'staff');
         }
 
         function applyNavRules() {
@@ -147,6 +188,18 @@
                 document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
+        }
+
+        async function logSystemAction(action, targetId) {
+            try {
+                await db.collection("audit_logs").add({
+                    actor: loggedInAdmin.name || loggedInAdmin.username || "User",
+                    role: loggedInAdmin.role || "staff",
+                    action: action,
+                    targetId: targetId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {}
         }
 
         async function fetchAdminOrders() {
@@ -163,7 +216,7 @@
                 tbody.innerHTML = "";
 
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#7f8c8d;'>No unverified payments right now.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#7f8c8d; padding:15px;'>No unverified payments right now.</td></tr>";
                     badge.innerText = "0 Pending";
                     return;
                 }
@@ -227,6 +280,8 @@
                     paymentStatus: "Paid",
                     finalOrderId: finalOrderId
                 });
+
+                await logSystemAction("Verified Payment & Created Order", finalOrderId);
 
                 alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created.`);
                 fetchAdminOrders();
@@ -329,7 +384,6 @@
                                 <i class="fab fa-whatsapp"></i>
                             </button>
 
-                            <!-- Delete Option: STRICT ADMIN ONLY -->
                             ${canDelete ? `
                                 <button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete Order">
                                     <i class="fas fa-trash"></i>
@@ -362,6 +416,7 @@
                     orderStatus: newStatus,
                     status: newStatus 
                 });
+                await logSystemAction(`Updated Order Status to ${newStatus}`, docId);
                 alert(`✓ Order status updated to "${newStatus}"`);
             } catch(e) {
                 alert("Failed to update status.");
@@ -377,6 +432,7 @@
             if (confirm(`Permanently delete order #${docId}? This action cannot be undone.`)) {
                 try {
                     await db.collection("orders").doc(docId).delete();
+                    await logSystemAction("Permanently Deleted Order", docId);
                     alert("✓ Order deleted successfully!");
                     fetchAdminOrders();
                 } catch(e) {
