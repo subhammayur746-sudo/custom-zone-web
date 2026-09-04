@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Tax Invoice - Custom Zone</title>
+    <title>Tax Invoice Generator - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -14,366 +14,248 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
-        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
-        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
-        
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i { margin-right: 12px; width: 18px; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
-        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 18px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;}
+        .invoice-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); max-width: 800px; margin: 0 auto; }
         
-        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
+        .inv-input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        .inv-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .inv-table th { background: #f8f9fa; padding: 8px; border: 1px solid #eee; text-align: left; font-size: 13px; }
+        .inv-table td { padding: 8px; border: 1px solid #eee; font-size: 13px; }
 
-        .order-select-item {
-            background: #f8f9fa;
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .order-select-item:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-        }
-
-        #invoice-print-area { display: none; }
         @media print {
-            body { background: #fff; }
-            .sidebar, .main-content, .mobile-admin-header { display: none !important; }
-            #invoice-print-area { display: block !important; position: static; width: 100%; padding: 0; margin: 0; border: none; }
-            @page { margin: 0; }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar { left: -260px; width: 250px; }
-            .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
-            .mobile-admin-header { display: flex; }
+            .sidebar, .no-print { display: none !important; }
+            .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+            .invoice-card { box-shadow: none !important; border: none !important; max-width: 100% !important; }
         }
     </style>
 </head>
 <body>
 
-    <div class="mobile-admin-header">
-        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
-        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
-    </div>
-
-    <div class="sidebar">
-        <div class="sidebar-header"><h2>CZ Admin</h2></div>
+    <div class="sidebar no-print">
+        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
         <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-invoice.html" class="active" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
-        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="admin-orders.html"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-users.html"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Generate Official Tax Invoice</h2>
-
-        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;">
+        <div class="invoice-card" id="invoice-printable-area">
             
-            <!-- Left: Manual Invoice Form -->
-            <div class="admin-card" style="flex: 1.3; min-width: 320px;">
-                <h3><i class="fas fa-file-invoice"></i> Create Invoice After Payment Verification</h3>
-                
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                        <label>Order ID</label>
-                        <input type="text" id="inv-order-id" placeholder="e.g., CZ1024" style="font-weight: bold; text-transform: uppercase;">
-                    </div>
-                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                        <label>Invoice Date</label>
-                        <input type="text" id="inv-date" placeholder="DD/MM/YYYY">
-                    </div>
+            <!-- Invoice Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #28469E; padding-bottom:15px; margin-bottom:15px;">
+                <div>
+                    <h2 style="margin:0; color:#28469E; font-weight:800;">Custom Zone</h2>
+                    <p style="margin:2px 0; font-size:12px; color:#555;">Handcrafted & Customized Kept Gifts</p>
+                    <p style="margin:2px 0; font-size:12px; color:#555;">Liluah Chakpara, Howrah, West Bengal</p>
+                    <p style="margin:2px 0; font-size:12px; color:#555;">WhatsApp: +91 6290407730</p>
                 </div>
-
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                        <label>Customer Full Name</label>
-                        <input type="text" id="inv-name" placeholder="e.g., Sourav Ganguly">
-                    </div>
-                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                        <label>Customer WhatsApp Phone</label>
-                        <input type="tel" id="inv-phone" placeholder="e.g., 9876543210">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Full Delivery Address</label>
-                    <textarea id="inv-address" rows="2" placeholder="House/Flat No, Street, P.O., District, PIN Code"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Ordered Items & Customizations</label>
-                    <textarea id="inv-items" rows="3" placeholder="- Customized Spotify Keychain (Name: Priya) (₹299)&#10;- Delivery Fee: FREE"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                        <label>Total Paid Amount (₹)</label>
-                        <input type="number" id="inv-amount" placeholder="e.g., 299">
-                    </div>
-                    <div class="form-group" style="flex: 1; min-width: 180px;">
-                        <label>Payment Status</label>
-                        <select id="inv-pay-status" style="font-weight: bold; color: green;">
-                            <option value="Paid via UPI - Verified">Paid via UPI (Verified)</option>
-                            <option value="Payment Verified - Processing">Processing</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
-                    <button onclick="sendInvoiceWhatsApp()" style="flex: 1; min-width: 200px; background: #25d366; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;">
-                        <i class="fab fa-whatsapp"></i> Send Invoice on WhatsApp
-                    </button>
-                    <button onclick="printManualInvoice()" style="flex: 1; min-width: 160px; background: #3498db; color: white; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;">
-                        <i class="fas fa-print"></i> Print / Save PDF
-                    </button>
+                <div style="text-align:right;">
+                    <h3 style="margin:0; color:#2c3e50; text-transform:uppercase;">TAX INVOICE</h3>
+                    <p style="margin:3px 0; font-size:13px;"><strong>Invoice No:</strong> <input type="text" id="inv-no" value="INV-1001" style="width:110px; padding:2px 5px; font-weight:bold;"></p>
+                    <p style="margin:3px 0; font-size:13px;"><strong>Date:</strong> <input type="text" id="inv-date" value="" style="width:110px; padding:2px 5px;"></p>
                 </div>
             </div>
 
-            <!-- Right: 1-Click Order Selector List -->
-            <div class="admin-card" style="flex: 1; min-width: 300px; max-height: 650px; overflow-y: auto;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">
-                    <h3 style="margin:0; border:none; padding:0; font-size:16px;"><i class="fas fa-list-ul"></i> Select Recent Order</h3>
-                    <button onclick="fetchOrdersForInvoice()" style="background:none; border:none; color:#3498db; cursor:pointer;" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+            <!-- Customer Details Block -->
+            <div style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:15px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <label style="font-size:11px; font-weight:bold;">Customer Name:</label>
+                        <input type="text" id="inv-cust-name" class="inv-input" placeholder="Customer Name">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; font-weight:bold;">Phone Number:</label>
+                        <input type="text" id="inv-cust-phone" class="inv-input" placeholder="Phone Number">
+                    </div>
                 </div>
-                <input type="text" id="order-quick-search" onkeyup="filterQuickOrders()" placeholder="🔍 Quick search order ID / name..." style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:12px; box-sizing:border-box; margin-bottom:12px;">
-                
-                <div id="quick-order-list">
-                    <p style="text-align:center; color:#7f8c8d; font-size:13px; padding:15px;">Loading recent orders...</p>
+                <div style="margin-top:8px;">
+                    <label style="font-size:11px; font-weight:bold;">Billing / Shipping Address:</label>
+                    <input type="text" id="inv-cust-address" class="inv-input" placeholder="Full Delivery Address">
                 </div>
+            </div>
+
+            <!-- Items Table -->
+            <table class="inv-table">
+                <thead>
+                    <tr>
+                        <th style="width:50%;">Item Description</th>
+                        <th style="width:15%;">Qty</th>
+                        <th style="width:15%;">Unit Price (₹)</th>
+                        <th style="width:20%; text-align:right;">Total (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="invoice-items-body">
+                    <tr>
+                        <td><input type="text" class="inv-input item-desc" placeholder="Custom Photo Frame"></td>
+                        <td><input type="number" class="inv-input item-qty" value="1" oninput="calculateInvoiceTotal()"></td>
+                        <td><input type="number" class="inv-input item-price" value="0" oninput="calculateInvoiceTotal()"></td>
+                        <td style="text-align:right; font-weight:bold;" class="item-line-total">₹0</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="no-print" style="margin-top:10px;">
+                <button type="button" onclick="addInvoiceItemRow()" style="background:#3498db; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add More Item</button>
+            </div>
+
+            <!-- Calculation Summary -->
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <div style="width:260px; line-height:1.8; font-size:13px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>Subtotal:</span>
+                        <strong id="inv-subtotal">₹0</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Delivery Fee:</span>
+                        <input type="number" id="inv-delivery" value="0" oninput="calculateInvoiceTotal()" style="width:70px; text-align:right; padding:2px 4px;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>Discount / Voucher:</span>
+                        <input type="number" id="inv-discount" value="0" oninput="calculateInvoiceTotal()" style="width:70px; text-align:right; padding:2px 4px;">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-top:2px solid #28469E; padding-top:4px; margin-top:4px; font-size:16px; color:#28469E;">
+                        <strong>Grand Total:</strong>
+                        <strong id="inv-grand-total">₹0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print & Share Actions -->
+            <div class="no-print" style="margin-top:25px; text-align:center; border-top:1px solid #eee; padding-top:18px; display:flex; justify-content:center; gap:10px;">
+                <button onclick="window.print()" style="background:#28469E; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-print"></i> Print / Save PDF
+                </button>
+                <button onclick="sendInvoiceOnWhatsApp()" style="background:#25d366; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                    <i class="fab fa-whatsapp"></i> Send on WhatsApp
+                </button>
             </div>
 
         </div>
     </div>
 
-    <div id="invoice-print-area"></div>
-
     <script>
-        let allInvoiceOrdersCache = [];
-        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
 
-        if (!loggedInUser) {
-            window.location.href = "admin-login.html";
-        } else {
-            document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
-            checkPrefillParams();
-            fetchOrdersForInvoice();
-        }
-
-        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
-
-        function checkPrefillParams() {
+        // Check for URL Parameter to auto-fill order details
+        window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.get('id')) document.getElementById('inv-order-id').value = urlParams.get('id');
-            if(urlParams.get('name')) document.getElementById('inv-name').value = urlParams.get('name');
-            if(urlParams.get('phone')) document.getElementById('inv-phone').value = urlParams.get('phone');
-            if(urlParams.get('amount')) document.getElementById('inv-amount').value = urlParams.get('amount');
-        }
+            const orderId = urlParams.get('orderId');
+            if (orderId) {
+                loadOrderDetailsIntoInvoice(orderId);
+            }
+        };
 
-        // ক্লাউড থেকে অর্ডার ফেচ করে সাইডবারে দেখানো
-        async function fetchOrdersForInvoice() {
-            const container = document.getElementById('quick-order-list');
+        async function loadOrderDetailsIntoInvoice(orderId) {
             try {
-                const snapshot = await db.collection("orders").orderBy("timestamp", "desc").limit(20).get();
-                allInvoiceOrdersCache = [];
-                container.innerHTML = "";
+                // Try finding by docId or orderId
+                let doc = await db.collection("orders").doc(orderId).get();
+                let ord = null;
 
-                if (snapshot.empty) {
-                    container.innerHTML = "<p style='text-align:center; color:#7f8c8d; font-size:13px;'>No recent orders found.</p>";
-                    return;
+                if (doc.exists) {
+                    ord = doc.data();
+                } else {
+                    const snap = await db.collection("orders").where("orderId", "==", orderId).limit(1).get();
+                    if (!snap.empty) ord = snap.docs[0].data();
                 }
 
-                snapshot.forEach(doc => {
-                    let ord = doc.data();
-                    ord.id = doc.id;
-                    allInvoiceOrdersCache.push(ord);
-                });
+                if (!ord) return;
 
-                renderQuickOrders(allInvoiceOrdersCache);
-            } catch (e) {
-                console.error(e);
-                container.innerHTML = "<p style='color:red; text-align:center; font-size:13px;'>Error loading orders.</p>";
+                document.getElementById('inv-no').value = `INV-${orderId.replace(/[^0-9]/g, '') || '101'}`;
+                document.getElementById('inv-cust-name').value = ord.customerName || ord.name || "";
+                document.getElementById('inv-cust-phone').value = ord.phone || "";
+                document.getElementById('inv-cust-address').value = ord.actualDeliveryAddress || ord.address || "";
+                document.getElementById('inv-delivery').value = ord.deliveryFee || 0;
+                document.getElementById('inv-discount').value = ord.discountGiven || 0;
+
+                const tbody = document.getElementById('invoice-items-body');
+                tbody.innerHTML = "";
+
+                if (Array.isArray(ord.items) && ord.items.length > 0) {
+                    ord.items.forEach(it => {
+                        let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><input type="text" class="inv-input item-desc" value="${it.name} ${it.variantName ? `(${it.variantName})` : ''}"></td>
+                                <td><input type="number" class="inv-input item-qty" value="${it.quantity || 1}" oninput="calculateInvoiceTotal()"></td>
+                                <td><input type="number" class="inv-input item-price" value="${unitPrice}" oninput="calculateInvoiceTotal()"></td>
+                                <td style="text-align:right; font-weight:bold;" class="item-line-total">₹${it.chargedAmount || it.price}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    let desc = ord.items ? ord.items.replace(/\[Delivery:.*?\]/g, '').trim() : "Custom Zone Gift Item";
+                    tbody.innerHTML = `
+                        <tr>
+                            <td><input type="text" class="inv-input item-desc" value="${desc}"></td>
+                            <td><input type="number" class="inv-input item-qty" value="1" oninput="calculateInvoiceTotal()"></td>
+                            <td><input type="number" class="inv-input item-price" value="${ord.totalAmount || 0}" oninput="calculateInvoiceTotal()"></td>
+                            <td style="text-align:right; font-weight:bold;" class="item-line-total">₹${ord.totalAmount || 0}</td>
+                        </tr>
+                    `;
+                }
+
+                calculateInvoiceTotal();
+
+            } catch(e) {
+                console.error("Auto invoice load error:", e);
             }
         }
 
-        function renderQuickOrders(orders) {
-            const container = document.getElementById('quick-order-list');
-            container.innerHTML = "";
-
-            if(orders.length === 0) {
-                container.innerHTML = "<p style='text-align:center; color:#7f8c8d; font-size:13px;'>No matching orders.</p>";
-                return;
-            }
-
-            orders.forEach(ord => {
-                let statusColor = "#f39c12";
-                if(ord.status === "Delivered Successfully") statusColor = "#27ae60";
-                if(ord.status.includes("Processing")) statusColor = "#2980b9";
-
-                container.innerHTML += `
-                    <div class="order-select-item" onclick="populateInvoiceForm('${ord.id}')">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <strong style="color:#e74c3c; font-size:13px;">${ord.id}</strong>
-                            <span style="font-size:11px; background:${statusColor}; color:white; padding:2px 6px; border-radius:3px;">${ord.status || 'Pending'}</span>
-                        </div>
-                        <div style="font-size:13px; color:#2c3e50; font-weight:600;">${ord.customerName || 'N/A'}</div>
-                        <div style="display:flex; justify-content:space-between; font-size:12px; color:#7f8c8d; margin-top:4px;">
-                            <span><i class="fas fa-phone-alt"></i> ${ord.phone || 'N/A'}</span>
-                            <strong style="color:#27ae60;">₹${ord.totalAmount || 0}</strong>
-                        </div>
-                        <button type="button" style="margin-top:8px; width:100%; background:#2c3e50; color:white; border:none; padding:4px; border-radius:3px; font-size:11px; cursor:pointer;">
-                            <i class="fas fa-arrow-left"></i> Autofill Form
-                        </button>
-                    </div>
-                `;
-            });
-        }
-
-        function filterQuickOrders() {
-            let term = document.getElementById('order-quick-search').value.toLowerCase().trim();
-            let filtered = allInvoiceOrdersCache.filter(o => o.id.toLowerCase().includes(term) || (o.customerName && o.customerName.toLowerCase().includes(term)));
-            renderQuickOrders(filtered);
-        }
-
-        // ১-ক্লিকে ইনভয়েস ফর্ম ফিল করার ফাংশন
-        function populateInvoiceForm(orderId) {
-            let ord = allInvoiceOrdersCache.find(o => o.id === orderId);
-            if(!ord) return;
-
-            document.getElementById('inv-order-id').value = ord.id;
-            document.getElementById('inv-name').value = ord.customerName || "";
-            document.getElementById('inv-phone').value = ord.phone || "";
-            document.getElementById('inv-address').value = ord.address || "";
-            document.getElementById('inv-amount').value = ord.totalAmount || "";
-            document.getElementById('inv-items').value = ord.items || "";
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // প্রফেশনাল হ্যান্ডক্রাফটিং ও ডেলিভারি টাইম মেসেজ সহ ইনভয়েস সেন্ডার
-        function sendInvoiceWhatsApp() {
-            const orderId = document.getElementById('inv-order-id').value.trim();
-            const date = document.getElementById('inv-date').value.trim();
-            const name = document.getElementById('inv-name').value.trim();
-            const phone = document.getElementById('inv-phone').value.replace(/[^0-9]/g, '');
-            const address = document.getElementById('inv-address').value.trim();
-            const items = document.getElementById('inv-items').value.trim();
-            const amount = document.getElementById('inv-amount').value.trim();
-            const payStatus = document.getElementById('inv-pay-status').value;
-
-            if(!orderId || !name || !phone || !amount || !items) {
-                alert("Please fill all required invoice fields."); return;
-            }
-
-            let targetNumber = phone.length === 10 ? "91" + phone : phone;
-
-            let msg = `*🧾 OFFICIAL TAX INVOICE & ORDER CONFIRMATION*\n` +
-                      `*CUSTOM ZONE - Customize with Love & Care*\n` +
-                      `-------------------------------------------\n\n` +
-                      `Hello *${name}*,\n\n` +
-                      `Thank you! Your payment has been *VERIFIED* and your order is officially confirmed. 🎉✨\n\n` +
-                      `*Invoice Details:*\n` +
-                      `📌 *Order ID:* ${orderId}\n` +
-                      `📅 *Date:* ${date}\n` +
-                      `💳 *Payment Status:* ${payStatus}\n` +
-                      `💰 *Total Paid Amount:* ₹${amount}\n\n` +
-                      `*Items Ordered:*\n` +
-                      `${items}\n\n` +
-                      `📍 *Delivery Address:*\n` +
-                      `${address || 'On File'}\n\n` +
-                      `-------------------------------------------\n` +
-                      `⏳ *Estimated Delivery Time: 6 - 7 Working Days*\n` +
-                      `*(Since your item is 100% handcrafted & personalized, it goes through precision crafting 🎨 ➔ quality check ✨ ➔ premium safe packaging 🎁 ➔ dispatch & fast courier delivery 🚚)*\n` +
-                      `-------------------------------------------\n\n` +
-                      `🔍 *Track your order live here:*\n` +
-                      `👉 https://custom-zone-web.vercel.app/track-order.html\n\n` +
-                      `For any queries, feel free to reply on this WhatsApp chat.\n` +
-                      `📞 Custom Zone Support: +91 6290407730`;
-
-            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
-            window.open(waUrl, "_blank");
-        }
-
-        function printManualInvoice() {
-            const orderId = document.getElementById('inv-order-id').value.trim();
-            const date = document.getElementById('inv-date').value.trim();
-            const name = document.getElementById('inv-name').value.trim();
-            const phone = document.getElementById('inv-phone').value.trim();
-            const address = document.getElementById('inv-address').value.trim();
-            const items = document.getElementById('inv-items').value.trim();
-            const amount = document.getElementById('inv-amount').value.trim();
-
-            if(!orderId || !name || !amount) {
-                alert("Please fill Order ID, Customer Name, and Amount to print."); return;
-            }
-
-            let printArea = document.getElementById('invoice-print-area');
-            printArea.innerHTML = `
-                <div style="border: 2px solid #2c3e50; padding: 30px; border-radius: 8px; background: #fff; max-width: 800px; margin: 20px auto; font-family: 'Poppins', sans-serif;">
-                    <div style="text-align: center; border-bottom: 2px solid #e74c3c; padding-bottom: 15px; margin-bottom: 20px;">
-                        <h1 style="color: #2c3e50; margin: 0; font-size: 32px; font-weight: 900;">CUSTOM ZONE</h1>
-                        <p style="color: #e74c3c; margin: 5px 0; font-weight: bold;">CUSTOMIZE WITH LOVE & CARE</p>
-                        <p style="color: #555; margin: 0; font-size: 14px;">+91 6290407730 | support@customzone.com</p>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                        <div>
-                            <h3 style="color: #2c3e50; margin-bottom: 10px;">INVOICE TO:</h3>
-                            <p style="margin: 2px 0; font-size: 16px;"><strong>${name}</strong></p>
-                            <p style="margin: 2px 0; color: #555; font-size: 14px;">${phone || 'N/A'}</p>
-                            <p style="margin: 4px 0 0 0; color: #555; max-width: 280px; font-size: 14px;">${address || 'N/A'}</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <h3 style="color: #2c3e50; margin-bottom: 10px;">INVOICE DETAILS:</h3>
-                            <p style="margin: 4px 0;"><strong>Order ID:</strong> <span style="color: #e74c3c; font-weight: bold;">${orderId}</span></p>
-                            <p style="margin: 4px 0;"><strong>Date:</strong> ${date}</p>
-                            <div style="margin-top: 10px; padding: 5px 10px; border: 1px solid #27ae60; background: #eafaf1; border-radius: 4px; display: inline-block;">
-                                <strong>Payment:</strong> <span style="color: #27ae60; font-weight:bold;">PAID & VERIFIED</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <hr style="border: 1px dashed #ddd; margin: 20px 0;">
-                    <h4 style="margin-bottom: 10px; color: #2c3e50; font-size: 16px;">Items Ordered:</h4>
-                    <pre style="font-family: inherit; font-size: 14px; white-space: pre-wrap; color: #333; line-height: 1.6; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee;">${items}</pre>
-                    
-                    <div style="background: #fffdf5; border-left: 4px solid #f39c12; padding: 10px 15px; margin: 15px 0; font-size: 12px; color: #555;">
-                        <strong>Note on Delivery:</strong> Customized handcrafted products take 6 - 7 working days to complete crafting, quality inspection, premium packaging, and courier delivery.
-                    </div>
-
-                    <hr style="border: 1px dashed #ddd; margin: 20px 0;">
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px;">
-                        <div>
-                            <h3 style="color: #27ae60; font-size: 24px; margin: 0;">Total Amount: ₹${amount}</h3>
-                            <p style="color: #7f8c8d; font-size: 12px; margin-top: 5px;">*Thank you for trusting Custom Zone.</p>
-                        </div>
-                        <div style="text-align: center; width: 150px;">
-                            <div style="height: 50px;"></div> 
-                            <hr style="border: 1px solid #2c3e50; margin-bottom: 5px;">
-                            <p style="margin: 0; font-weight: bold; font-size: 14px; color: #2c3e50;">Authorized Signature</p>
-                        </div>
-                    </div>
-                </div>
+        function addInvoiceItemRow() {
+            const tbody = document.getElementById('invoice-items-body');
+            tbody.innerHTML += `
+                <tr>
+                    <td><input type="text" class="inv-input item-desc" placeholder="Product name"></td>
+                    <td><input type="number" class="inv-input item-qty" value="1" oninput="calculateInvoiceTotal()"></td>
+                    <td><input type="number" class="inv-input item-price" value="0" oninput="calculateInvoiceTotal()"></td>
+                    <td style="text-align:right; font-weight:bold;" class="item-line-total">₹0</td>
+                </tr>
             `;
-            window.print();
+        }
+
+        function calculateInvoiceTotal() {
+            const rows = document.querySelectorAll('#invoice-items-body tr');
+            let subtotal = 0;
+
+            rows.forEach(r => {
+                let qty = parseFloat(r.querySelector('.item-qty').value) || 0;
+                let price = parseFloat(r.querySelector('.item-price').value) || 0;
+                let total = qty * price;
+                r.querySelector('.item-line-total').innerText = `₹${total}`;
+                subtotal += total;
+            });
+
+            let delivery = parseFloat(document.getElementById('inv-delivery').value) || 0;
+            let discount = parseFloat(document.getElementById('inv-discount').value) || 0;
+
+            document.getElementById('inv-subtotal').innerText = `₹${subtotal}`;
+            let grandTotal = Math.max(0, subtotal + delivery - discount);
+            document.getElementById('inv-grand-total').innerText = `₹${grandTotal}`;
+        }
+
+        function sendInvoiceOnWhatsApp() {
+            const name = document.getElementById('inv-cust-name').value.trim();
+            const phone = document.getElementById('inv-cust-phone').value.trim();
+            const invNo = document.getElementById('inv-no').value.trim();
+            const grandTotal = document.getElementById('inv-grand-total').innerText;
+
+            if (!phone) { alert("Please provide customer phone number."); return; }
+
+            let cleanPhone = phone.replace(/[^0-9]/g, '');
+            if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+
+            let msg = `Hello ${name || 'Customer'},\nYour official Tax Invoice *#${invNo}* from Custom Zone has been generated.\n\nTotal Paid Amount: *${grandTotal}*\n\nThank you for shopping with Custom Zone! 🎁✨`;
+            window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
         }
     </script>
 </body>

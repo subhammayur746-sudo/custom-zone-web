@@ -276,7 +276,6 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
 
-        <!-- Add / Edit Product Form -->
         <div class="admin-card">
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
@@ -709,6 +708,9 @@
                     pricingHtml = `<strong style="color:#27ae60; font-size:14px;">₹${discountPrice || p.price}</strong>`;
                 }
 
+                // Strict Delete Rule Check
+                let canDelete = loggedInUser && (loggedInUser.role === 'main_admin' || loggedInUser.canDelete === true);
+
                 tbody.innerHTML += `
                     <tr>
                         <td>
@@ -730,7 +732,7 @@
                         <td style="white-space:nowrap;">
                             <button onclick="editProduct('${p.id}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
                             <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#95a5a6; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide Product"><i class="fas fa-eye-slash"></i></button>
-                            <button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>
+                            ${canDelete ? `<button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>` : `<button onclick="alert('❌ Access Denied: Only Main Admin has permission to delete products!')" style="background:#bdc3c7; color:#7f8c8d; border:none; padding:6px 10px; border-radius:4px; cursor:not-allowed; margin-left:3px;" title="Delete Restricted"><i class="fas fa-trash"></i></button>`}
                         </td>
                     </tr>
                 `;
@@ -776,7 +778,6 @@
             uploadedProductImages = prod.images ? [...prod.images] : [];
             renderImagePreviews();
 
-            // Populate Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -792,7 +793,6 @@
                 toggleVariantSection(false);
             }
 
-            // Populate Quantity Tiers
             const toggleQty = document.getElementById('toggle-qty-pricing');
             const qtyList = document.getElementById('qty-tier-items-list');
             qtyList.innerHTML = "";
@@ -858,7 +858,6 @@
             if (actualPrice <= 0 || discountPrice <= 0) { alert("Both Actual Price and Discount Price must be greater than 0."); return; }
             if (discountPrice > actualPrice) { alert("Discount Price cannot be greater than Actual Price."); return; }
 
-            // Process Variants
             let variants = [];
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
@@ -882,7 +881,6 @@
                 });
             }
 
-            // Process Quantity Tiers
             let qtyTiers = [];
             if (isQtyPricingEnabled) {
                 const qtyRows = document.querySelectorAll('.qty-tier-item-box');
@@ -946,7 +944,13 @@
         }
 
         async function deleteProduct(id) {
-            if (confirm("Are you sure you want to delete this product?")) {
+            // STRICT CLIENT-SIDE CHECK
+            if (loggedInUser.role !== 'main_admin' && !loggedInUser.canDelete) {
+                alert("❌ Access Denied: Only Main Admin has permission to delete products!");
+                return;
+            }
+
+            if (confirm("Are you sure you want to permanently delete this product?")) {
                 try {
                     await db.collection("products").doc(id).delete();
                     fetchAdminProducts();

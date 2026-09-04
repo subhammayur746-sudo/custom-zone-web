@@ -68,6 +68,38 @@ async function initDynamicFomoTimer() {
     }
 }
 
+// Load Active Coupons into Cart Offers Banner
+async function loadAvailableCoupons() {
+    const badge = document.getElementById('available-coupons-badge');
+    if(!badge) return;
+    try {
+        const snapshot = await db.collection("coupons").where("isActive", "==", true).get();
+        if(snapshot.empty) {
+            badge.style.display = "none";
+            return;
+        }
+        let offers = [];
+        snapshot.forEach(doc => {
+            let c = doc.data();
+            let codeName = c.code || doc.id;
+            let discountVal = c.discountAmount || c.discount || 0;
+            if(c.type !== 'referral' && c.type !== 'voucher' && !codeName.startsWith('GIFT-') && !codeName.startsWith('REF-')) {
+                offers.push(`Use <strong>${codeName}</strong> (₹${discountVal} OFF on min ₹${c.minOrder || 0})`);
+            }
+        });
+
+        if(offers.length > 0) {
+            badge.innerHTML = `<i class="fas fa-gift" style="color: var(--success-green);"></i> Store Offers: ` + offers.join(" | ");
+            badge.style.display = "block";
+        } else {
+            badge.style.display = "none";
+        }
+    } catch(e) {
+        console.error("Coupons load error", e);
+        badge.style.display = "none";
+    }
+}
+
 // Auto-fill saved customer address
 function autoFillCustomerAddress() {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
@@ -341,7 +373,6 @@ async function submitOrderViaWhatsApp() {
         btn.innerText = "Creating Payment Order Request...";
     }
 
-    // Temporary Payment Reference (CZ-PAY-XXXXX)
     const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
     const paymentReference = `CZ-PAY-${randomHex}`;
 
@@ -367,21 +398,17 @@ async function submitOrderViaWhatsApp() {
     };
 
     try {
-        // Save only in pending_payments collection
         await db.collection("pending_payments").doc(paymentReference).set(pendingPaymentRecord);
 
-        // Update default address if changed
         if (address && customer.savedAddress !== fullDeliveryAddress) {
             customer.savedAddress = fullDeliveryAddress;
             localStorage.setItem('cz_customer_user', JSON.stringify(customer));
             await db.collection("customers").doc(customer.phone).update({ savedAddress: fullDeliveryAddress });
         }
 
-        // Clear cart
         localStorage.removeItem('cz_cart');
         updateNavbarCartCount();
 
-        // Render QR Payment Gate Screen
         renderPaymentGateScreen(paymentReference, currentTotal, name, phone);
 
     } catch (err) {
@@ -394,7 +421,6 @@ async function submitOrderViaWhatsApp() {
     }
 }
 
-// Payment Screen with Existing QR Code & WhatsApp Confirmation
 function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const container = document.querySelector('.cart-layout');
     if (!container) return;
@@ -415,7 +441,6 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
                 Amount to Pay: ₹${amount}
             </div>
 
-            <!-- Existing Custom Zone Payment QR -->
             <div style="margin:0 auto 20px auto; max-width:240px; padding:12px; border:2px dashed var(--blue-primary); border-radius:12px; background:#FFFFFF;">
                 <img src="assets/images/payment-qr.png" onerror="this.src='assets/images/logo.png'" alt="Payment QR" style="width:100%; border-radius:8px; display:block;">
                 <small style="color:var(--text-muted); font-weight:600; display:block; margin-top:8px;">UPI / GPay / PhonePe / Paytm</small>
@@ -438,5 +463,6 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
 window.addEventListener('DOMContentLoaded', () => {
     renderCart();
     autoFillCustomerAddress();
+    loadAvailableCoupons();
     initDynamicFomoTimer();
 });
