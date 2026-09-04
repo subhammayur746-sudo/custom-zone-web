@@ -8,20 +8,19 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; }
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
-        .sidebar a i { margin-right: 12px; width: 18px; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .invoice-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); max-width: 800px; margin: 0 auto; }
+        .invoice-card { background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); max-width: 800px; margin: 0 auto; border: 1px solid #eee; }
         
         .inv-input { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
         .inv-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -39,19 +38,21 @@
 
     <div class="sidebar no-print">
         <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
-        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-users.html"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" class="active" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
         <div class="invoice-card" id="invoice-printable-area">
             
-            <!-- Invoice Header -->
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #28469E; padding-bottom:15px; margin-bottom:15px;">
                 <div>
                     <h2 style="margin:0; color:#28469E; font-weight:800;">Custom Zone</h2>
@@ -66,7 +67,6 @@
                 </div>
             </div>
 
-            <!-- Customer Details Block -->
             <div style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:15px;">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div>
@@ -84,7 +84,6 @@
                 </div>
             </div>
 
-            <!-- Items Table -->
             <table class="inv-table">
                 <thead>
                     <tr>
@@ -108,7 +107,6 @@
                 <button type="button" onclick="addInvoiceItemRow()" style="background:#3498db; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add More Item</button>
             </div>
 
-            <!-- Calculation Summary -->
             <div style="margin-top:20px; display:flex; justify-content:flex-end;">
                 <div style="width:260px; line-height:1.8; font-size:13px;">
                     <div style="display:flex; justify-content:space-between;">
@@ -130,7 +128,6 @@
                 </div>
             </div>
 
-            <!-- Print & Share Actions -->
             <div class="no-print" style="margin-top:25px; text-align:center; border-top:1px solid #eee; padding-top:18px; display:flex; justify-content:center; gap:10px;">
                 <button onclick="window.print()" style="background:#28469E; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:bold; cursor:pointer;">
                     <i class="fas fa-print"></i> Print / Save PDF
@@ -144,10 +141,36 @@
     </div>
 
     <script>
+        let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+
+        if (!loggedInAdmin) {
+            window.location.href = "admin-login.html";
+        } else if (loggedInAdmin.role === 'staff') {
+            let perms = loggedInAdmin.permissions || [];
+            if (!perms.includes('invoice')) {
+                alert("❌ Access Denied: You do not have permission to access Manual Invoice!");
+                window.location.href = "admin-dashboard.html";
+            }
+        }
+
+        // Apply staff sidebar visibility
+        function applyNavRules() {
+            if (loggedInAdmin && loggedInAdmin.role === 'staff') {
+                let perms = loggedInAdmin.permissions || [];
+                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
+                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
+                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
+                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
+                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                document.getElementById('nav-ads').style.display = 'none';
+                document.getElementById('nav-users').style.display = 'none';
+            }
+        }
+
         document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
 
-        // Check for URL Parameter to auto-fill order details
         window.onload = () => {
+            applyNavRules();
             const urlParams = new URLSearchParams(window.location.search);
             const orderId = urlParams.get('orderId');
             if (orderId) {
@@ -157,7 +180,6 @@
 
         async function loadOrderDetailsIntoInvoice(orderId) {
             try {
-                // Try finding by docId or orderId
                 let doc = await db.collection("orders").doc(orderId).get();
                 let ord = null;
 
