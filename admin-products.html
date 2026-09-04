@@ -266,9 +266,6 @@
         <a href="admin-customers.html" id="menu-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
         <a href="admin-products.html" class="active" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
@@ -355,7 +352,7 @@
             <!-- Admin Internal Note -->
             <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
                 <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
-                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
+                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts..." style="background:#fff;"></textarea>
                 <small style="color:#7f8c8d; font-size:11px;">This note is strictly private for store management and never shown to customers.</small>
             </div>
 
@@ -377,7 +374,7 @@
                 </div>
             </div>
 
-            <!-- Quantity-Based / Bulk Package Pricing Section -->
+            <!-- Quantity-Based Pricing Section -->
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
@@ -445,6 +442,11 @@
         function logout() { 
             localStorage.removeItem('cz_logged_in_user'); 
             window.location.href = "admin-login.html"; 
+        }
+
+        function isMainAdmin() {
+            if (!loggedInUser) return false;
+            return (loggedInUser.role !== 'staff');
         }
 
         function handleMainCategoryChange(val) {
@@ -679,6 +681,8 @@
             const tbody = document.getElementById('admin-product-table');
             tbody.innerHTML = "";
 
+            let canDelete = isMainAdmin();
+
             products.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
                 
@@ -708,9 +712,6 @@
                     pricingHtml = `<strong style="color:#27ae60; font-size:14px;">₹${discountPrice || p.price}</strong>`;
                 }
 
-                // Strict Delete Rule Check
-                let canDelete = loggedInUser && (loggedInUser.role === 'main_admin' || loggedInUser.canDelete === true);
-
                 tbody.innerHTML += `
                     <tr>
                         <td>
@@ -732,7 +733,11 @@
                         <td style="white-space:nowrap;">
                             <button onclick="editProduct('${p.id}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
                             <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#95a5a6; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide Product"><i class="fas fa-eye-slash"></i></button>
-                            ${canDelete ? `<button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>` : `<button onclick="alert('❌ Access Denied: Only Main Admin has permission to delete products!')" style="background:#bdc3c7; color:#7f8c8d; border:none; padding:6px 10px; border-radius:4px; cursor:not-allowed; margin-left:3px;" title="Delete Restricted"><i class="fas fa-trash"></i></button>`}
+                            ${canDelete ? `
+                                <button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>
+                            ` : `
+                                <button onclick="alert('❌ Access Denied: Staff members cannot delete products!')" style="background:#bdc3c7; color:#7f8c8d; border:none; padding:6px 10px; border-radius:4px; cursor:not-allowed; margin-left:3px;" title="Delete Restricted"><i class="fas fa-trash"></i></button>
+                            `}
                         </td>
                     </tr>
                 `;
@@ -944,15 +949,16 @@
         }
 
         async function deleteProduct(id) {
-            // STRICT CLIENT-SIDE CHECK
-            if (loggedInUser.role !== 'main_admin' && !loggedInUser.canDelete) {
-                alert("❌ Access Denied: Only Main Admin has permission to delete products!");
+            // HARD RULE: Staff cannot delete products
+            if (!isMainAdmin()) {
+                alert("❌ Access Denied: Staff members cannot delete products!");
                 return;
             }
 
             if (confirm("Are you sure you want to permanently delete this product?")) {
                 try {
                     await db.collection("products").doc(id).delete();
+                    alert("✓ Product deleted successfully!");
                     fetchAdminProducts();
                 } catch(e) {
                     alert("Error deleting product.");

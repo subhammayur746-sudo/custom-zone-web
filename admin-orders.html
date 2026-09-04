@@ -50,7 +50,7 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px;">Payment Verification & All Customer Orders</h2>
 
-        <!-- Step 1: Unverified Pending Payments (New flow) -->
+        <!-- Step 1: Unverified Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px;">
                 <h3 style="color:#d35400; margin:0;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify WhatsApp Screenshot & Mark Paid)</h3>
@@ -72,7 +72,7 @@
             </table>
         </div>
 
-        <!-- Step 2: All Confirmed & Historical Orders -->
+        <!-- Step 2: All Confirmed Orders -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h3 style="color:#27ae60; margin:0;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders (Past & New Records)</h3>
@@ -118,6 +118,12 @@
             window.location.href = "admin-login.html";
         }
 
+        // Hard rule: staff cannot delete anything, only admin can
+        function isMainAdminUser() {
+            if (!loggedInAdmin) return false;
+            return (loggedInAdmin.role !== 'staff');
+        }
+
         async function fetchAdminOrders() {
             loadPendingPayments();
             loadConfirmedOrders();
@@ -160,7 +166,6 @@
             }
         }
 
-        // Verify Payment & Generate Final Order ID
         async function verifyAndMarkPaid(paymentRef) {
             if (!confirm(`Confirm receipt of payment for ${paymentRef}? This will generate the official Order ID.`)) return;
 
@@ -207,11 +212,10 @@
             }
         }
 
-        // 2. Fetch ALL Orders (Old + New)
+        // 2. Fetch ALL Orders
         async function loadConfirmedOrders() {
             const tbody = document.getElementById('confirmed-orders-tbody');
             try {
-                // পুরানো এবং নতুন সমস্ত অর্ডার একসাথে ফেচ করার জন্য আনকনস্ট্রেইন্ড স্ন্যাপশট
                 const snap = await db.collection("orders").get();
                 allOrdersCache = [];
                 tbody.innerHTML = "";
@@ -224,12 +228,10 @@
                 snap.forEach(doc => {
                     let ord = doc.data();
                     ord.docId = doc.id;
-                    // যদি orderId ফিল্ড না থাকে তবে doc.id ব্যবহার হবে
                     if(!ord.orderId) ord.orderId = doc.id;
                     allOrdersCache.push(ord);
                 });
 
-                // নতুন থেকে পুরানো হিসেবে সর্ট করা
                 allOrdersCache.sort((a, b) => {
                     let timeA = a.verifiedAt ? (a.verifiedAt.seconds || 0) : (a.timestamp ? (a.timestamp.seconds || 0) : 0);
                     let timeB = b.verifiedAt ? (b.verifiedAt.seconds || 0) : (b.timestamp ? (b.timestamp.seconds || 0) : 0);
@@ -248,7 +250,7 @@
             const tbody = document.getElementById('confirmed-orders-tbody');
             tbody.innerHTML = "";
 
-            let canDelete = loggedInAdmin && (loggedInAdmin.role === 'main_admin' || loggedInAdmin.canDelete === true);
+            let canDelete = isMainAdminUser();
 
             orders.forEach(ord => {
                 let itemsDetail = "";
@@ -290,28 +292,25 @@
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
-                            <!-- Option 1: View / Print Receipt Slip -->
                             <button class="btn-act btn-receipt" onclick="viewOrderReceipt('${ord.docId}')" title="Print Order Slip">
                                 <i class="fas fa-receipt"></i> Slip
                             </button>
 
-                            <!-- Option 2: Link to Manual Invoice -->
-                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice with prefilled details">
+                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice">
                                 <i class="fas fa-file-invoice"></i> Invoice
                             </a>
 
-                            <!-- Option 3: Send WhatsApp Status Update -->
                             <button class="btn-act btn-wa" onclick="sendWhatsAppStatusUpdate('${ord.docId}')" title="Send WhatsApp Update">
                                 <i class="fab fa-whatsapp"></i>
                             </button>
 
-                            <!-- Option 4: Delete Button (STRICT ADMIN ONLY) -->
+                            <!-- Delete Option: STRICT ADMIN ONLY -->
                             ${canDelete ? `
-                                <button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Permanent Delete">
+                                <button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete Order">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             ` : `
-                                <button class="btn-act btn-dis" onclick="alert('❌ Access Denied: Only Main Admin can delete orders!')" title="Delete Restricted for Staff">
+                                <button class="btn-act btn-dis" onclick="alert('❌ Access Denied: Staff members cannot delete orders!')" title="Delete Restricted for Staff">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             `}
@@ -338,22 +337,22 @@
                     orderStatus: newStatus,
                     status: newStatus 
                 });
-                alert(`✓ Order status successfully updated to "${newStatus}"`);
+                alert(`✓ Order status updated to "${newStatus}"`);
             } catch(e) {
                 alert("Failed to update status.");
             }
         }
 
         async function deleteOrderPermanent(docId) {
-            // STRICT CLIENT-SIDE CHECK
-            if (loggedInAdmin.role !== 'main_admin' && !loggedInAdmin.canDelete) {
-                alert("❌ Access Denied: Only Main Admin has permission to delete orders!");
+            if (!isMainAdminUser()) {
+                alert("❌ Access Denied: Staff members cannot delete any data!");
                 return;
             }
 
             if (confirm(`Permanently delete order #${docId}? This action cannot be undone.`)) {
                 try {
                     await db.collection("orders").doc(docId).delete();
+                    alert("✓ Order deleted successfully!");
                     fetchAdminOrders();
                 } catch(e) {
                     alert("Error deleting order.");
@@ -361,7 +360,6 @@
             }
         }
 
-        // WhatsApp Status Sender Bridge
         function sendWhatsAppStatusUpdate(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord || !ord.phone) {
@@ -376,7 +374,6 @@
             window.open(`https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // View Order Receipt Slip Modal
         function viewOrderReceipt(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
