@@ -17,9 +17,9 @@
         body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
-        .sidebar a i { margin-right: 12px; width: 18px; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
         
         /* Dashboard Stats Grid */
@@ -37,6 +37,7 @@
 </head>
 <body>
 
+    <!-- Unified Complete Admin Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
         <a href="admin-dashboard.html" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
@@ -44,6 +45,9 @@
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
@@ -60,14 +64,14 @@
         <!-- Order Progress & Revenue Stats Cards -->
         <div class="stats-grid">
             
-            <!-- REVENUE CARD: STRICT ADMIN ONLY -->
+            <!-- REVENUE CARD: STRICT ADMIN ONLY (Counts Delivered Orders) -->
             <div class="stat-card" id="card-revenue" style="display:none; border-left:4px solid #16a34a;">
                 <div class="stat-icon-wrap" style="background:#dcfce7; color:#16a34a;">
                     <i class="fas fa-rupee-sign"></i>
                 </div>
                 <div class="stat-info">
                     <h3 id="stat-revenue">₹0</h3>
-                    <p>Total Revenue (Paid)</p>
+                    <p>Delivered Income</p>
                 </div>
             </div>
 
@@ -179,9 +183,8 @@
             window.location.href = "admin-login.html";
         }
 
-        // Check if current user is Main Admin
         function isMainAdmin() {
-            return (loggedInAdmin.role !== 'staff');
+            return (loggedInAdmin && loggedInAdmin.role !== 'staff');
         }
 
         function adminLogout() {
@@ -189,31 +192,29 @@
             window.location.href = "admin-login.html";
         }
 
-        // Apply Staff Permissions on Sidebar & Access
         function applyNavPermissions() {
             document.getElementById('logged-user-name').innerText = loggedInAdmin.name || loggedInAdmin.username || "Admin";
             document.getElementById('logged-user-role').innerText = isMainAdmin() ? "Super Admin" : "Staff Member";
 
-            // If main admin, show revenue card
             if (isMainAdmin()) {
                 document.getElementById('card-revenue').style.display = "flex";
             } else {
-                // If Staff, strictly hide revenue card
                 document.getElementById('card-revenue').style.display = "none";
                 
-                // Hide restricted sidebar links for staff
                 let perms = loggedInAdmin.permissions || [];
                 if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
                 if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
                 if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
-                document.getElementById('nav-users').style.display = 'none'; // Staff can never access staff management
+                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
+                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                document.getElementById('nav-ads').style.display = 'none';
+                document.getElementById('nav-users').style.display = 'none';
             }
         }
 
         async function loadDashboardStats() {
             try {
-                // 1. Fetch Confirmed Orders
                 const ordersSnap = await db.collection("orders").get();
                 let totalConfirmed = 0;
                 let processingCount = 0;
@@ -221,7 +222,7 @@
                 let shippedCount = 0;
                 let deliveredCount = 0;
                 let cancelledCount = 0;
-                let totalRevenue = 0;
+                let deliveredRevenue = 0;
                 let recentOrders = [];
 
                 ordersSnap.forEach(doc => {
@@ -229,22 +230,28 @@
                     ord.docId = doc.id;
                     totalConfirmed++;
 
-                    let status = ord.orderStatus || ord.status || "Processing";
-                    if (status === "Processing") processingCount++;
-                    else if (status === "Packed") packedCount++;
-                    else if (status === "Shipped") shippedCount++;
-                    else if (status === "Delivered") deliveredCount++;
-                    else if (status === "Cancelled") cancelledCount++;
+                    // Case-insensitive status matching to catch both old and new orders
+                    let rawStatus = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
 
-                    // Only Paid orders contribute to revenue
-                    if (ord.paymentStatus === "Paid") {
-                        totalRevenue += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0);
+                    if (rawStatus === "delivered") {
+                        deliveredCount++;
+                        // Delivered Order Amount calculation (supporting both totalAmount and total)
+                        let amount = parseInt(ord.totalAmount) || parseInt(ord.total) || 0;
+                        deliveredRevenue += amount;
+                    } else if (rawStatus === "shipped") {
+                        shippedCount++;
+                    } else if (rawStatus === "packed") {
+                        packedCount++;
+                    } else if (rawStatus === "cancelled") {
+                        cancelledCount++;
+                    } else {
+                        processingCount++;
                     }
 
                     recentOrders.push(ord);
                 });
 
-                // 2. Fetch Pending Payments Count
+                // Pending Payments Count
                 const pendingSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
                 const pendingCount = pendingSnap.size;
 
@@ -258,10 +265,15 @@
                 document.getElementById('stat-cancelled').innerText = cancelledCount;
 
                 if (isMainAdmin()) {
-                    document.getElementById('stat-revenue').innerText = `₹${totalRevenue.toLocaleString('en-IN')}`;
+                    document.getElementById('stat-revenue').innerText = `₹${deliveredRevenue.toLocaleString('en-IN')}`;
                 }
 
-                // Render Recent 10 Orders
+                recentOrders.sort((a, b) => {
+                    let timeA = a.verifiedAt ? (a.verifiedAt.seconds || 0) : (a.timestamp ? (a.timestamp.seconds || 0) : 0);
+                    let timeB = b.verifiedAt ? (b.verifiedAt.seconds || 0) : (b.timestamp ? (b.timestamp.seconds || 0) : 0);
+                    return timeB - timeA;
+                });
+
                 renderRecentOrders(recentOrders.slice(0, 10));
 
             } catch(e) {
@@ -287,7 +299,11 @@
                 }
 
                 let status = ord.orderStatus || ord.status || "Processing";
-                let statusColor = status === "Delivered" ? "#10b981" : (status === "Cancelled" ? "#ef4444" : "#28469E");
+                let statusColor = "#28469E";
+                if (status.toLowerCase() === "delivered") statusColor = "#10b981";
+                else if (status.toLowerCase() === "shipped") statusColor = "#06b6d4";
+                else if (status.toLowerCase() === "packed") statusColor = "#8b5cf6";
+                else if (status.toLowerCase() === "cancelled") statusColor = "#ef4444";
 
                 tbody.innerHTML += `
                     <tr>
