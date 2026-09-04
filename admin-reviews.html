@@ -37,6 +37,10 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
 
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-box { background: #fff; width: 100%; max-width: 450px; border-radius: 8px; padding: 22px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -86,13 +90,43 @@
                         <th>Customer & Rating</th>
                         <th>Comment</th>
                         <th>Photo</th>
-                        <th>Action</th>
+                        <th style="width: 100px;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="reviews-table-body">
                     <tr><td colspan="5" style="text-align:center;">Loading customer reviews...</td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Edit Review Modal -->
+    <div class="modal-overlay" id="edit-review-modal">
+        <div class="modal-box">
+            <span onclick="closeEditModal()" style="position:absolute; top:12px; right:15px; font-size:22px; cursor:pointer; font-weight:bold;">&times;</span>
+            <h3 style="margin-top:0; color:#2c3e50; font-size:16px; border-bottom:1px solid #eee; padding-bottom:8px;">Edit Customer Review</h3>
+            
+            <input type="hidden" id="edit-rev-id">
+            
+            <div style="margin: 12px 0;">
+                <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">Rating (1 to 5 Stars)</label>
+                <select id="edit-rev-rating" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    <option value="5">5 Stars (★★★★★)</option>
+                    <option value="4">4 Stars (★★★★☆)</option>
+                    <option value="3">3 Stars (★★★☆☆)</option>
+                    <option value="2">2 Stars (★★☆☆☆)</option>
+                    <option value="1">1 Star (★☆☆☆☆)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">Comment / Feedback</label>
+                <textarea id="edit-rev-comment" rows="3" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px;"></textarea>
+            </div>
+
+            <button onclick="updateReviewCloud()" style="background:#27ae60; color:#fff; border:none; width:100%; padding:10px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                Update Review
+            </button>
         </div>
     </div>
 
@@ -116,8 +150,6 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
-        function isMainAdminUser() { return (loggedInAdmin && loggedInAdmin.role !== 'staff'); }
-
         function applyNavRules() {
             if (loggedInAdmin && loggedInAdmin.role === 'staff') {
                 let perms = loggedInAdmin.permissions || [];
@@ -131,10 +163,25 @@
             }
         }
 
+        async function logSystemAction(action, targetId) {
+            try {
+                await db.collection("audit_logs").add({
+                    actor: loggedInAdmin.name || loggedInAdmin.username || "User",
+                    role: loggedInAdmin.role || "staff",
+                    action: action,
+                    targetId: targetId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {}
+        }
+
+        let reviewsCache = [];
+
         async function fetchReviews() {
             const tbody = document.getElementById('reviews-table-body');
             try {
                 const snap = await db.collection("reviews").get();
+                reviewsCache = [];
                 tbody.innerHTML = "";
                 if (snap.empty) {
                     tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:15px; color:#7f8c8d;'>No reviews yet.</td></tr>";
@@ -142,27 +189,72 @@
                 }
                 snap.forEach(doc => {
                     let r = doc.data();
-                    let photoHTML = r.photoUrl ? `<img src="${r.photoUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : `-`;
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${r.productName || 'Product'}</strong></td>
-                            <td><strong>${r.customerName || 'Customer'}</strong><br><span style="color:#f39c12;">${"★".repeat(r.rating || 5)}</span></td>
-                            <td style="max-width:240px; font-size:12px;">${r.comment || '-'}</td>
-                            <td>${photoHTML}</td>
-                            <td>
-                                ${isMainAdminUser() ? `<button onclick="deleteReview('${doc.id}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
-                            </td>
-                        </tr>
-                    `;
+                    r.docId = doc.id;
+                    reviewsCache.push(r);
                 });
+                renderReviewsTable(reviewsCache);
             } catch(e) { tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading reviews.</td></tr>"; }
         }
 
-        async function deleteReview(docId) {
-            if (!isMainAdminUser()) return;
-            if (confirm("Delete review?")) {
-                await db.collection("reviews").doc(docId).delete();
+        function renderReviewsTable(list) {
+            const tbody = document.getElementById('reviews-table-body');
+            tbody.innerHTML = "";
+            list.forEach(r => {
+                let photoHTML = r.photoUrl ? `<img src="${r.photoUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : `-`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${r.productName || 'Product'}</strong></td>
+                        <td><strong>${r.customerName || 'Customer'}</strong><br><span style="color:#f39c12;">${"★".repeat(r.rating || 5)}</span></td>
+                        <td style="max-width:240px; font-size:12px;">${r.comment || '-'}</td>
+                        <td>${photoHTML}</td>
+                        <td style="white-space:nowrap;">
+                            <button onclick="openEditModal('${r.docId}')" style="background:#3498db; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Edit Review"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteReview('${r.docId}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Review"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openEditModal(docId) {
+            let r = reviewsCache.find(x => x.docId === docId);
+            if (!r) return;
+            document.getElementById('edit-rev-id').value = r.docId;
+            document.getElementById('edit-rev-rating').value = r.rating || 5;
+            document.getElementById('edit-rev-comment').value = r.comment || "";
+            document.getElementById('edit-review-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-review-modal').style.display = 'none';
+        }
+
+        async function updateReviewCloud() {
+            const docId = document.getElementById('edit-rev-id').value;
+            const rating = parseInt(document.getElementById('edit-rev-rating').value) || 5;
+            const comment = document.getElementById('edit-rev-comment').value.trim();
+
+            try {
+                await db.collection("reviews").doc(docId).update({ rating, comment });
+                await logSystemAction("Edited Customer Review", docId);
+                alert("✅ Review updated successfully!");
+                closeEditModal();
                 fetchReviews();
+            } catch(e) {
+                alert("Failed to update review.");
+            }
+        }
+
+        async function deleteReview(docId) {
+            if (confirm("Permanently delete this customer review?")) {
+                try {
+                    await db.collection("reviews").doc(docId).delete();
+                    await logSystemAction("Deleted Customer Review", docId);
+                    alert("✓ Review deleted.");
+                    fetchReviews();
+                } catch(e) {
+                    alert("Failed to delete review.");
+                }
             }
         }
 
