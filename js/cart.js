@@ -6,9 +6,7 @@ let currentTotal = 0;
 let isGiftWrappingClaimed = false;
 let fomoTimerInterval = null;
 let flashBenefitName = "FREE Premium Gift Wrapping";
-let selectedRating = 5;
 
-// Dynamic Flash Offer / FOMO Timer
 async function initDynamicFomoTimer() {
     const fomoContainer = document.getElementById('fomo-timer-container');
     const countdownEl = document.getElementById('fomo-countdown');
@@ -70,7 +68,21 @@ async function initDynamicFomoTimer() {
     }
 }
 
-// Render Cart Items with Image Thumbnails & Variants
+// Auto-fill saved customer address
+function autoFillCustomerAddress() {
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    if (!customer) return;
+
+    const nameInput = document.getElementById('cust-name');
+    const phoneInput = document.getElementById('cust-phone');
+    const addressInput = document.getElementById('cust-address');
+
+    if (nameInput && customer.name) nameInput.value = customer.name;
+    if (phoneInput && customer.phone) phoneInput.value = customer.phone;
+    if (addressInput && customer.savedAddress) addressInput.value = customer.savedAddress;
+}
+
+// Render Cart Items
 function renderCart() {
     const container = document.getElementById('cart-items-container');
     const totalItemsEl = document.getElementById('total-items');
@@ -132,7 +144,7 @@ function renderCart() {
                     <h4 class="cart-item-title">${item.name}</h4>
                     ${variantBadge}
                     ${customHTML}
-                    <div class="cart-item-price">₹${price}</div>
+                    <div class="cart-item-price">₹${price} (Qty: ${item.quantity || 1})</div>
                 </div>
 
                 <button class="cart-remove-btn" onclick="removeFromCart(${index})" title="Remove item">
@@ -145,7 +157,6 @@ function renderCart() {
     html += `</div>`;
     container.innerHTML = html;
 
-    // Delivery Charge Calculation
     if (currentSubTotal === 0) {
         currentDeliveryCharge = 0;
     } else if (deliverySettings.freeAbove > 0 && currentSubTotal >= deliverySettings.freeAbove) {
@@ -241,41 +252,12 @@ async function lookupPincode(pin) {
     }
 }
 
-// Load Store Offers
-async function loadAvailableCoupons() {
-    const badge = document.getElementById('available-coupons-badge');
-    if(!badge) return;
-    try {
-        const snapshot = await db.collection("coupons").where("isActive", "==", true).get();
-        if(snapshot.empty) {
-            badge.style.display = "none";
-            return;
-        }
-        let offers = [];
-        snapshot.forEach(doc => {
-            let c = doc.data();
-            if(c.type !== 'referral' && c.type !== 'voucher' && !c.code.startsWith('GIFT-') && !c.code.startsWith('REF-')) {
-                offers.push(`Use <strong>${c.code}</strong> (₹${c.discount} OFF on min ₹${c.minOrder || 0})`);
-            }
-        });
-
-        if(offers.length > 0) {
-            badge.innerHTML = `<i class="fas fa-gift" style="color: var(--success-green);"></i> Offers: ` + offers.join(" | ");
-            badge.style.display = "block";
-        } else {
-            badge.style.display = "none";
-        }
-    } catch(e) {
-        badge.style.display = "none";
-    }
-}
-
-// Coupon / Referral / Gift Card Application
+// Coupon / Gift Card Verification
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
 
-    if(!rawCode) { alert("Please enter a coupon, gift card, or referral code."); return; }
+    if(!rawCode) { alert("Please enter a coupon code."); return; }
     if(currentSubTotal === 0) { alert("Cart is empty."); return; }
 
     msg.style.display = "block";
@@ -284,16 +266,8 @@ async function applyCoupon() {
 
     try {
         let doc = await db.collection("coupons").doc(rawCode).get();
-        let targetCode = rawCode;
-
-        if (!doc.exists && rawCode.startsWith("CZ")) {
-            targetCode = "REF-" + rawCode;
-            doc = await db.collection("coupons").doc(targetCode).get();
-        }
-
-        if (doc.exists && doc.data().isActive) {
+        if (doc.exists && doc.data().isActive !== false) {
             const coupon = doc.data();
-
             if(currentSubTotal < (coupon.minOrder || 0)) {
                 msg.style.color = "var(--danger-red)";
                 msg.innerText = `❌ Requires a minimum order of ₹${coupon.minOrder}.`;
@@ -303,53 +277,15 @@ async function applyCoupon() {
                 return;
             }
 
-            if(localStorage.getItem('cz_used_' + targetCode)) {
-                msg.style.color = "var(--danger-red)";
-                msg.innerText = `❌ You have already used "${targetCode}" from this device.`;
-                return;
-            }
-
-            appliedDiscount = parseInt(coupon.discount) || 0;
-            appliedCouponCode = targetCode;
+            appliedDiscount = parseInt(coupon.discountAmount || coupon.discount) || 0;
+            appliedCouponCode = rawCode;
             msg.style.color = "var(--success-green)";
-            
-            let successLabel = coupon.type === 'voucher' ? '🎁 Gift Card' : 'Code';
-            msg.innerText = `✅ ${successLabel} "${targetCode}" applied! You saved ₹${appliedDiscount}.`;
+            msg.innerText = `✅ Code "${rawCode}" applied! You saved ₹${appliedDiscount}.`;
             renderCart();
             return;
         }
 
-        let cleanOrderId = rawCode.replace("REF-", "");
-        let orderDoc = await db.collection("orders").doc(cleanOrderId).get();
-
-        if (orderDoc.exists) {
-            let refCodeName = "REF-" + cleanOrderId;
-
-            if(currentSubTotal < 199) {
-                msg.style.color = "var(--danger-red)";
-                msg.innerText = `❌ Referral code requires a minimum order of ₹199.`;
-                appliedDiscount = 0;
-                appliedCouponCode = "";
-                renderCart();
-                return;
-            }
-
-            if(localStorage.getItem('cz_used_' + refCodeName)) {
-                msg.style.color = "var(--danger-red)";
-                msg.innerText = `❌ You have already used "${refCodeName}" from this device.`;
-                return;
-            }
-
-            appliedDiscount = 50;
-            appliedCouponCode = refCodeName;
-            msg.style.color = "var(--success-green)";
-            msg.innerText = `✅ Referral Code "${refCodeName}" applied! You saved ₹50.`;
-            renderCart();
-            return;
-        }
-
-        // Fallback preset
-        if (rawCode === "FRIST10" || rawCode === "FIRST10") {
+        if (rawCode === "FIRST10" || rawCode === "FRIST10") {
             appliedDiscount = 10;
             appliedCouponCode = rawCode;
             msg.style.color = "var(--success-green)";
@@ -365,196 +301,142 @@ async function applyCoupon() {
         renderCart();
 
     } catch(e) {
-        console.error(e);
         msg.style.color = "var(--danger-red)";
         msg.innerText = "Error applying code.";
     }
 }
 
-// WhatsApp Order Submit with In-Page Success & Review Screen
+// PAYMENT-FIRST SYSTEM: Place Order creates Temporary Payment Reference (NO Final Order ID generated)
 async function submitOrderViaWhatsApp() {
     let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
+    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+
+    if (!customer) {
+        alert("Please sign in or create an account before placing your order.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    if (cartItems.length === 0) {
+        alert("Your shopping cart is empty.");
+        return;
+    }
+
     const name = document.getElementById('cust-name').value.trim();
     const phone = document.getElementById('cust-phone').value.trim();
-    const email = document.getElementById('cust-email') ? document.getElementById('cust-email').value.trim() : "N/A";
     const pin = document.getElementById('cust-pin').value.trim();
     const district = document.getElementById('cust-district').value.trim();
     const postOffice = document.getElementById('cust-postoffice').value.trim();
     const address = document.getElementById('cust-address').value.trim();
-    
-    const greetingNote = document.getElementById('cust-greeting-note') ? document.getElementById('cust-greeting-note').value.trim() : "";
-    const occasionType = document.getElementById('cust-occasion-type') ? document.getElementById('cust-occasion-type').value : "";
-    const occasionDate = document.getElementById('cust-occasion-date') ? document.getElementById('cust-occasion-date').value : "";
-
-    const myWhatsAppNumber = "916290407730"; 
+    const greeting = document.getElementById('cust-greeting-note')?.value.trim() || '';
 
     if (!name || !phone || !pin || !district || !postOffice || !address) { 
         alert("Please fill all required delivery details (*)."); 
         return; 
     }
-    if (cartItems.length === 0) { alert("Your cart is empty."); return; }
 
-    const internalOrderId = "CZ" + Math.floor(1000 + Math.random() * 9000);
+    const btn = document.querySelector('.checkout-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Creating Payment Order Request...";
+    }
 
-    let productDetails = "";
-    cartItems.forEach((item, idx) => {
-        let varText = item.variantName ? ` (Option: ${item.variantName})` : "";
-        let custData = item.userText ? ` [Custom: "${item.userText}"]` : (item.customType === "pic" ? " [Photo on WhatsApp]" : "");
-        productDetails += `${idx + 1}. ${item.name}${varText} - ₹${item.price}${custData}\n`;
-    });
+    // Temporary Payment Reference (CZ-PAY-XXXXX)
+    const randomHex = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const paymentReference = `CZ-PAY-${randomHex}`;
 
-    let deliveryTextMsg = currentDeliveryCharge === 0 ? "FREE" : `₹${currentDeliveryCharge}`;
-    let couponTextMsg = appliedDiscount > 0 ? `\nCoupon/Gift Card Applied: ${appliedCouponCode} (-₹${appliedDiscount})` : "";
-    let giftWrapTag = isGiftWrappingClaimed ? `\n🎁 Special Perk: ${flashBenefitName} (Claimed via Flash Timer)` : "";
-    let greetingCardTag = greetingNote ? `\n💌 Handwritten Greeting Note: "${greetingNote}"` : "";
-    let occasionMsg = (occasionType && occasionDate) ? `\n🎉 Special Occasion: ${occasionType} (${occasionDate})` : "";
-    let fullDeliveryAddress = `${address}, P.O: ${postOffice}, District: ${district} - ${pin}`;
+    let fullDeliveryAddress = `${address}, P.O: ${postOffice}, ${district} - ${pin}`;
 
-    let msg = `*#CZ_ORDER_REQUEST#*\n\n` +
-              `Hello Custom Zone, I would like to place an order:\n\n` +
-              `*Customer Details:*\n` +
-              `Name: ${name}\n` +
-              `Phone: ${phone}\n` +
-              `Address: ${fullDeliveryAddress}\n\n` +
-              `*Ordered Items:*\n` +
-              `${productDetails}\n` +
-              `Subtotal: ₹${currentSubTotal}\n` +
-              `Delivery: ${deliveryTextMsg}${couponTextMsg}${giftWrapTag}${greetingCardTag}${occasionMsg}\n` +
-              `*Total Payable: ₹${currentTotal}*\n\n` +
-              `Please share your payment QR code to complete the order.`;
-
-    const orderDate = new Date().toLocaleDateString('en-GB'); 
-    
-    const orderData = {
-        status: "Payment Pending",
+    const pendingPaymentRecord = {
+        paymentReference: paymentReference,
+        customerId: customer.customerId || "N/A",
         customerName: name,
         phone: phone,
-        email: email,
-        postOffice: postOffice,
-        district: district,
-        pincode: pin,
-        address: fullDeliveryAddress,
+        items: cartItems,
         subTotal: currentSubTotal,
         deliveryFee: currentDeliveryCharge,
         discountGiven: appliedDiscount,
-        couponUsed: appliedCouponCode,
-        freeGiftWrapping: isGiftWrappingClaimed,
-        greetingNote: greetingNote || "",
-        occasionType: occasionType || "",
-        occasionDate: occasionDate || "",
+        couponUsed: appliedCouponCode || "None",
         totalAmount: currentTotal,
-        date: orderDate,
-        items: productDetails + `\n[Delivery: ${deliveryTextMsg}]${couponTextMsg}${giftWrapTag}${greetingCardTag}${occasionMsg}`,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        actualDeliveryAddress: fullDeliveryAddress,
+        greetingNote: greeting,
+        paymentStatus: "Pending",
+        orderStatus: "Payment Pending",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        date: new Date().toLocaleDateString('en-GB')
     };
-    
+
     try {
-        await db.collection("orders").doc(internalOrderId).set(orderData);
-        
-        if(appliedCouponCode) {
-            localStorage.setItem('cz_used_' + appliedCouponCode, 'true');
-            if(appliedCouponCode.startsWith('GIFT-')) {
-                await db.collection("coupons").doc(appliedCouponCode).update({
-                    isActive: false,
-                    isUsed: true,
-                    usedByOrder: internalOrderId,
-                    usedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
+        // Save only in pending_payments collection
+        await db.collection("pending_payments").doc(paymentReference).set(pendingPaymentRecord);
+
+        // Update default address if changed
+        if (address && customer.savedAddress !== fullDeliveryAddress) {
+            customer.savedAddress = fullDeliveryAddress;
+            localStorage.setItem('cz_customer_user', JSON.stringify(customer));
+            await db.collection("customers").doc(customer.phone).update({ savedAddress: fullDeliveryAddress });
         }
-    } catch (error) {
-        console.error("Order sync error", error);
+
+        // Clear cart
+        localStorage.removeItem('cz_cart');
+        updateNavbarCartCount();
+
+        // Render QR Payment Gate Screen
+        renderPaymentGateScreen(paymentReference, currentTotal, name, phone);
+
+    } catch (err) {
+        console.error(err);
+        alert("Server error creating payment order. Please try again.");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "Place Order";
+        }
     }
+}
 
-    // Open WhatsApp in a new tab without reloading this page
-    const waUrl = `https://api.whatsapp.com/send?phone=${myWhatsAppNumber}&text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, "_blank");
-    
-    // Clear Cart
-    localStorage.removeItem('cz_cart');
-    updateNavbarCartCount();
+// Payment Screen with Existing QR Code & WhatsApp Confirmation
+function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
+    const container = document.querySelector('.cart-layout');
+    if (!container) return;
 
-    // Show Beautiful Order Success Screen inside the Cart Layout
-    const cartLayout = document.querySelector('.cart-layout');
-    if (cartLayout) {
-        cartLayout.innerHTML = `
-            <div style="background: var(--white); padding: 40px 25px; border-radius: 12px; width: 100%; box-shadow: var(--shadow-soft); text-align: center; border: 1px solid var(--card-border);">
-                <i class="fab fa-whatsapp" style="font-size: 60px; color: var(--success-green);"></i>
-                <h2 style="color: var(--blue-primary); margin-top: 15px; font-weight: 800;">Order Request Sent to WhatsApp!</h2>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.6;">
-                    Order Reference ID: <strong style="color:var(--blue-primary); font-size:16px;">#${internalOrderId}</strong><br>
-                    We have received your order request on WhatsApp. Please complete your payment verification on WhatsApp to confirm your order dispatch.
-                </p>
+    const configuredWhatsApp = "916290407730";
+    const waPaymentText = `Hello Custom Zone,\nI have completed the payment.\nPayment Reference: ${paymentRef}\nCustomer: ${customerName}\nAmount: ₹${amount}`;
+    const waUrl = `https://api.whatsapp.com/send?phone=${configuredWhatsApp}&text=${encodeURIComponent(waPaymentText)}`;
 
-                <!-- Feedback Rating Box -->
-                <div style="background: var(--blue-light); border: 1px solid var(--card-border); padding: 20px; border-radius: 8px; max-width: 480px; margin: 0 auto 25px auto;">
-                    <h3 style="color: var(--blue-primary); margin-bottom: 5px; font-size: 16px;">Rate Your Experience ⭐</h3>
-                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 10px;">Leave a review for Custom Zone!</p>
-                    <div style="font-size: 28px; cursor: pointer; color: #f1c40f; margin-bottom: 10px;" id="star-rating-box">
-                        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
-                    </div>
-                    <textarea id="review-comment" placeholder="Write your valuable feedback..." style="width: 100%; padding: 10px; border: 1px solid var(--card-border); border-radius: 6px; box-sizing: border-box; background:#fff; font-family:inherit; font-size:13px;"></textarea><br>
-                    <button onclick="submitReviewCloud('${name}', '${cartItems[0] ? cartItems[0].id : ''}')" id="btn-review" style="background: var(--success-green); color: white; border: none; padding: 10px 22px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size:13px;">Submit Review</button>
-                    <p id="review-status" style="margin-top: 8px; font-weight: bold; font-size:13px; display: none;"></p>
-                </div>
-
-                <a href="index.html" style="background: var(--blue-primary); color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size:14px; display:inline-block;">Continue Shopping</a>
+    container.innerHTML = `
+        <div style="background:var(--white); padding:35px 25px; border-radius:12px; width:100%; box-shadow:var(--shadow-soft); text-align:center; border:1px solid var(--card-border);">
+            <div style="background:var(--blue-light); display:inline-block; padding:8px 16px; border-radius:20px; color:var(--blue-primary); font-weight:700; font-size:13px; margin-bottom:15px; border:1px solid var(--card-border);">
+                Payment Reference: ${paymentRef}
             </div>
-        `;
-    }
-}
+            <h2 style="color:var(--text-primary); margin:0 0 10px 0; font-weight:800;">Order Request Created</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-bottom:15px;">Please scan the QR code below and complete your payment.</p>
+            
+            <div style="font-size:28px; font-weight:800; color:var(--blue-primary); margin-bottom:20px;">
+                Amount to Pay: ₹${amount}
+            </div>
 
-function setRating(stars) {
-    selectedRating = stars;
-    const starBox = document.getElementById('star-rating-box');
-    if (!starBox) return;
-    let starHTML = "";
-    for(let i=1; i<=5; i++) {
-        starHTML += `<span onclick="setRating(${i})" style="color: ${i <= stars ? '#f1c40f' : '#ccc'};">★</span>`;
-    }
-    starBox.innerHTML = starHTML;
-}
+            <!-- Existing Custom Zone Payment QR -->
+            <div style="margin:0 auto 20px auto; max-width:240px; padding:12px; border:2px dashed var(--blue-primary); border-radius:12px; background:#FFFFFF;">
+                <img src="assets/images/payment-qr.png" onerror="this.src='assets/images/logo.png'" alt="Payment QR" style="width:100%; border-radius:8px; display:block;">
+                <small style="color:var(--text-muted); font-weight:600; display:block; margin-top:8px;">UPI / GPay / PhonePe / Paytm</small>
+            </div>
 
-async function submitReviewCloud(customerName, productId = "") {
-    const comment = document.getElementById('review-comment').value.trim();
-    const status = document.getElementById('review-status');
-    const btn = document.getElementById('btn-review');
+            <div style="max-width:440px; margin:0 auto 20px auto;">
+                <a href="${waUrl}" target="_blank" style="background:var(--success-green); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 20px; border-radius:8px; font-weight:700; font-size:14px; text-decoration:none;">
+                    <i class="fab fa-whatsapp" style="font-size:20px;"></i> Send Payment Confirmation on WhatsApp
+                </a>
+            </div>
 
-    if(!comment) {
-        alert("Please write a short review before submitting!"); 
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerText = "Submitting...";
-
-    try {
-        await db.collection("reviews").add({
-            productId: productId || "",
-            customerName: customerName,
-            rating: selectedRating,
-            comment: comment,
-            date: new Date().toLocaleDateString('en-GB'),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        status.style.display = "block";
-        status.style.color = "var(--success-green)";
-        status.innerText = "🎉 Review submitted successfully!";
-        document.getElementById('review-comment').value = "";
-    } catch(e) {
-        console.error(e);
-        status.style.display = "block";
-        status.style.color = "var(--danger-red)";
-        status.innerText = "Failed to submit review.";
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Submitted";
-    }
+            <div style="background:#FFFBEB; border:1px solid #FCD34D; padding:14px; border-radius:8px; max-width:520px; margin:0 auto; font-size:12px; color:#92400E; text-align:left; line-height:1.5;">
+                <strong>⚠️ Strict Business Rule Notice:</strong><br>
+                Your official <strong>Final Order ID</strong> will be generated automatically once our admin team verifies your payment screenshot. You can view your Payment Pending request inside your <a href="profile.html" style="color:#28469E; font-weight:bold;">Profile Page</a>.
+            </div>
+        </div>
+    `;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     renderCart();
-    loadAvailableCoupons();
+    autoFillCustomerAddress();
     initDynamicFomoTimer();
 });

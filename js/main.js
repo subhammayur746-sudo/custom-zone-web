@@ -5,7 +5,6 @@ let selectedSubCategory = "all";
 let categoryMap = {};
 let pendingAction = null;
 let currentAuthMode = "login";
-let activeSessionOtp = null;
 let currentOpenProductId = null;
 let currentSelectedVariant = null;
 let currentSelectedQty = 1;
@@ -13,6 +12,7 @@ let currentApplicablePrice = 0;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
+// Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -27,6 +27,7 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
+// Fetch Live Products & Reviews
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -151,13 +152,14 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
+// Render Products Grid with Image Fit & Discount
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
     container.innerHTML = "";
 
     if (products.length === 0) {
-        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#595959; padding:25px;'>No products found matching your search or budget.</p>";
+        container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#595959; padding:25px;'>No products found matching your search.</p>";
         return;
     }
 
@@ -288,7 +290,7 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// Clean Modal Price Render Helper
+// Modal Price Update Helper
 function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     const priceContainer = document.getElementById('pdm-price-box');
     if (!priceContainer) return;
@@ -312,7 +314,6 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
-// Calculate Quantity Package Price
 function calculateQuantityPrice(product, qty, basePrice) {
     if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
         let sortedTiers = [...product.qtyTiers].sort((a, b) => b.minQty - a.minQty);
@@ -356,7 +357,6 @@ function openProductDetailsModal(productId) {
     let basePrice = parseInt(product.discountPrice || product.price) || 0;
     let baseActualPrice = parseInt(product.actualPrice) || 0;
 
-    // 1. Render Variants if available
     if (hasActiveVariants) {
         let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5);
         currentSelectedVariant = activeVariants[0];
@@ -381,7 +381,6 @@ function openProductDetailsModal(productId) {
         if (customContainer) customContainer.innerHTML += variantHtml;
     }
 
-    // 2. Render Quantity-Based Package Pricing Pills
     if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
         let sortedTiers = [...product.qtyTiers].sort((a, b) => a.minQty - b.minQty);
         
@@ -438,7 +437,7 @@ function openProductDetailsModal(productId) {
             customContainer.innerHTML += `
                 <div style="margin-top:10px;">
                     <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
-                        📷 Photo Customization: You can share your photos directly on WhatsApp after clicking checkout!
+                        📷 Photo Customization: You can share your photos directly on WhatsApp after checkout!
                     </p>
                 </div>
             `;
@@ -542,7 +541,7 @@ async function loadProductSpecificReviews(productId) {
             .get();
 
         if (snapshot.empty) {
-            container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>No reviews yet for this product. Be the first to leave one!</p>";
+            container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>No reviews yet for this product.</p>";
             return;
         }
 
@@ -578,7 +577,6 @@ async function loadProductSpecificReviews(productId) {
         });
 
     } catch (e) {
-        console.error("Error loading product reviews:", e);
         container.innerHTML = "<p style='color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
     }
 }
@@ -705,7 +703,6 @@ async function submitProductReviewCloud() {
         }
 
     } catch (e) {
-        console.error(e);
         alert("Failed to submit review.");
     } finally {
         if (btn) {
@@ -723,11 +720,13 @@ function checkUrlProductParam() {
     }
 }
 
+// STRICT AUTH GATE: Guest users CANNOT add products to cart
 function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+    
     if (!customer) {
         pendingAction = { type: 'cart', id: productId, text: customText, variant: selectedVariant, qty: selectedQty, price: packagePrice };
-        openAuthModal();
+        openAuthModal(true);
         return;
     }
 
@@ -764,14 +763,14 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert(`✅ ${product.name} (${selectedQty} PCS package - ₹${finalPackagePrice}) added to cart!`);
+    alert(`✅ ${product.name} (${selectedQty} PCS - ₹${finalPackagePrice}) added to cart!`);
 }
 
 async function toggleWishlistCloud(productId) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) {
         pendingAction = { type: 'wishlist', id: productId };
-        openAuthModal();
+        openAuthModal(true);
         return;
     }
 
@@ -807,30 +806,34 @@ async function toggleWishlistCloud(productId) {
     renderHomeProducts(liveProducts);
 }
 
+// Customer Authentication: Phone + Name Verification System
 function switchAuthForm(mode) {
     currentAuthMode = mode;
-    const nameField = document.getElementById('signup-name-field');
+    const addressField = document.getElementById('signup-address-field');
     const tabLogin = document.getElementById('tab-btn-login');
     const tabSignup = document.getElementById('tab-btn-signup');
     const err = document.getElementById('auth-error-msg');
 
     if (err) err.style.display = "none";
-    backToStepOne();
 
     if (mode === 'signup') {
-        if (nameField) nameField.style.display = "block";
+        if (addressField) addressField.style.display = "block";
         if (tabSignup) tabSignup.classList.add('active');
         if (tabLogin) tabLogin.classList.remove('active');
     } else {
-        if (nameField) nameField.style.display = "none";
+        if (addressField) addressField.style.display = "none";
         if (tabLogin) tabLogin.classList.add('active');
         if (tabSignup) tabSignup.classList.remove('active');
     }
 }
 
-function openAuthModal() {
+function openAuthModal(isGate = false) {
     switchAuthForm('login');
     const modal = document.getElementById('auth-modal');
+    const gateMsg = document.getElementById('auth-gate-alert');
+    if (gateMsg) {
+        gateMsg.style.display = isGate ? 'block' : 'none';
+    }
     if (modal) modal.classList.add('show-modal');
 }
 
@@ -839,156 +842,124 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-function backToStepOne() {
-    const step1 = document.getElementById('auth-form-step-1');
-    const step2 = document.getElementById('auth-form-step-2');
-    const err = document.getElementById('auth-error-msg');
-    const otpInput = document.getElementById('entered-otp-input');
-
-    if (step1) step1.style.display = "block";
-    if (step2) step2.style.display = "none";
-    if (err) err.style.display = "none";
-    if (otpInput) otpInput.value = "";
-}
-
-async function requestOtpAction() {
-    const nameInput = document.getElementById('auth-user-name');
+// Complete Phone + Name Login & Registration
+async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
+    const nameInput = document.getElementById('auth-user-name');
+    const addressInput = document.getElementById('auth-user-address');
     const err = document.getElementById('auth-error-msg');
-    const btn = document.getElementById('btn-request-otp');
+    const btn = document.getElementById('btn-submit-auth');
 
-    const name = nameInput ? nameInput.value.trim() : "";
     const phone = phoneInput ? phoneInput.value.replace(/[^0-9]/g, '') : "";
+    const name = nameInput ? nameInput.value.trim() : "";
+    const address = addressInput ? addressInput.value.trim() : "";
 
     if (phone.length !== 10) {
-        if (err) {
-            err.style.display = "block";
-            err.innerText = "Please enter a valid 10-digit WhatsApp number.";
-        }
+        err.style.display = "block";
+        err.innerText = "Please enter a valid 10-digit WhatsApp phone number.";
         return;
     }
 
-    if (currentAuthMode === 'signup' && !name) {
-        if (err) {
-            err.style.display = "block";
-            err.innerText = "Please enter your Full Name.";
-        }
+    if (!name) {
+        err.style.display = "block";
+        err.innerText = "Please enter your Full Name.";
         return;
     }
 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "Checking...";
-    }
+    btn.disabled = true;
+    btn.innerText = "Verifying...";
 
     try {
-        const userDoc = await db.collection("customers").doc(phone).get();
+        const customerRef = db.collection("customers").doc(phone);
+        const docSnap = await customerRef.get();
 
-        if (currentAuthMode === 'login' && !userDoc.exists) {
-            if (err) {
+        if (currentAuthMode === 'login') {
+            if (!docSnap.exists) {
                 err.style.display = "block";
-                err.innerText = "No account found! Please click 'Sign Up' tab to create one.";
-            }
-            if (btn) {
+                err.innerText = "Account not found. Please click 'Sign Up' to register.";
                 btn.disabled = false;
-                btn.innerText = "Get Verification Code";
+                btn.innerText = "Login / Proceed";
+                return;
             }
-            return;
-        }
 
-        activeSessionOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            const customerData = docSnap.data();
+            
+            // Server verification: Phone + Name match
+            if (customerData.name.trim().toLowerCase() !== name.toLowerCase()) {
+                err.style.display = "block";
+                err.innerText = "Invalid phone number or name combination.";
+                btn.disabled = false;
+                btn.innerText = "Login / Proceed";
+                return;
+            }
 
-        const hintPhone = document.getElementById('hint-display-phone');
-        const hintOtp = document.getElementById('hint-display-otp');
-        if (hintPhone) hintPhone.innerText = "+91 " + phone;
-        if (hintOtp) hintOtp.innerText = activeSessionOtp;
+            // Customer ID ensures permanence
+            if (!customerData.customerId) {
+                customerData.customerId = "CZ-CUST-" + Math.floor(10000 + Math.random() * 90000);
+                await customerRef.update({ customerId: customerData.customerId });
+            }
 
-        const step1 = document.getElementById('auth-form-step-1');
-        const step2 = document.getElementById('auth-form-step-2');
-        if (step1) step1.style.display = "none";
-        if (step2) step2.style.display = "block";
-        if (err) err.style.display = "none";
+            await customerRef.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
 
-    } catch (e) {
-        if (err) {
-            err.style.display = "block";
-            err.innerText = "Connection error. Please try again.";
-        }
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = "Get Verification Code";
-        }
-    }
-}
+            localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
+            closeAuthModal();
+            updateNavUserSlot();
+            alert(`🎉 Welcome back, ${customerData.name}! (Customer ID: ${customerData.customerId})`);
 
-async function verifyAndAuthenticateUser() {
-    const otpInput = document.getElementById('entered-otp-input');
-    const nameInput = document.getElementById('auth-user-name');
-    const phoneInput = document.getElementById('auth-user-phone');
-    const err = document.getElementById('auth-error-msg');
-    const btn = document.getElementById('btn-submit-otp');
-
-    const entered = otpInput ? otpInput.value.trim() : "";
-    const name = nameInput ? nameInput.value.trim() || "Customer" : "Customer";
-    const phone = phoneInput ? phoneInput.value.replace(/[^0-9]/g, '') : "";
-
-    if (entered !== activeSessionOtp) {
-        if (err) {
-            err.style.display = "block";
-            err.innerText = "❌ Incorrect 4-digit code.";
-        }
-        return;
-    }
-
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "Verifying...";
-    }
-
-    try {
-        const userDoc = await db.collection("customers").doc(phone).get();
-        let customerData;
-
-        if (userDoc.exists) {
-            customerData = userDoc.data();
-            await db.collection("customers").doc(phone).update({
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-            });
         } else {
-            customerData = {
+            // Sign Up
+            if (docSnap.exists) {
+                err.style.display = "block";
+                err.innerText = "This phone number is already registered. Please log in.";
+                btn.disabled = false;
+                btn.innerText = "Create Account";
+                return;
+            }
+
+            if (!address) {
+                err.style.display = "block";
+                err.innerText = "Complete delivery address is required for registration.";
+                btn.disabled = false;
+                btn.innerText = "Create Account";
+                return;
+            }
+
+            const autoCustomerId = "CZ-CUST-" + Math.floor(10000 + Math.random() * 90000);
+
+            const newCustomerData = {
+                customerId: autoCustomerId,
                 name: name,
                 phone: phone,
-                wishlist: [],
+                savedAddress: address,
                 isActive: true,
-                totalOrders: 0,
-                joinedDate: new Date().toLocaleDateString('en-GB'),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             };
-            await db.collection("customers").doc(phone).set(customerData);
-        }
 
-        localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
-        closeAuthModal();
-        updateNavUserSlot();
-        renderHomeProducts(liveProducts);
-        alert(`🎉 Welcome ${customerData.name}! Logged in successfully.`);
+            await customerRef.set(newCustomerData);
+
+            localStorage.setItem('cz_customer_user', JSON.stringify(newCustomerData));
+            closeAuthModal();
+            updateNavUserSlot();
+            alert(`🎉 Account created! Your unique Customer ID is: ${autoCustomerId}`);
+        }
 
         if (pendingAction) {
-            if (pendingAction.type === 'cart') handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null);
-            if (pendingAction.type === 'wishlist') toggleWishlistCloud(pendingAction.id);
+            if (pendingAction.type === 'cart') {
+                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null);
+            } else if (pendingAction.type === 'wishlist') {
+                toggleWishlistCloud(pendingAction.id);
+            }
             pendingAction = null;
         }
+
     } catch (e) {
-        if (err) {
-            err.style.display = "block";
-            err.innerText = "Error syncing with cloud.";
-        }
+        console.error(e);
+        err.style.display = "block";
+        err.innerText = "Server connection error. Please try again.";
     } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = "Verify & Proceed";
-        }
+        btn.disabled = false;
+        btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
     }
 }
 

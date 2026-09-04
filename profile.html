@@ -15,7 +15,7 @@
 </head>
 <body>
 
-    <!-- Unified Navbar with Tagline -->
+    <!-- Unified Navbar -->
     <header class="navbar">
         <div class="nav-brand-section">
             <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
@@ -46,53 +46,47 @@
         </div>
     </header>
 
-    <!-- Mobile Drawer -->
-    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
-    <div class="mobile-drawer" id="mobile-drawer">
-        <div class="drawer-header">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
-                <div style="display:flex; flex-direction:column; line-height:1.1;">
-                    <strong style="color:var(--blue-primary); font-size:15px;">Custom Zone</strong>
-                    <small style="color:var(--text-muted); font-size:9.5px;">You Imagine. We Customize.</small>
+    <main class="container">
+        <!-- Customer Profile Details Card -->
+        <div style="background:var(--white); padding:24px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; border-left:5px solid var(--blue-primary); border:1px solid var(--card-border);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:15px;">
+                <div>
+                    <span style="background:var(--blue-light); color:var(--blue-primary); font-weight:800; padding:3px 10px; border-radius:12px; font-size:12px; border:1px solid var(--card-border);" id="display-cust-id">CZ-CUST-Loading</span>
+                    <h2 style="color:var(--blue-primary); margin:8px 0 4px 0;" id="user-display-name">Customer Name</h2>
+                    <p style="color:var(--text-muted); margin:0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
+                </div>
+                <button onclick="logoutCustomer()" style="background:var(--danger-red); color:#fff; border:none; padding:9px 18px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
+            </div>
+
+            <!-- Saved Address Editable Section -->
+            <div style="margin-top:18px; padding-top:15px; border-top:1px solid var(--card-border);">
+                <label style="font-size:12px; font-weight:bold; color:var(--text-primary); display:block; margin-bottom:5px;">
+                    <i class="fas fa-map-marker-alt" style="color:var(--danger-red);"></i> Saved Delivery Address:
+                </label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="input-saved-address" style="flex:1; padding:9px 12px; border:1px solid var(--card-border); border-radius:6px; font-size:13px;" placeholder="House No, Street, Post Office, District, Pincode">
+                    <button onclick="updateCustomerSavedAddress()" style="background:var(--blue-primary); color:#fff; border:none; padding:9px 16px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Update Address</button>
                 </div>
             </div>
-            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--blue-primary);">&times;</span>
-        </div>
-        <div class="drawer-links">
-            <a href="index.html"><i class="fas fa-home"></i> Home</a>
-            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
-            <a href="contact.html"><i class="fas fa-phone-alt"></i> Contact Us</a>
-            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
-            <div style="border-top:1px solid var(--card-border); margin-top:8px; padding-top:8px;">
-                <a href="javascript:void(0)" onclick="logoutCustomer()" style="color:var(--danger-red); font-weight:bold; display:block; padding:12px 22px; text-decoration:none;"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
-        </div>
-    </div>
-
-    <main class="container">
-        <!-- Profile Banner -->
-        <div style="background:var(--white); padding:22px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border-left:5px solid var(--blue-primary); border:1px solid var(--card-border);">
-            <div>
-                <h2 style="color:var(--blue-primary); margin:0;" id="user-display-name">Welcome!</h2>
-                <p style="color:var(--text-muted); margin:6px 0 0 0; font-size:14px;"><i class="fas fa-phone-alt"></i> <span id="user-display-phone">-</span></p>
-            </div>
-            <button onclick="logoutCustomer()" style="background:var(--danger-red); color:#fff; border:none; padding:9px 18px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:13px;">Logout</button>
         </div>
 
-        <!-- Saved Wishlist Section -->
+        <!-- Pending Payments (Before Payment is Verified) -->
         <div style="background:var(--white); padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); margin-bottom:25px; border:1px solid var(--card-border);">
-            <h3 style="color:var(--blue-primary); margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:8px;"><i class="fas fa-heart" style="color:var(--danger-red);"></i> My Saved Wishlist (Synced across devices)</h3>
-            <div class="product-grid" id="wishlist-container">
-                <p style="text-align:center; color:var(--text-muted); grid-column:1/-1;">Loading your saved wishlist...</p>
+            <h3 style="color:#d97706; margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:8px;">
+                <i class="fas fa-clock"></i> Unverified / Pending Payments
+            </h3>
+            <div id="pending-payments-container">
+                <p style="text-align:center; color:var(--text-muted); font-size:13px;">Checking pending payment records...</p>
             </div>
         </div>
 
-        <!-- Orders History Section -->
+        <!-- Confirmed Orders (Only After Admin Marks as Paid) -->
         <div style="background:var(--white); padding:20px; border-radius:10px; box-shadow:var(--shadow-soft); border:1px solid var(--card-border);">
-            <h3 style="color:var(--blue-primary); margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:8px;"><i class="fas fa-shopping-bag"></i> My Previous Orders</h3>
-            <div id="orders-history-container">
-                <p style="text-align:center; color:var(--text-muted);">Fetching order history...</p>
+            <h3 style="color:var(--blue-primary); margin-bottom:15px; border-bottom:2px solid var(--card-border); padding-bottom:8px;">
+                <i class="fas fa-shopping-bag"></i> Confirmed Orders (My Orders)
+            </h3>
+            <div id="confirmed-orders-container">
+                <p style="text-align:center; color:var(--text-muted); font-size:13px;">Loading confirmed orders...</p>
             </div>
         </div>
     </main>
@@ -104,23 +98,17 @@
 
     <script>
         let currentCust = JSON.parse(localStorage.getItem('cz_customer_user'));
+
         if(!currentCust) {
             window.location.href = "index.html";
         } else {
             document.getElementById('user-display-name').innerText = currentCust.name || "Customer";
             document.getElementById('user-display-phone').innerText = currentCust.phone || "";
-            loadFreshCloudProfile();
-            loadCustomerOrders();
-        }
-
-        function openMobileDrawer() {
-            document.getElementById('mobile-drawer').classList.add('open');
-            document.getElementById('drawer-overlay').style.display = 'block';
-        }
-
-        function closeMobileDrawer() {
-            document.getElementById('mobile-drawer').classList.remove('open');
-            document.getElementById('drawer-overlay').style.display = 'none';
+            document.getElementById('display-cust-id').innerText = currentCust.customerId || "CZ-CUST-ACTIVE";
+            document.getElementById('input-saved-address').value = currentCust.savedAddress || "";
+            
+            loadCustomerPendingPayments();
+            loadCustomerConfirmedOrders();
         }
 
         function logoutCustomer() {
@@ -128,100 +116,137 @@
             window.location.href = "index.html";
         }
 
-        async function loadFreshCloudProfile() {
+        async function updateCustomerSavedAddress() {
+            const newAddress = document.getElementById('input-saved-address').value.trim();
+            if (!newAddress) { alert("Address cannot be empty."); return; }
+
             try {
-                const doc = await db.collection("customers").doc(currentCust.phone).get();
-                if(doc.exists) {
-                    currentCust = doc.data();
-                    localStorage.setItem('cz_customer_user', JSON.stringify(currentCust));
-                    renderWishlistDOM(currentCust.wishlist || []);
-                }
+                await db.collection("customers").doc(currentCust.phone).update({ savedAddress: newAddress });
+                currentCust.savedAddress = newAddress;
+                localStorage.setItem('cz_customer_user', JSON.stringify(currentCust));
+                alert("✅ Delivery address updated successfully!");
             } catch(e) {
-                renderWishlistDOM(currentCust.wishlist || []);
+                alert("Failed to update address.");
             }
         }
 
-        function renderWishlistDOM(wishlist) {
-            const container = document.getElementById('wishlist-container');
-            if(wishlist.length === 0) {
-                container.innerHTML = "<p style='text-align:center; color:var(--text-muted); grid-column:1/-1; padding:20px;'>Your wishlist is empty.</p>";
-                return;
-            }
-
-            container.innerHTML = "";
-            wishlist.forEach((prod, index) => {
-                container.innerHTML += `
-                    <div class="product-card">
-                        <img src="${prod.image || 'assets/images/logo.png'}" alt="${prod.name}">
-                        <h3>${prod.name}</h3>
-                        <p>₹${prod.price}</p>
-                        <div style="display:flex; gap:6px;">
-                            <button class="btn-cart-action" onclick="moveWishlistToCart('${prod.id}', ${index})"><i class="fas fa-shopping-cart"></i> Move to Cart</button>
-                            <button onclick="removeWishlistItemCloud(${index})" style="background:var(--danger-red); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        async function removeWishlistItemCloud(idx) {
-            let wishlist = currentCust.wishlist || [];
-            wishlist.splice(idx, 1);
-            currentCust.wishlist = wishlist;
-            localStorage.setItem('cz_customer_user', JSON.stringify(currentCust));
-
-            await db.collection("customers").doc(currentCust.phone).update({ wishlist: wishlist });
-            renderWishlistDOM(wishlist);
-        }
-
-        function moveWishlistToCart(prodId, idx) {
-            let wishlist = currentCust.wishlist || [];
-            let item = wishlist[idx];
-            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
-            cart.push(item);
-            localStorage.setItem('cz_cart', JSON.stringify(cart));
-            removeWishlistItemCloud(idx);
-            alert("Moved to cart!");
-        }
-
-        async function loadCustomerOrders() {
-            const container = document.getElementById('orders-history-container');
-            let cleanPhone = currentCust.phone.replace(/[^0-9]/g, '');
-
+        // Load Pending Payments (NO Final Order ID generated yet)
+        async function loadCustomerPendingPayments() {
+            const container = document.getElementById('pending-payments-container');
             try {
-                const snapshot = await db.collection("orders").get();
-                let myOrders = [];
+                const snap = await db.collection("pending_payments")
+                    .where("phone", "==", currentCust.phone)
+                    .where("paymentStatus", "==", "Pending")
+                    .get();
 
-                snapshot.forEach(doc => {
-                    let ord = doc.data();
-                    ord.id = doc.id;
-                    let ordPhone = (ord.phone || '').replace(/[^0-9]/g, '');
-                    if(ordPhone.endsWith(cleanPhone) || cleanPhone.endsWith(ordPhone)) {
-                        myOrders.push(ord);
-                    }
-                });
-
-                if(myOrders.length === 0) {
-                    container.innerHTML = "<p style='text-align:center; color:var(--text-muted); padding:20px;'>No past orders found for this phone number.</p>";
+                if (snap.empty) {
+                    container.innerHTML = "<p style='text-align:center; color:var(--text-muted); font-size:13px; padding:10px;'>No pending payments. All placed requests are confirmed!</p>";
                     return;
                 }
 
-                let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
-                myOrders.forEach(ord => {
-                    let badgeBg = "#f39c12";
-                    if(ord.status === "Delivered Successfully") badgeBg = "var(--success-green)";
-                    if(ord.status.includes("Shipped")) badgeBg = "var(--blue-primary)";
+                let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
+                snap.forEach(doc => {
+                    let p = doc.data();
+                    html += `
+                        <div style="border:1px dashed #f59e0b; background:#fffbeb; padding:14px; border-radius:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="color:#b45309; font-size:14px;">Payment Reference: ${p.paymentReference}</strong>
+                                <span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:11px;">Verification Pending</span>
+                            </div>
+                            <p style="font-size:12px; color:#4b5563; margin:6px 0;">Total Amount: <strong>₹${p.totalAmount}</strong> | Date: ${p.date || 'Recent'}</p>
+                            <small style="color:#78350f;">Our team is verifying your payment screenshot on WhatsApp. Once approved, your official Order ID will appear below.</small>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = "<p style='color:red;'>Error fetching pending payments.</p>";
+            }
+        }
+
+        // Visual Status Timeline Generator
+        function renderOrderTimeline(status) {
+            const steps = [
+                { key: 'placed', label: 'Order Placed' },
+                { key: 'verified', label: 'Payment Verified' },
+                { key: 'processing', label: 'Processing' },
+                { key: 'packed', label: 'Packed' },
+                { key: 'shipped', label: 'Shipped' },
+                { key: 'delivered', label: 'Delivered' }
+            ];
+
+            let activeIndex = 2; // Default confirmed is Processing
+            if (status === 'Packed') activeIndex = 3;
+            if (status === 'Shipped') activeIndex = 4;
+            if (status === 'Delivered') activeIndex = 5;
+
+            return `
+                <div style="display:flex; justify-content:space-between; position:relative; margin:20px 0 10px 0;">
+                    <div style="position:absolute; top:12px; left:0; right:0; height:2px; background:#E5E7EB; z-index:1;"></div>
+                    ${steps.map((step, idx) => {
+                        const isDone = idx <= activeIndex;
+                        const isCurrent = idx === activeIndex;
+                        const color = isDone ? '#28469E' : '#9CA3AF';
+                        const bg = isCurrent ? '#F0C986' : (isDone ? '#28469E' : '#FFFFFF');
+                        const icon = isDone ? '✓' : idx + 1;
+                        return `
+                            <div style="position:relative; z-index:2; text-align:center; flex:1;">
+                                <div style="width:24px; height:24px; border-radius:50%; background:${bg}; color:${isDone && !isCurrent ? '#fff' : '#111827'}; border:2px solid ${color}; margin:0 auto 5px auto; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center;">
+                                    ${icon}
+                                </div>
+                                <span style="font-size:10px; font-weight:${isCurrent ? '800' : '500'}; color:${color}; display:block;">${step.label}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Load Confirmed Orders (Only orders verified by admin)
+        async function loadCustomerConfirmedOrders() {
+            const container = document.getElementById('confirmed-orders-container');
+            try {
+                const snap = await db.collection("orders")
+                    .where("phone", "==", currentCust.phone)
+                    .where("paymentStatus", "==", "Paid")
+                    .get();
+
+                if (snap.empty) {
+                    container.innerHTML = "<p style='text-align:center; color:var(--text-muted); padding:20px;'>No confirmed orders found yet.</p>";
+                    return;
+                }
+
+                let html = `<div style="display:flex; flex-direction:column; gap:16px;">`;
+                snap.forEach(doc => {
+                    let ord = doc.data();
+                    let itemsDetail = "";
+
+                    if (Array.isArray(ord.items)) {
+                        itemsDetail = ord.items.map(it => `• ${it.name} (Qty: ${it.quantity || 1}) - ₹${it.chargedAmount || it.price}`).join("<br>");
+                    } else {
+                        itemsDetail = ord.items || "-";
+                    }
 
                     html += `
-                        <div style="border:1px solid var(--card-border); padding:15px; border-radius:8px; background:var(--blue-light);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                <strong style="color:var(--blue-primary); font-size:15px;">Order #${ord.id}</strong>
-                                <span style="background:${badgeBg}; color:white; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:bold;">${ord.status}</span>
+                        <div style="border:1px solid var(--card-border); padding:16px; border-radius:8px; background:var(--white);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--card-border); padding-bottom:8px;">
+                                <div>
+                                    <strong style="color:var(--blue-primary); font-size:16px;">Order #${ord.orderId}</strong>
+                                    <span style="font-size:11px; color:var(--text-muted); display:block;">Payment Ref: ${ord.paymentReference}</span>
+                                </div>
+                                <span style="background:var(--blue-primary); color:white; padding:4px 12px; border-radius:12px; font-size:11px; font-weight:bold;">${ord.orderStatus || 'Processing'}</span>
                             </div>
-                            <p style="font-size:13px; color:var(--text-muted); margin:4px 0;"><pre style="font-family:inherit; font-size:12px; white-space:pre-wrap; color:var(--text-primary);">${ord.items}</pre></p>
-                            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:13px;">
-                                <span style="color:var(--text-muted);">Date: <strong style="color:var(--text-primary);">${ord.date || 'N/A'}</strong></span>
-                                <span style="font-weight:bold; color:var(--success-green);">Total: ₹${ord.totalAmount}</span>
+
+                            ${renderOrderTimeline(ord.orderStatus || 'Processing')}
+
+                            <div style="margin:12px 0; font-size:13px; color:var(--text-primary); line-height:1.6; background:var(--blue-light); padding:10px; border-radius:6px;">
+                                <strong>Items:</strong><br>${itemsDetail}
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--text-muted); border-top:1px solid var(--card-border); padding-top:8px;">
+                                <span>Delivery Address: <strong style="color:var(--text-primary);">${ord.actualDeliveryAddress || ord.address || '-'}</strong></span>
+                                <span style="font-weight:bold; color:var(--success-green); font-size:15px;">Paid Total: ₹${ord.totalAmount}</span>
                             </div>
                         </div>
                     `;
@@ -229,7 +254,8 @@
                 html += `</div>`;
                 container.innerHTML = html;
             } catch(e) {
-                container.innerHTML = "<p style='color:var(--danger-red);'>Failed to load orders.</p>";
+                console.error(e);
+                container.innerHTML = "<p style='color:red;'>Error fetching confirmed orders.</p>";
             }
         }
     </script>
