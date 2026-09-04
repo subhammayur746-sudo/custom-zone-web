@@ -8,14 +8,12 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; margin: 0; background: #f4f7f6; color: #2c3e50; flex-direction: column; min-height: 100vh; }
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; transition: 0.3s ease; overflow-y: auto; }
@@ -66,14 +64,12 @@
 </head>
 <body>
 
-    <!-- Mobile Top Header Bar -->
     <div class="mobile-admin-bar">
         <h3>CZ Admin</h3>
         <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
     </div>
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
 
-    <!-- Unified Complete Sidebar -->
     <div class="sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <h2>CZ Admin</h2>
@@ -98,6 +94,9 @@
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
             <input type="hidden" id="prod-doc-id">
+            <!-- Hidden inputs to track old price before edit -->
+            <input type="hidden" id="prod-old-discount-price">
+            <input type="hidden" id="prod-old-actual-price">
 
             <div class="form-grid-row">
                 <div class="form-group" style="margin:0;">
@@ -124,12 +123,11 @@
                 </div>
             </div>
 
-            <!-- Pricing Section -->
             <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
                     <label>Actual Price / MRP (₹) *</label>
                     <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 289" min="1" required>
-                    <small style="color:#7f8c8d; font-size:11px;">Original Price (Will show strikethrough: <span style="text-decoration:line-through;">₹289</span>)</small>
+                    <small style="color:#7f8c8d; font-size:11px;">Original Price (Will show strikethrough)</small>
                 </div>
                 <div class="form-group" style="margin:0;">
                     <label>Discount / Selling Price (₹) *</label>
@@ -146,7 +144,6 @@
                 </div>
             </div>
 
-            <!-- Photos -->
             <div class="form-group" style="margin-top:15px;">
                 <label><i class="fas fa-images"></i> Product Photos (Direct Upload):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
@@ -157,13 +154,11 @@
                 <div class="preview-thumbs-wrapper" id="image-previews-container"></div>
             </div>
 
-            <!-- Admin Note -->
             <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
                 <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Note (Private):</label>
-                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
+                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180..." style="background:#fff;"></textarea>
             </div>
 
-            <!-- Product Variants Section -->
             <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
@@ -171,14 +166,12 @@
                     </label>
                     <span style="font-size:11px; background:#2c3e50; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
                 </div>
-
                 <div id="variants-container" style="display:none;">
                     <div id="variant-items-list"></div>
                     <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Variant</button>
                 </div>
             </div>
 
-            <!-- Quantity Pricing Section -->
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
@@ -198,7 +191,6 @@
             </div>
         </div>
 
-        <!-- Live Products Table -->
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
@@ -269,16 +261,21 @@
             }
         }
 
-        // Action Logger to record history in audit_logs
-        async function logSystemAction(action, targetId) {
+        // Dedicated Price & System Audit Logger
+        async function logSystemAction(action, targetId, oldPrice = null, newPrice = null) {
             try {
-                await db.collection("audit_logs").add({
+                let logData = {
                     actor: loggedInUser.name || loggedInUser.username || "User",
                     role: loggedInUser.role || "staff",
                     action: action,
                     targetId: targetId,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                };
+                if (oldPrice !== null && newPrice !== null) {
+                    logData.oldPrice = oldPrice;
+                    logData.newPrice = newPrice;
+                }
+                await db.collection("audit_logs").add(logData);
             } catch(e) {}
         }
 
@@ -589,6 +586,10 @@
             document.getElementById('prod-doc-id').value = prod.id;
             document.getElementById('prod-name').value = prod.name || "";
             
+            // Save original prices for audit logging
+            document.getElementById('prod-old-discount-price').value = prod.discountPrice || prod.price || "";
+            document.getElementById('prod-old-actual-price').value = prod.actualPrice || "";
+
             const mainCatSelect = document.getElementById('prod-main-cat');
             const customCatInput = document.getElementById('prod-custom-main-cat');
             let isPreset = ["Handmade", "Customized", "Gift cards", "CASUAL ITEM"].includes(prod.mainCategory);
@@ -651,6 +652,8 @@
         function resetProductForm() {
             document.getElementById('form-heading').innerHTML = `<i class="fas fa-plus-circle"></i> Add New Product`;
             document.getElementById('prod-doc-id').value = "";
+            document.getElementById('prod-old-discount-price').value = "";
+            document.getElementById('prod-old-actual-price').value = "";
             document.getElementById('prod-name').value = "";
             document.getElementById('prod-main-cat').value = "Handmade";
             document.getElementById('prod-custom-main-cat').style.display = "none";
@@ -753,12 +756,22 @@
 
             try {
                 if (id) {
+                    const oldDiscountPrice = parseInt(document.getElementById('prod-old-discount-price').value) || 0;
+                    
                     await db.collection("products").doc(id).update(prodPayload);
-                    await logSystemAction("Edited Product", name);
+
+                    // Price alteration detection
+                    if (oldDiscountPrice > 0 && oldDiscountPrice !== discountPrice) {
+                        let priceAction = `Price changed from ₹${oldDiscountPrice} to ₹${discountPrice}`;
+                        await logSystemAction(priceAction, name, oldDiscountPrice, discountPrice);
+                    } else {
+                        await logSystemAction("Edited Product Details", name);
+                    }
+
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    await logSystemAction("Added New Product", name);
+                    await logSystemAction("Added New Product", `${name} (₹${discountPrice})`);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();

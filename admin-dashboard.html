@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
@@ -44,12 +43,18 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        /* Compact Audit Log */
-        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; opacity: 0.9; }
+        /* Compact Audit Log on Dashboard */
+        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; opacity: 0.95; }
         .audit-scroll-container { max-height: 190px; overflow-y: auto; padding-right: 4px; }
         .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
         .audit-item-row:last-child { border-bottom: none; }
         .audit-actor-badge { background: #e2e8f0; color: #1e293b; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
+
+        /* Full Audit Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-box { background: #fff; width: 100%; max-width: 880px; border-radius: 10px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { padding: 16px 20px; background: #2c3e50; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -156,14 +161,16 @@
             </table>
         </div>
 
-        <!-- Scalable Compact Audit Log Section -->
+        <!-- Compact Audit Log Section -->
         <div class="audit-log-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                 <span style="font-size:11.5px; font-weight:700; color:#334155; text-transform:uppercase;">
-                    <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Latest Actions (Last 5 Team Updates)
+                    <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Latest Actions (Recent 5 Updates)
                 </span>
-                <div>
-                    <button onclick="clearAuditHistory()" id="btn-clear-audit" style="background:none; border:none; color:#dc2626; font-size:11px; cursor:pointer; display:none; font-weight:600;"><i class="fas fa-trash-alt"></i> Clear Logs</button>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button onclick="openFullAuditModal()" style="background:#2c3e50; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
+                        <i class="fas fa-external-link-alt"></i> View Full History & Export
+                    </button>
                 </div>
             </div>
             <div class="audit-scroll-container" id="audit-log-items-box">
@@ -172,9 +179,53 @@
         </div>
     </div>
 
+    <!-- Full Audit Modal with Search, Filter, Export to Excel and Purge -->
+    <div class="modal-overlay" id="full-audit-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:16px;"><i class="fas fa-shield-alt"></i> Complete Audit Log & Action History</h3>
+                <span onclick="closeFullAuditModal()" style="font-size:22px; cursor:pointer; font-weight:bold;">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Action Controls -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+                    <input type="text" id="audit-filter-input" onkeyup="filterFullAuditLogs()" placeholder="🔍 Search user, action, target item..." style="padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:12px; min-width:250px;">
+                    
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="exportAuditLogsToCSV()" style="background:#16a34a; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+                            <i class="fas fa-file-excel"></i> Export to Excel (CSV)
+                        </button>
+                        <button id="btn-purge-logs" onclick="purgeAuditLogsProtection()" style="background:#dc2626; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; display:none;">
+                            <i class="fas fa-trash-alt"></i> Clear Archived Logs
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User / Actor</th>
+                                <th>Action Performed</th>
+                                <th>Target / Details</th>
+                                <th>Price Alteration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-audit-tbody">
+                            <tr><td colspan="5" style="text-align:center;">Loading full history from cloud...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInAdmin) window.location.href = "admin-login.html";
+
+        let fullAuditHistoryCache = [];
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -198,7 +249,7 @@
 
             if (isMainAdmin()) {
                 document.getElementById('card-revenue').style.display = "flex";
-                document.getElementById('btn-clear-audit').style.display = "inline-block";
+                document.getElementById('btn-purge-logs').style.display = "inline-block";
             } else {
                 document.getElementById('card-revenue').style.display = "none";
                 let perms = loggedInAdmin.permissions || [];
@@ -253,11 +304,7 @@
                     document.getElementById('stat-revenue').innerText = `₹${deliveredRevenue.toLocaleString('en-IN')}`;
                 }
 
-                recentOrders.sort((a, b) => {
-                    let timeA = a.verifiedAt ? (a.verifiedAt.seconds || 0) : (a.timestamp ? (a.timestamp.seconds || 0) : 0);
-                    let timeB = b.verifiedAt ? (b.verifiedAt.seconds || 0) : (b.timestamp ? (b.timestamp.seconds || 0) : 0);
-                    return timeB - timeA;
-                });
+                recentOrders.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
 
                 renderRecentOrders(recentOrders.slice(0, 8));
                 loadAuditLogs();
@@ -296,7 +343,6 @@
         async function loadAuditLogs() {
             const box = document.getElementById('audit-log-items-box');
             try {
-                // Strict limit of 5 records
                 const snap = await db.collection("audit_logs").limit(5).get();
                 if (snap.empty) {
                     box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No recent team actions.</p>";
@@ -309,12 +355,14 @@
                 let html = "";
                 logs.forEach(l => {
                     let timeStr = l.timestamp?.toDate ? l.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent';
+                    let priceTag = l.oldPrice ? `<span style="background:#fee2e2; color:#dc2626; font-size:10px; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:bold;">₹${l.oldPrice} ➔ ₹${l.newPrice}</span>` : '';
                     html += `
                         <div class="audit-item-row">
                             <div>
                                 <span class="audit-actor-badge">${l.actor || 'User'} (${l.role || 'staff'})</span>
                                 <span>${l.action || 'Updated'}</span> 
                                 <strong style="color:#2c3e50;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
+                                ${priceTag}
                             </div>
                             <span style="font-size:11px; color:#94a3b8;"><i class="far fa-clock"></i> ${timeStr}</span>
                         </div>
@@ -324,15 +372,125 @@
             } catch(e) {}
         }
 
-        async function clearAuditHistory() {
-            if (!confirm("Clear action history log?")) return;
+        // FULL AUDIT LOG MODAL HANDLERS
+        async function openFullAuditModal() {
+            document.getElementById('full-audit-modal').style.display = 'flex';
+            const tbody = document.getElementById('full-audit-tbody');
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Loading all historical logs...</td></tr>";
+
+            try {
+                const snap = await db.collection("audit_logs").get();
+                fullAuditHistoryCache = [];
+                snap.forEach(doc => {
+                    let d = doc.data();
+                    d.id = doc.id;
+                    fullAuditHistoryCache.push(d);
+                });
+
+                fullAuditHistoryCache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                renderFullAuditTable(fullAuditHistoryCache);
+            } catch(err) {
+                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading audit logs.</td></tr>";
+            }
+        }
+
+        function closeFullAuditModal() {
+            document.getElementById('full-audit-modal').style.display = 'none';
+        }
+
+        function renderFullAuditTable(list) {
+            const tbody = document.getElementById('full-audit-tbody');
+            tbody.innerHTML = "";
+
+            if (list.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#94a3b8;'>No records found.</td></tr>";
+                return;
+            }
+
+            list.forEach(l => {
+                let dateStr = l.timestamp?.toDate ? l.timestamp.toDate().toLocaleString('en-GB') : 'Recent';
+                let priceCol = l.oldPrice ? `<strong style="color:#dc2626;">₹${l.oldPrice}</strong> ➔ <strong style="color:#16a34a;">₹${l.newPrice}</strong>` : `<span style="color:#94a3b8;">-</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="white-space:nowrap; font-size:12px; color:#64748b;">${dateStr}</td>
+                        <td><strong>${l.actor || 'User'}</strong> <small style="color:#64748b;">(${l.role || 'staff'})</small></td>
+                        <td><span style="font-weight:600; color:#1e293b;">${l.action}</span></td>
+                        <td>${l.targetId || '-'}</td>
+                        <td>${priceCol}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterFullAuditLogs() {
+            let term = document.getElementById('audit-filter-input').value.toLowerCase().trim();
+            let filtered = fullAuditHistoryCache.filter(l => {
+                let actorMatch = l.actor && l.actor.toLowerCase().includes(term);
+                let actionMatch = l.action && l.action.toLowerCase().includes(term);
+                let targetMatch = l.targetId && l.targetId.toLowerCase().includes(term);
+                return actorMatch || actionMatch || targetMatch;
+            });
+            renderFullAuditTable(filtered);
+        }
+
+        // Export Entire Audit Logs to Excel CSV
+        function exportAuditLogsToCSV() {
+            if (fullAuditHistoryCache.length === 0) {
+                alert("No audit logs to export.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date & Time,Actor Name,Role,Action Performed,Target/Details,Old Price,New Price\r\n";
+
+            fullAuditHistoryCache.forEach(l => {
+                let dateStr = l.timestamp?.toDate ? l.timestamp.toDate().toLocaleString('en-GB') : 'Recent';
+                let row = [
+                    `"${dateStr}"`,
+                    `"${l.actor || 'User'}"`,
+                    `"${l.role || 'staff'}"`,
+                    `"${l.action || ''}"`,
+                    `"${l.targetId || ''}"`,
+                    `"${l.oldPrice || ''}"`,
+                    `"${l.newPrice || ''}"`
+                ];
+                csvContent += row.join(",") + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `customzone_audit_log_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Safe Purge: Clears cloud audit logs after saving backup
+        async function purgeAuditLogsProtection() {
+            if (!isMainAdmin()) {
+                alert("❌ Access Denied: Only Main Admin can purge audit logs!");
+                return;
+            }
+
+            let confirmCode = prompt("⚠️ WARNING: Make sure you have clicked 'Export to Excel (CSV)' to back up first.\n\nType 'PURGE' in capital letters to clear all logs:");
+            if (confirmCode !== "PURGE") {
+                alert("Action cancelled. Logs were not deleted.");
+                return;
+            }
+
             try {
                 const snap = await db.collection("audit_logs").get();
                 const batch = db.batch();
                 snap.docs.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
+
+                alert("✓ Audit log archive cleared successfully. Database memory released.");
+                fullAuditHistoryCache = [];
+                renderFullAuditTable([]);
                 loadAuditLogs();
-            } catch(e) {
+            } catch(err) {
                 alert("Failed to clear logs.");
             }
         }
