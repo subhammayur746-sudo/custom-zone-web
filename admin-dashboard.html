@@ -14,280 +14,298 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
-        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
-        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
-        
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i { margin-right: 12px; width: 18px; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; }
-        .stat-card i { font-size: 35px; color: #e74c3c; }
-        .stat-card h3 { margin: 0; font-size: 22px; color: #2c3e50; }
-        .stat-card p { margin: 0; color: #7f8c8d; font-size: 13px; }
         
-        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
-        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        /* Dashboard Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
+        .stat-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
+        .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .stat-info h3 { margin: 0; font-size: 22px; font-weight: 800; color: #2c3e50; }
+        .stat-info p { margin: 2px 0 0 0; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
 
-        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
-
-        @media (max-width: 768px) {
-            .sidebar { left: -260px; width: 250px; }
-            .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
-            .mobile-admin-header { display: flex; }
-        }
+        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
+        .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <div class="mobile-admin-header">
-        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
-        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
-    </div>
-
     <div class="sidebar">
-        <div class="sidebar-header"><h2>CZ Admin</h2></div>
-        <a href="admin-dashboard.html" class="active"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-customers.html" id="menu-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-products.html" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html" id="menu-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="menu-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" id="menu-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
-        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
+        <a href="admin-dashboard.html" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Welcome, <span id="admin-user-display">Admin</span>! 👋</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+            <div>
+                <h2 style="color:#2c3e50; margin:0;">Store Overview & Order Progress</h2>
+                <small style="color:#64748b;">Logged in as: <strong id="logged-user-name" style="color:#28469E;">Admin</strong> (<span id="logged-user-role">Role</span>)</small>
+            </div>
+            <button onclick="loadDashboardStats()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh Stats</button>
+        </div>
 
+        <!-- Order Progress & Revenue Stats Cards -->
         <div class="stats-grid">
-            <div class="stat-card">
-                <i class="fas fa-shopping-cart" style="color: #3498db;"></i>
-                <div>
+            
+            <!-- REVENUE CARD: STRICT ADMIN ONLY -->
+            <div class="stat-card" id="card-revenue" style="display:none; border-left:4px solid #16a34a;">
+                <div class="stat-icon-wrap" style="background:#dcfce7; color:#16a34a;">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-revenue">₹0</h3>
+                    <p>Total Revenue (Paid)</p>
+                </div>
+            </div>
+
+            <!-- Total Confirmed Orders -->
+            <div class="stat-card" style="border-left:4px solid #28469E;">
+                <div class="stat-icon-wrap" style="background:#e0e7ff; color:#28469E;">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+                <div class="stat-info">
                     <h3 id="stat-total-orders">0</h3>
-                    <p>Total Orders</p>
+                    <p>Total Confirmed</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-rupee-sign" style="color: #27ae60;"></i>
-                <div>
-                    <h3 id="stat-total-revenue">₹0</h3>
-                    <p>Delivered Revenue</p>
+
+            <!-- Pending Payments -->
+            <div class="stat-card" style="border-left:4px solid #d97706;">
+                <div class="stat-icon-wrap" style="background:#fef3c7; color:#d97706;">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-pending">0</h3>
+                    <p>Pending Payments</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-box" style="color: #f39c12;"></i>
-                <div>
-                    <h3 id="stat-total-products">0</h3>
-                    <p>Active Products</p>
+
+            <!-- Processing Orders -->
+            <div class="stat-card" style="border-left:4px solid #3b82f6;">
+                <div class="stat-icon-wrap" style="background:#dbeafe; color:#3b82f6;">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-processing">0</h3>
+                    <p>Processing</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-star" style="color: #e74c3c;"></i>
-                <div>
-                    <h3 id="stat-avg-rating">5.0 ★</h3>
-                    <p>Store Rating</p>
+
+            <!-- Packed Orders -->
+            <div class="stat-card" style="border-left:4px solid #8b5cf6;">
+                <div class="stat-icon-wrap" style="background:#ede9fe; color:#8b5cf6;">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-packed">0</h3>
+                    <p>Packed</p>
                 </div>
             </div>
+
+            <!-- Shipped Orders -->
+            <div class="stat-card" style="border-left:4px solid #06b6d4;">
+                <div class="stat-icon-wrap" style="background:#cffafe; color:#06b6d4;">
+                    <i class="fas fa-shipping-fast"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-shipped">0</h3>
+                    <p>Shipped</p>
+                </div>
+            </div>
+
+            <!-- Delivered Orders -->
+            <div class="stat-card" style="border-left:4px solid #10b981;">
+                <div class="stat-icon-wrap" style="background:#d1fae5; color:#10b981;">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-delivered">0</h3>
+                    <p>Delivered</p>
+                </div>
+            </div>
+
+            <!-- Cancelled Orders -->
+            <div class="stat-card" style="border-left:4px solid #ef4444;">
+                <div class="stat-icon-wrap" style="background:#fee2e2; color:#ef4444;">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="stat-cancelled">0</h3>
+                    <p>Cancelled</p>
+                </div>
+            </div>
+
         </div>
 
-        <div class="admin-card" style="border: 2px solid #f39c12; background: #fffdf9;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom: 15px; border-bottom: 2px solid #ffeaa7; padding-bottom: 10px;">
-                <h3 style="margin:0; border:none; padding:0; color:#d35400;">
-                    <i class="fas fa-birthday-cake" style="color:#e74c3c;"></i> Upcoming Occasion Reminders (Next 10 Days)
-                </h3>
-                <span style="font-size:12px; background:#ffeaa7; padding:4px 8px; border-radius:4px; font-weight:bold; color:#d35400;">Smart Retention System</span>
-            </div>
-
-            <div id="occasion-reminder-container" style="overflow-x:auto;">
-                <p style="text-align:center; color:#7f8c8d; padding:10px;">Scanning database for upcoming customer birthdays & anniversaries...</p>
-            </div>
-        </div>
-
-        <div class="admin-card" style="overflow-x: auto;">
-            <h3><i class="fas fa-clock"></i> Recent Orders Activity</h3>
-            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+        <!-- Recent Confirmed Orders Table -->
+        <div class="admin-card" style="overflow-x:auto;">
+            <h3 style="color:#2c3e50; margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">
+                <i class="fas fa-history"></i> Recent Orders Activity
+            </h3>
+            <table class="admin-table">
                 <thead>
-                    <tr style="background: #f8f9fa; text-align: left;">
-                        <th style="padding: 10px;">Order ID</th>
-                        <th style="padding: 10px;">Customer Name</th>
-                        <th style="padding: 10px;">Amount</th>
-                        <th style="padding: 10px;">Status</th>
-                        <th style="padding: 10px;">Action</th>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Phone</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Current Status</th>
                     </tr>
                 </thead>
                 <tbody id="dashboard-recent-orders">
-                    <tr><td colspan="5" style="text-align:center; padding:15px;">Loading latest orders...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Loading live activity...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-
-        if (!loggedInUser) {
+        let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
-        } else {
-            document.getElementById('admin-user-display').innerText = loggedInUser.name || "Admin";
-            loadDashboardStats();
-            loadOccasionReminders();
         }
 
-        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+        // Check if current user is Main Admin
+        function isMainAdmin() {
+            return (loggedInAdmin.role !== 'staff');
+        }
+
+        function adminLogout() {
+            localStorage.removeItem('cz_logged_in_user');
+            window.location.href = "admin-login.html";
+        }
+
+        // Apply Staff Permissions on Sidebar & Access
+        function applyNavPermissions() {
+            document.getElementById('logged-user-name').innerText = loggedInAdmin.name || loggedInAdmin.username || "Admin";
+            document.getElementById('logged-user-role').innerText = isMainAdmin() ? "Super Admin" : "Staff Member";
+
+            // If main admin, show revenue card
+            if (isMainAdmin()) {
+                document.getElementById('card-revenue').style.display = "flex";
+            } else {
+                // If Staff, strictly hide revenue card
+                document.getElementById('card-revenue').style.display = "none";
+                
+                // Hide restricted sidebar links for staff
+                let perms = loggedInAdmin.permissions || [];
+                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
+                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
+                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
+                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
+                document.getElementById('nav-users').style.display = 'none'; // Staff can never access staff management
+            }
+        }
 
         async function loadDashboardStats() {
             try {
-                const orderSnap = await db.collection("orders").get();
-                let totalOrders = orderSnap.size;
-                let revenue = 0;
+                // 1. Fetch Confirmed Orders
+                const ordersSnap = await db.collection("orders").get();
+                let totalConfirmed = 0;
+                let processingCount = 0;
+                let packedCount = 0;
+                let shippedCount = 0;
+                let deliveredCount = 0;
+                let cancelledCount = 0;
+                let totalRevenue = 0;
                 let recentOrders = [];
 
-                orderSnap.forEach(doc => {
+                ordersSnap.forEach(doc => {
                     let ord = doc.data();
-                    ord.id = doc.id;
-                    if(ord.status === "Delivered Successfully") {
-                        revenue += (parseInt(ord.totalAmount) || 0);
+                    ord.docId = doc.id;
+                    totalConfirmed++;
+
+                    let status = ord.orderStatus || ord.status || "Processing";
+                    if (status === "Processing") processingCount++;
+                    else if (status === "Packed") packedCount++;
+                    else if (status === "Shipped") shippedCount++;
+                    else if (status === "Delivered") deliveredCount++;
+                    else if (status === "Cancelled") cancelledCount++;
+
+                    // Only Paid orders contribute to revenue
+                    if (ord.paymentStatus === "Paid") {
+                        totalRevenue += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0);
                     }
+
                     recentOrders.push(ord);
                 });
 
-                document.getElementById('stat-total-orders').innerText = totalOrders;
-                document.getElementById('stat-total-revenue').innerText = "₹" + revenue;
+                // 2. Fetch Pending Payments Count
+                const pendingSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
+                const pendingCount = pendingSnap.size;
 
-                const prodSnap = await db.collection("products").where("isActive", "==", true).get();
-                document.getElementById('stat-total-products').innerText = prodSnap.size;
+                // Update UI Counters
+                document.getElementById('stat-total-orders').innerText = totalConfirmed;
+                document.getElementById('stat-pending').innerText = pendingCount;
+                document.getElementById('stat-processing').innerText = processingCount;
+                document.getElementById('stat-packed').innerText = packedCount;
+                document.getElementById('stat-shipped').innerText = shippedCount;
+                document.getElementById('stat-delivered').innerText = deliveredCount;
+                document.getElementById('stat-cancelled').innerText = cancelledCount;
 
-                const revSnap = await db.collection("reviews").get();
-                if(!revSnap.empty) {
-                    let totalRating = 0;
-                    revSnap.forEach(doc => totalRating += (doc.data().rating || 5));
-                    let avg = (totalRating / revSnap.size).toFixed(1);
-                    document.getElementById('stat-avg-rating').innerText = avg + " ★";
+                if (isMainAdmin()) {
+                    document.getElementById('stat-revenue').innerText = `₹${totalRevenue.toLocaleString('en-IN')}`;
                 }
 
-                const recentTbody = document.getElementById('dashboard-recent-orders');
-                recentTbody.innerHTML = "";
-                recentOrders.slice(0, 5).forEach(ord => {
-                    recentTbody.innerHTML += `
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 10px;"><strong>${ord.id}</strong></td>
-                            <td style="padding: 10px;">${ord.customerName || '-'}</td>
-                            <td style="padding: 10px; font-weight:bold; color:#27ae60;">₹${ord.totalAmount || 0}</td>
-                            <td style="padding: 10px;"><span style="background:#eaf2f8; color:#2980b9; padding:3px 7px; border-radius:4px; font-size:12px;">${ord.status || 'Pending'}</span></td>
-                            <td style="padding: 10px;"><a href="admin-orders.html" style="color:#e74c3c; text-decoration:none; font-weight:bold;">Manage →</a></td>
-                        </tr>
-                    `;
-                });
+                // Render Recent 10 Orders
+                renderRecentOrders(recentOrders.slice(0, 10));
 
             } catch(e) {
-                console.error("Stats loading error", e);
+                console.error("Dashboard stats error:", e);
             }
         }
 
-        async function loadOccasionReminders() {
-            const container = document.getElementById('occasion-reminder-container');
-            try {
-                const snapshot = await db.collection("orders").get();
-                let reminders = [];
-                let today = new Date();
-                let currentYear = today.getFullYear();
+        function renderRecentOrders(orders) {
+            const tbody = document.getElementById('dashboard-recent-orders');
+            tbody.innerHTML = "";
 
-                snapshot.forEach(doc => {
-                    let ord = doc.data();
-                    if(ord.occasionDate && ord.occasionType && ord.customerName && ord.phone) {
-                        let occDate = new Date(ord.occasionDate);
-                        if(!isNaN(occDate.getTime())) {
-                            let thisYearOcc = new Date(currentYear, occDate.getMonth(), occDate.getDate());
-                            if(thisYearOcc < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
-                                thisYearOcc.setFullYear(currentYear + 1);
-                            }
-                            let diffDays = Math.ceil((thisYearOcc - today) / (1000 * 60 * 60 * 24));
+            if (orders.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#7f8c8d;'>No recent orders found.</td></tr>";
+                return;
+            }
 
-                            if(diffDays >= 0 && diffDays <= 10) {
-                                reminders.push({
-                                    customerName: ord.customerName,
-                                    phone: ord.phone,
-                                    occasionType: ord.occasionType,
-                                    dateFormatted: thisYearOcc.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                                    daysLeft: diffDays
-                                });
-                            }
-                        }
-                    }
-                });
-
-                if(reminders.length === 0) {
-                    container.innerHTML = `<p style="text-align:center; color:#7f8c8d; padding:10px; font-size:13px;">No customer birthdays or anniversaries in the next 10 days.</p>`;
-                    return;
+            orders.forEach(ord => {
+                let itemsText = "";
+                if (Array.isArray(ord.items)) {
+                    itemsText = ord.items.map(it => `${it.name} (x${it.quantity || 1})`).join(", ");
+                } else {
+                    itemsText = ord.items ? ord.items.substring(0, 45) + "..." : "-";
                 }
 
-                let html = `<table style="width:100%; border-collapse:collapse; min-width:650px;">
-                    <thead>
-                        <tr style="background:#fff3cd; text-align:left; font-size:13px;">
-                            <th style="padding:8px;">Customer</th>
-                            <th style="padding:8px;">Occasion</th>
-                            <th style="padding:8px;">Date</th>
-                            <th style="padding:8px;">Days Left</th>
-                            <th style="padding:8px;">1-Click Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
+                let status = ord.orderStatus || ord.status || "Processing";
+                let statusColor = status === "Delivered" ? "#10b981" : (status === "Cancelled" ? "#ef4444" : "#28469E");
 
-                reminders.forEach(r => {
-                    let badgeColor = r.daysLeft <= 3 ? "#e74c3c" : "#f39c12";
-                    let daysText = r.daysLeft === 0 ? "Today!" : (r.daysLeft === 1 ? "Tomorrow" : `In ${r.daysLeft} Days`);
-
-                    html += `
-                        <tr style="border-bottom:1px solid #eee; font-size:13px;">
-                            <td style="padding:8px;"><strong>${r.customerName}</strong><br><small>${r.phone}</small></td>
-                            <td style="padding:8px;"><span style="color:#2c3e50; font-weight:600;">🎁 ${r.occasionType}</span></td>
-                            <td style="padding:8px; font-weight:bold;">${r.dateFormatted}</td>
-                            <td style="padding:8px;"><span style="background:${badgeColor}; color:white; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold;">${daysText}</span></td>
-                            <td style="padding:8px;">
-                                <button onclick="sendOccasionOfferWhatsApp('${r.customerName}', '${r.phone}', '${r.occasionType}', '${r.dateFormatted}')" style="background:#25d366; color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">
-                                    <i class="fab fa-whatsapp"></i> Send Special Offer
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                html += `</tbody></table>`;
-                container.innerHTML = html;
-
-            } catch(e) {
-                console.error("Reminder loading error", e);
-                container.innerHTML = `<p style="color:red; text-align:center;">Failed to load occasion reminders.</p>`;
-            }
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>#${ord.orderId || ord.docId}</strong></td>
+                        <td>${ord.customerName || ord.name || 'Customer'}</td>
+                        <td>${ord.phone || '-'}</td>
+                        <td style="max-width:250px; font-size:12px; color:#555;">${itemsText}</td>
+                        <td><strong style="color:#16a34a;">₹${ord.totalAmount || ord.total || 0}</strong></td>
+                        <td><span style="background:${statusColor}; color:#fff; padding:3px 9px; border-radius:10px; font-size:11px; font-weight:bold;">${status}</span></td>
+                    </tr>
+                `;
+            });
         }
 
-        function sendOccasionOfferWhatsApp(name, phone, occasion, dateText) {
-            let cleanPhone = phone.replace(/[^0-9]/g, '');
-            if(!cleanPhone || cleanPhone.length < 10) { alert("Invalid phone number."); return; }
-            let targetNumber = cleanPhone.length === 10 ? "91" + cleanPhone : cleanPhone;
-
-            let msg = `*🎉 ADVANCE WISHES FROM CUSTOM ZONE!* 🎂❤️\n\n` +
-                      `Hello *${name}*,\n\n` +
-                      `We remember that your special *${occasion}* is coming up on *${dateText}*! ✨\n\n` +
-                      `To make your celebration unforgettable, we have an exclusive surprise discount for you and your loved ones:\n\n` +
-                      `🎁 *Get FLAT ₹50 OFF on any customized gift!*\n` +
-                      `👉 Use Coupon Code: *LOVE50*\n\n` +
-                      `🛍️ Order your personalized keepsake before time:\n` +
-                      `https://custom-zone-web.vercel.app\n\n` +
-                      `Warm wishes from the Custom Zone Family! ❤️\n` +
-                      `📞 WhatsApp Support: +91 6290407730`;
-
-            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
-            window.open(waUrl, "_blank");
-        }
+        window.onload = () => {
+            applyNavPermissions();
+            loadDashboardStats();
+        };
     </script>
 </body>
 </html>

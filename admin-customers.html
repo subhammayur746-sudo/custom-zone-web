@@ -14,85 +14,55 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto;}
+        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; }
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
-        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #e74c3c; }
-        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
-        
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i { margin-right: 12px; width: 18px; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
-        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
-
-        .mobile-admin-header { display: none; background: #2c3e50; color: #fff; padding: 12px 15px; justify-content: space-between; align-items: center; }
-
-        @media (max-width: 768px) {
-            .sidebar { left: -260px; width: 250px; }
-            .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
-            .mobile-admin-header { display: flex; }
-        }
+        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 750px; }
+        .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
+        .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-    <div class="mobile-admin-header">
-        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
-        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
-    </div>
-
     <div class="sidebar">
-        <div class="sidebar-header"><h2>CZ Admin</h2></div>
-        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-customers.html" class="active"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-reviews.html"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html"><i class="fas fa-users"></i> Staff Access</a>
-        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
+        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html" class="active" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:20px; gap:10px;">
-            <h2 style="color: #2c3e50; margin:0;">Registered Customers Directory</h2>
-            <button onclick="exportCustomersCSV()" style="background:#27ae60; color:white; border:none; padding:10px 16px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px;">
-                <i class="fas fa-file-excel"></i> Export CSV / Excel
-            </button>
-        </div>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Customer Database Directory</h2>
 
         <div class="admin-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:12px;">
-                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-users"></i> All Customer Accounts</h3>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <input type="text" id="cust-search-input" onkeyup="filterCustomerDirectory()" placeholder="🔍 Search Name / Phone..." style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px; min-width:200px;">
-                    <select id="cust-status-filter" onchange="filterCustomerDirectory()" style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:13px; font-weight:600;">
-                        <option value="all">All Status</option>
-                        <option value="active">Active (Ordered / Logged in)</option>
-                        <option value="inactive">Inactive (No Orders / Win-back)</option>
-                    </select>
-                </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <h3 style="color:#2c3e50; margin:0;"><i class="fas fa-users"></i> Registered Customer List</h3>
+                <input type="text" id="cust-search" onkeyup="filterCustomers()" placeholder="🔍 Search Customer Name, ID, Phone..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px;">
             </div>
 
             <div style="overflow-x:auto;">
-                <table style="width:100%; border-collapse:collapse; min-width:700px;">
+                <table class="admin-table">
                     <thead>
-                        <tr style="background:#f8f9fa; text-align:left; font-size:13px;">
-                            <th style="padding:10px;">Customer Name</th>
-                            <th style="padding:10px;">WhatsApp Phone</th>
-                            <th style="padding:10px;">Joined Date</th>
-                            <th style="padding:10px;">Wishlist Items</th>
-                            <th style="padding:10px;">Status</th>
-                            <th style="padding:10px;">Win-back Offer</th>
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>Full Name</th>
+                            <th>Phone (WhatsApp)</th>
+                            <th>Default Saved Address</th>
+                            <th>Account Created</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-cust-list">
-                        <tr><td colspan="6" style="text-align:center; padding:15px;">Loading customers...</td></tr>
+                    <tbody id="customers-table-body">
+                        <tr><td colspan="6" style="text-align:center;">Loading customer directory...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -100,125 +70,131 @@
     </div>
 
     <script>
-        let allCustomersCache = [];
-        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
-        if (!loggedInUser) {
+        // STRICT SECURITY GUARD: URL Access verification
+        if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
-        } else {
-            fetchCloudCustomers();
+        } else if (loggedInAdmin.role === 'staff') {
+            let perms = loggedInAdmin.permissions || [];
+            if (!perms.includes('customers')) {
+                alert("❌ Access Denied: You do not have permission to access Customer Directory!");
+                window.location.href = "admin-dashboard.html";
+            }
         }
 
-        function logout() { localStorage.removeItem('cz_logged_in_user'); window.location.href = "admin-login.html"; }
+        function isMainAdminUser() {
+            return (loggedInAdmin && loggedInAdmin.role !== 'staff');
+        }
 
-        async function fetchCloudCustomers() {
-            const tbody = document.getElementById('admin-cust-list');
+        // Apply Sidebar Display based on permissions
+        function applyNavRules() {
+            if (loggedInAdmin.role === 'staff') {
+                let perms = loggedInAdmin.permissions || [];
+                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
+                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
+                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
+                document.getElementById('nav-users').style.display = 'none';
+            }
+        }
+
+        let customersCache = [];
+
+        async function fetchCustomers() {
+            const tbody = document.getElementById('customers-table-body');
             try {
-                const snapshot = await db.collection("customers").get();
-                allCustomersCache = [];
+                const snap = await db.collection("customers").get();
+                customersCache = [];
                 tbody.innerHTML = "";
 
-                if(snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px;'>No customers registered yet.</td></tr>";
+                if (snap.empty) {
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#7f8c8d;'>No customers registered yet.</td></tr>";
                     return;
                 }
 
-                snapshot.forEach(doc => {
+                snap.forEach(doc => {
                     let c = doc.data();
-                    c.phone = doc.id;
-                    allCustomersCache.push(c);
+                    c.phoneKey = doc.id;
+                    customersCache.push(c);
                 });
 
-                renderCustomerTable(allCustomersCache);
+                renderCustomersTable(customersCache);
+
             } catch(e) {
-                console.error(e);
-                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading directory.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading customer records.</td></tr>";
             }
         }
 
-        function renderCustomerTable(custs) {
-            const tbody = document.getElementById('admin-cust-list');
+        function renderCustomersTable(list) {
+            const tbody = document.getElementById('customers-table-body');
             tbody.innerHTML = "";
 
-            if(custs.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px;'>No matching customers found.</td></tr>";
-                return;
-            }
+            let canDelete = isMainAdminUser();
 
-            custs.forEach(c => {
-                let wishlistCount = c.wishlist ? c.wishlist.length : 0;
-                let isActive = c.isActive !== false;
-                let statusBadge = isActive ? '<span style="background:#eafaf1; color:#27ae60; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">Active</span>' : '<span style="background:#fdedec; color:#e74c3c; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">Inactive</span>';
+            list.forEach(c => {
+                let dateStr = c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate().toLocaleDateString('en-GB') : c.joinedDate || 'Recent') : 'Recent';
 
                 tbody.innerHTML += `
-                    <tr style="border-bottom:1px solid #eee; font-size:13px;">
-                        <td style="padding:10px;"><strong>${c.name}</strong></td>
-                        <td style="padding:10px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> ${c.phone}</td>
-                        <td style="padding:10px;">${c.joinedDate || 'Recent'}</td>
-                        <td style="padding:10px;"><strong>${wishlistCount}</strong> items</td>
-                        <td style="padding:10px;">${statusBadge}</td>
-                        <td style="padding:10px;">
-                            <button onclick="sendWinBackOfferWhatsApp('${c.name}', '${c.phone}')" style="background:#25d366; color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;">
-                                <i class="fab fa-whatsapp"></i> Send ₹50 Offer
-                            </button>
+                    <tr>
+                        <td><strong style="color:#28469E;">${c.customerId || 'CZ-CUST-USER'}</strong></td>
+                        <td><strong>${c.name || 'Customer'}</strong></td>
+                        <td>${c.phone || c.phoneKey}</td>
+                        <td style="max-width:280px; font-size:12px; color:#555;">${c.savedAddress || '-'}</td>
+                        <td><small style="color:#7f8c8d;">${dateStr}</small></td>
+                        <td>
+                            <!-- WhatsApp direct connect -->
+                            <a href="https://api.whatsapp.com/send?phone=91${c.phone}" target="_blank" style="background:#25d366; color:#fff; padding:5px 9px; border-radius:4px; text-decoration:none; font-size:12px;" title="Chat on WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+
+                            <!-- Delete Option: STRICT MAIN ADMIN ONLY -->
+                            ${canDelete ? `
+                                <button onclick="deleteCustomerRecord('${c.phoneKey}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer; margin-left:4px;" title="Delete Customer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : `
+                                <button onclick="alert('❌ Access Denied: Staff cannot delete customers!')" style="background:#bdc3c7; color:#7f8c8d; border:none; padding:5px 9px; border-radius:4px; cursor:not-allowed; margin-left:4px;" title="Restricted">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            `}
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function filterCustomerDirectory() {
-            let term = document.getElementById('cust-search-input').value.toLowerCase().trim();
-            let status = document.getElementById('cust-status-filter').value;
-
-            let filtered = allCustomersCache.filter(c => {
-                let matchSearch = (c.name && c.name.toLowerCase().includes(term)) || c.phone.includes(term);
-                let matchStatus = status === 'all' || (status === 'active' && c.isActive !== false) || (status === 'inactive' && c.isActive === false);
-                return matchSearch && matchStatus;
+        function filterCustomers() {
+            let term = document.getElementById('cust-search').value.toLowerCase().trim();
+            let filtered = customersCache.filter(c => {
+                let nameMatch = c.name && c.name.toLowerCase().includes(term);
+                let idMatch = c.customerId && c.customerId.toLowerCase().includes(term);
+                let phoneMatch = (c.phone && c.phone.includes(term)) || (c.phoneKey && c.phoneKey.includes(term));
+                return nameMatch || idMatch || phoneMatch;
             });
-
-            renderCustomerTable(filtered);
+            renderCustomersTable(filtered);
         }
 
-        // কাস্টমার রি-এনগেজমেন্ট ও ডিসকাউন্ট অফার পাঠানো
-        function sendWinBackOfferWhatsApp(name, phone) {
-            let cleanPhone = phone.replace(/[^0-9]/g, '');
-            let targetNumber = cleanPhone.length === 10 ? "91" + cleanPhone : cleanPhone;
+        async function deleteCustomerRecord(phoneKey) {
+            if (!isMainAdminUser()) {
+                alert("❌ Access Denied: Only Main Admin can delete customer records!");
+                return;
+            }
 
-            let msg = `*✨ EXCLUSIVE DISCOUNT FROM CUSTOM ZONE!* 🎁❤️\n\n` +
-                      `Hello *${name}*,\n\n` +
-                      `We miss having you around at Custom Zone! As a token of love, we have added a special *FLAT ₹50 OFF* voucher to your account. ✨\n\n` +
-                      `👉 Use Coupon Code: *COMEBACK50*\n` +
-                      `👉 Applicable on all personalized keychains, frames & gifts!\n\n` +
-                      `🛍️ Explore new handcrafted arrivals:\n` +
-                      `https://custom-zone-web.vercel.app\n\n` +
-                      `Happy Gifting! | Support: +91 6290407730`;
-
-            const waUrl = `https://api.whatsapp.com/send?phone=${targetNumber}&text=${encodeURIComponent(msg)}`;
-            window.open(waUrl, "_blank");
+            if (confirm(`Permanently delete customer record for ${phoneKey}?`)) {
+                try {
+                    await db.collection("customers").doc(phoneKey).delete();
+                    alert("✓ Customer record deleted.");
+                    fetchCustomers();
+                } catch(e) {
+                    alert("Failed to delete customer.");
+                }
+            }
         }
 
-        // ১-ক্লিকে CSV / Excel ডাউনলোড
-        function exportCustomersCSV() {
-            if(allCustomersCache.length === 0) { alert("No customer data to export."); return; }
-
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Customer Name,Phone Number,Joined Date,Wishlist Count,Status\n";
-
-            allCustomersCache.forEach(c => {
-                let wishlistCount = c.wishlist ? c.wishlist.length : 0;
-                let status = c.isActive !== false ? "Active" : "Inactive";
-                csvContent += `"${c.name}","${c.phone}","${c.joinedDate || 'N/A'}","${wishlistCount}","${status}"\n`;
-            });
-
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `CustomZone_Customers_${new Date().toLocaleDateString('en-GB')}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        window.onload = () => {
+            applyNavRules();
+            fetchCustomers();
+        };
     </script>
 </body>
 </html>

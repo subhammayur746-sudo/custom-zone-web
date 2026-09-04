@@ -16,257 +16,49 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body { 
-            display: flex; 
-            margin: 0; 
-            background: #f4f7f6; 
-            color: #2c3e50;
-            flex-direction: column; 
-            min-height: 100vh;
-        }
-
-        .sidebar { 
-            width: 250px; 
-            background: #2c3e50; 
-            color: #fff; 
-            height: 100vh; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            z-index: 100; 
-            transition: 0.3s; 
-            overflow-y: auto;
-        }
-        .sidebar-header { 
-            padding: 20px; 
-            text-align: center; 
-            border-bottom: 1px solid #34495e; 
-        }
-        .sidebar-header h2 { 
-            color: #e74c3c; 
-            font-size: 22px; 
-            margin: 0; 
-            font-weight: 800; 
-        }
-        .sidebar a { 
-            display: block; 
-            color: #bdc3c7; 
-            padding: 14px 22px; 
-            text-decoration: none; 
-            font-size: 14px; 
-            border-left: 4px solid transparent; 
-            transition: 0.2s;
-        }
-        .sidebar a:hover, .sidebar a.active { 
-            background: #34495e; 
-            color: #fff; 
-            border-left-color: #e74c3c; 
-        }
-        .sidebar a i { 
-            margin-right: 12px; 
-            width: 18px; 
-            text-align: center; 
-        }
-        .logout-btn { 
-            background: #c0392b !important; 
-            color: white !important; 
-            margin-top: 20px; 
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; color: #2c3e50; flex-direction: column; min-height: 100vh; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; font-weight: 800; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
+        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
         
-        .main-content { 
-            margin-left: 250px; 
-            padding: 25px; 
-            width: calc(100% - 250px); 
-            box-sizing: border-box; 
-        }
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
+        .admin-card { background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
+        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
 
-        .admin-card { 
-            background: #ffffff; 
-            padding: 24px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06); 
-            margin-bottom: 25px; 
-            border: 1px solid #eee; 
-        }
-        .admin-card h3 { 
-            margin-bottom: 18px; 
-            color: #2c3e50; 
-            border-bottom: 2px solid #eee; 
-            padding-bottom: 10px; 
-            font-size: 17px; 
-        }
+        .form-grid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #2c3e50; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff; color: #2c3e50; font-size: 13px; }
+        .btn-admin { background: #27ae60; color: #fff; padding: 11px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        
+        .upload-dropzone { border: 2px dashed #bdc3c7; background: #fafbfc; padding: 15px; border-radius: 6px; text-align: center; cursor: pointer; }
+        .preview-thumbs-wrapper { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .thumb-preview-box { position: relative; width: 65px; height: 65px; border-radius: 4px; overflow: hidden; border: 1px solid #ddd; }
+        .thumb-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb-preview-box .remove-thumb-btn { position: absolute; top: 2px; right: 2px; background: rgba(231, 76, 60, 0.9); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .form-grid-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-group { 
-            margin-bottom: 15px; 
-        }
-        .form-group label { 
-            display: block; 
-            margin-bottom: 6px; 
-            font-weight: 600; 
-            font-size: 13px; 
-            color: #2c3e50; 
-        }
-        .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; 
-            padding: 10px 12px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            box-sizing: border-box; 
-            background: #fff; 
-            color: #2c3e50; 
-            font-size: 13px;
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
-            border-color: #3498db; 
-            outline: none; 
-        }
-
-        .btn-admin { 
-            background: #27ae60; 
-            color: #fff; 
-            padding: 11px 24px; 
-            border: none; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            font-size: 14px; 
-            transition: 0.2s; 
-        }
-        .btn-admin:hover { 
-            background: #219150; 
-        }
-
-        .upload-dropzone {
-            border: 2px dashed #bdc3c7;
-            background: #fafbfc;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .upload-dropzone:hover {
-            border-color: #3498db;
-            background: #f0f7fb;
-        }
-        .preview-thumbs-wrapper {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .thumb-preview-box {
-            position: relative;
-            width: 65px;
-            height: 65px;
-            border-radius: 4px;
-            overflow: hidden;
-            border: 1px solid #ddd;
-        }
-        .thumb-preview-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .thumb-preview-box .remove-thumb-btn {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: rgba(231, 76, 60, 0.9);
-            color: #fff;
-            border: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .variant-item-box, .qty-tier-item-box {
-            background: #fafbfc;
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .table-responsive-container {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #eee;
-            border-radius: 6px;
-        }
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 750px;
-            background: #fff;
-        }
-        .admin-table th {
-            background: #f8f9fa;
-            color: #2c3e50;
-            text-align: left;
-            font-size: 13px;
-            padding: 12px 14px;
-            border-bottom: 2px solid #eee;
-        }
-        .admin-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid #eee;
-            font-size: 13px;
-            color: #2c3e50;
-            vertical-align: middle;
-        }
-
-        .mobile-admin-header { 
-            display: none; 
-            background: #2c3e50; 
-            color: #fff; 
-            padding: 12px 15px; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-
-        @media (max-width: 768px) {
-            .sidebar { left: -260px; width: 250px; }
-            .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
-            .mobile-admin-header { display: flex; }
-        }
+        .variant-item-box, .qty-tier-item-box { background: #fafbfc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 10px; }
+        .table-responsive-container { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 6px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 750px; background: #fff; }
+        .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px 14px; border-bottom: 2px solid #eee; }
+        .admin-table td { padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 13px; color: #2c3e50; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-    <div class="mobile-admin-header">
-        <h3 style="margin:0; color:#e74c3c;">CZ Admin</h3>
-        <button onclick="document.querySelector('.sidebar').classList.toggle('active')" style="background:none; border:none; color:white; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
-    </div>
-
     <div class="sidebar">
         <div class="sidebar-header"><h2>CZ Admin</h2></div>
-        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" id="menu-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-customers.html" id="menu-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="menu-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-products.html" class="active" id="menu-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-users.html" id="menu-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Home Dashboard</a>
+        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" class="active" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -298,18 +90,7 @@
                     <label>Sub Category</label>
                     <input type="text" id="prod-sub-cat" list="subcat-default-list" placeholder="Choose or type...">
                     <datalist id="subcat-default-list">
-                        <option value="Keychains">
-                        <option value="Frames">
-                        <option value="Mug">
-                        <option value="Hair Pin">
-                        <option value="Shirts">
-                        <option value="Resin Art">
-                        <option value="Shadow Box">
-                        <option value="Clocks">
-                        <option value="Wallets">
-                        <option value="Bottles">
-                        <option value="Gift Hampers">
-                        <option value="Desk Organizers">
+                        <option value="Keychains"><option value="Frames"><option value="Mug"><option value="Hair Pin"><option value="Shirts"><option value="Resin Art"><option value="Shadow Box"><option value="Clocks"><option value="Wallets"><option value="Bottles"><option value="Gift Hampers">
                     </datalist>
                 </div>
             </div>
@@ -338,22 +119,19 @@
 
             <!-- Direct Photo Upload -->
             <div class="form-group" style="margin-top:15px;">
-                <label><i class="fas fa-images"></i> Product Photos (Direct Upload from Device):</label>
+                <label><i class="fas fa-images"></i> Product Photos (Direct Upload):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
                     <i class="fas fa-cloud-upload-alt" style="font-size:26px; color:#3498db; margin-bottom:6px;"></i>
                     <p style="margin:0; font-size:13px; font-weight:600; color:#2c3e50;">Click here to select images from Phone/PC</p>
-                    <span style="font-size:11px; color:#7f8c8d;">Supported: JPG, PNG, WEBP (Multiple allowed)</span>
                 </div>
                 <input type="file" id="prod-file-input" accept="image/*" multiple onchange="handleDirectImageUpload(this)" style="display:none;">
-                
                 <div class="preview-thumbs-wrapper" id="image-previews-container"></div>
             </div>
 
             <!-- Admin Internal Note -->
             <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
-                <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Personal / Internal Note (Private):</label>
-                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Supplier: Rahul Arts..." style="background:#fff;"></textarea>
-                <small style="color:#7f8c8d; font-size:11px;">This note is strictly private for store management and never shown to customers.</small>
+                <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Note (Private):</label>
+                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
             </div>
 
             <!-- Product Variants Section -->
@@ -367,14 +145,11 @@
 
                 <div id="variants-container" style="display:none;">
                     <div id="variant-items-list"></div>
-                    
-                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
-                        + Add Variant
-                    </button>
+                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Variant</button>
                 </div>
             </div>
 
-            <!-- Quantity-Based Pricing Section -->
+            <!-- Quantity Pricing Section -->
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
@@ -382,16 +157,9 @@
                     </label>
                     <span style="font-size:11px; background:#16a34a; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Package Price Tiers</span>
                 </div>
-                <small style="color:#4b5563; font-size:12px; display:block; margin-bottom:8px;">
-                    * উদাহরণ: ৩ পিসের প্যাকেজ প্রাইস ₹249 হলে কাস্টমার ৩ পিস নিলে মোট দাম ₹249 ধার্য হবে।
-                </small>
-
                 <div id="qty-pricing-container" style="display:none;">
                     <div id="qty-tier-items-list"></div>
-                    
-                    <button type="button" onclick="addQtyTierRow()" id="btn-add-qty-tier" style="background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">
-                        + Add Quantity Tier
-                    </button>
+                    <button type="button" onclick="addQtyTierRow()" id="btn-add-qty-tier" style="background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Quantity Tier</button>
                 </div>
             </div>
 
@@ -433,10 +201,15 @@
         let uploadedProductImages = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
+        // STRICT SECURITY GUARD: URL Access verification
         if (!loggedInUser) {
             window.location.href = "admin-login.html";
-        } else {
-            fetchAdminProducts();
+        } else if (loggedInUser.role === 'staff') {
+            let perms = loggedInUser.permissions || [];
+            if (!perms.includes('products')) {
+                alert("❌ Access Denied: You do not have permission to access Manage Products!");
+                window.location.href = "admin-dashboard.html";
+            }
         }
 
         function logout() { 
@@ -445,8 +218,18 @@
         }
 
         function isMainAdmin() {
-            if (!loggedInUser) return false;
-            return (loggedInUser.role !== 'staff');
+            return (loggedInUser && loggedInUser.role !== 'staff');
+        }
+
+        // Apply Sidebar Hide based on permissions
+        function applyNavRules() {
+            if (loggedInUser.role === 'staff') {
+                let perms = loggedInUser.permissions || [];
+                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
+                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
+                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
+                document.getElementById('nav-users').style.display = 'none';
+            }
         }
 
         function handleMainCategoryChange(val) {
@@ -545,7 +328,6 @@
         function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "") {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
-            
             if (currentCount >= 5) {
                 alert("Maximum 5 variants allowed per product.");
                 return;
@@ -568,7 +350,7 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" title="Optional Strikethrough MRP">
+                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" title="MRP">
                     <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required title="Selling Price">
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
@@ -637,12 +419,12 @@
             div.innerHTML = `
                 <div style="display:flex; gap:10px; align-items:center;">
                     <div style="flex:1;">
-                        <label style="font-size:11px; font-weight:bold;">Minimum Quantity (PCS):</label>
+                        <label style="font-size:11px; font-weight:bold;">Min Quantity (PCS):</label>
                         <input type="number" min="1" placeholder="e.g., 3" value="${minQty}" class="qty-min-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
                     <div style="flex:1.5;">
-                        <label style="font-size:11px; font-weight:bold;">Direct Package Price (₹):</label>
-                        <input type="number" min="1" placeholder="e.g., 249 for 3 pcs" value="${packagePrice}" class="qty-price-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                        <label style="font-size:11px; font-weight:bold;">Package Price (₹):</label>
+                        <input type="number" min="1" placeholder="e.g., 249" value="${packagePrice}" class="qty-price-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
                     <div style="padding-top:16px;">
                         <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:7px 10px; border-radius:4px; font-size:11px; cursor:pointer;">✕</button>
@@ -672,7 +454,6 @@
 
                 renderAdminProducts(allProductsCache);
             } catch(e) {
-                console.error(e);
                 tbody.innerHTML = "<tr><td colspan='6' style='color:#e74c3c; text-align:center; padding:15px;'>Error loading inventory.</td></tr>";
             }
         }
@@ -931,7 +712,6 @@
                 resetProductForm();
                 fetchAdminProducts();
             } catch(e) {
-                console.error(e);
                 alert("Error saving product.");
             } finally {
                 btn.disabled = false;
@@ -949,7 +729,6 @@
         }
 
         async function deleteProduct(id) {
-            // HARD RULE: Staff cannot delete products
             if (!isMainAdmin()) {
                 alert("❌ Access Denied: Staff members cannot delete products!");
                 return;
@@ -965,6 +744,11 @@
                 }
             }
         }
+
+        window.onload = () => {
+            applyNavRules();
+            fetchAdminProducts();
+        };
     </script>
 </body>
 </html>
