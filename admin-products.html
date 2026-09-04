@@ -18,15 +18,22 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; margin: 0; background: #f4f7f6; color: #2c3e50; flex-direction: column; min-height: 100vh; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; transition: 0.3s; overflow-y: auto; }
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; transition: 0.3s ease; overflow-y: auto; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
         .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+        
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
         
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
         .admin-card { background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
         .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
 
@@ -47,17 +54,39 @@
         .admin-table { width: 100%; border-collapse: collapse; min-width: 750px; background: #fff; }
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px 14px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 13px; color: #2c3e50; vertical-align: middle; }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="sidebar-header"><h2>CZ Admin</h2></div>
-        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Home Dashboard</a>
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
+    <!-- Unified Complete Sidebar -->
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
+        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" class="active" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
@@ -95,7 +124,7 @@
                 </div>
             </div>
 
-            <!-- Pricing / Discount Section -->
+            <!-- Pricing Section -->
             <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
                     <label>Actual Price / MRP (₹) *</label>
@@ -117,7 +146,7 @@
                 </div>
             </div>
 
-            <!-- Direct Photo Upload -->
+            <!-- Photos -->
             <div class="form-group" style="margin-top:15px;">
                 <label><i class="fas fa-images"></i> Product Photos (Direct Upload):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
@@ -128,7 +157,7 @@
                 <div class="preview-thumbs-wrapper" id="image-previews-container"></div>
             </div>
 
-            <!-- Admin Internal Note -->
+            <!-- Admin Note -->
             <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
                 <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Note (Private):</label>
                 <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180, Stock: 15 pcs remaining..." style="background:#fff;"></textarea>
@@ -169,7 +198,7 @@
             </div>
         </div>
 
-        <!-- Live Product Catalog Table -->
+        <!-- Live Products Table -->
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
@@ -201,7 +230,6 @@
         let uploadedProductImages = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
-        // STRICT SECURITY GUARD: URL Access verification
         if (!loggedInUser) {
             window.location.href = "admin-login.html";
         } else if (loggedInUser.role === 'staff') {
@@ -210,6 +238,13 @@
                 alert("❌ Access Denied: You do not have permission to access Manage Products!");
                 window.location.href = "admin-dashboard.html";
             }
+        }
+
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
         function logout() { 
@@ -221,15 +256,30 @@
             return (loggedInUser && loggedInUser.role !== 'staff');
         }
 
-        // Apply Sidebar Hide based on permissions
         function applyNavRules() {
             if (loggedInUser.role === 'staff') {
                 let perms = loggedInUser.permissions || [];
                 if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
                 if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
+                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
+                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
+        }
+
+        // Action Logger to record history in audit_logs
+        async function logSystemAction(action, targetId) {
+            try {
+                await db.collection("audit_logs").add({
+                    actor: loggedInUser.name || loggedInUser.username || "User",
+                    role: loggedInUser.role || "staff",
+                    action: action,
+                    targetId: targetId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {}
         }
 
         function handleMainCategoryChange(val) {
@@ -350,8 +400,8 @@
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
                         <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" title="MRP">
-                    <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required title="Selling Price">
+                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <input type="file" accept="image/*" onchange="handleVariantImageUpload(this)" style="font-size:11px; flex:1;">
@@ -471,8 +521,8 @@
                     ? `<span style="background:#2c3e50; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.variants.length} Variants</span>`
                     : '';
 
-                let qtyBadge = (p.hasQtyPricing && p.qtyTiers && p.qtyTiers.length > 0)
-                    ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.qtyTiers.length} Qty Tiers</span>`
+                let qtyBadge = (p.hasQtyPricing && p.qtyTiers && p.qtyTiers.length > 0) 
+                    ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.qtyTiers.length} Qty Tiers</span>` 
                     : '';
                 
                 let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d35400; background:#fffdfa; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #f9e3ba; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
@@ -704,9 +754,11 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
+                    await logSystemAction("Edited Product", name);
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
+                    await logSystemAction("Added New Product", name);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();
@@ -722,6 +774,7 @@
         async function toggleProductActive(id, currentActive) {
             try {
                 await db.collection("products").doc(id).update({ isActive: !currentActive });
+                await logSystemAction(currentActive ? "Deactivated Product" : "Activated Product", id);
                 fetchAdminProducts();
             } catch(e) {
                 alert("Failed to update status.");
@@ -737,6 +790,7 @@
             if (confirm("Are you sure you want to permanently delete this product?")) {
                 try {
                     await db.collection("products").doc(id).delete();
+                    await logSystemAction("Permanently Deleted Product", id);
                     alert("✓ Product deleted successfully!");
                     fetchAdminProducts();
                 } catch(e) {

@@ -14,32 +14,76 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
+
+        /* Sidebar Styling */
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+        
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
+
+        /* Main Content Layout */
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
+        /* Mobile Top Navbar */
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
         /* Dashboard Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
-        .stat-card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
-        .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .stat-card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
+        .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
         .stat-info h3 { margin: 0; font-size: 22px; font-weight: 800; color: #2c3e50; }
-        .stat-info p { margin: 2px 0 0 0; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .stat-info p { margin: 2px 0 0 0; font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
 
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 650px; }
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+
+        /* Audit Log (আবছা টিম হিস্ট্রি সেকশন) */
+        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 18px; margin-top: 25px; opacity: 0.88; transition: opacity 0.2s; }
+        .audit-log-section:hover { opacity: 1; }
+        .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
+        .audit-item-row:last-child { border-bottom: none; }
+        .audit-actor-badge { background: #e2e8f0; color: #1e293b; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
+
+        /* Mobile Breakpoint */
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat-card { padding: 12px; }
+            .stat-icon-wrap { width: 40px; height: 40px; font-size: 18px; }
+            .stat-info h3 { font-size: 18px; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- Mobile Top Header Bar -->
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
     <!-- Unified Complete Admin Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
         <a href="admin-dashboard.html" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
@@ -55,16 +99,18 @@
     <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
             <div>
-                <h2 style="color:#2c3e50; margin:0;">Store Overview & Order Progress</h2>
+                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Order Progress</h2>
                 <small style="color:#64748b;">Logged in as: <strong id="logged-user-name" style="color:#28469E;">Admin</strong> (<span id="logged-user-role">Role</span>)</small>
             </div>
-            <button onclick="loadDashboardStats()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh Stats</button>
+            <button id="btn-refresh-stats" onclick="loadDashboardStats()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+                <i class="fas fa-sync-alt" id="refresh-spinner"></i> Refresh Stats
+            </button>
         </div>
 
         <!-- Order Progress & Revenue Stats Cards -->
         <div class="stats-grid">
             
-            <!-- REVENUE CARD: STRICT ADMIN ONLY (Counts Delivered Orders) -->
+            <!-- REVENUE CARD: STRICT MAIN ADMIN ONLY (Delivered Orders) -->
             <div class="stat-card" id="card-revenue" style="display:none; border-left:4px solid #16a34a;">
                 <div class="stat-icon-wrap" style="background:#dcfce7; color:#16a34a;">
                     <i class="fas fa-rupee-sign"></i>
@@ -175,12 +221,33 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Audit Log / Recent Team Action History (আবছা ব্যাকগ্রাউন্ডের হিস্ট্রি) -->
+        <div class="audit-log-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:12px; font-weight:700; color:#334155; text-transform:uppercase;">
+                    <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Recent Actions & Activity History (Audit Log)
+                </span>
+                <small style="color:#64748b; font-size:11px;">Auto logged by system</small>
+            </div>
+            <div id="audit-log-items-box">
+                <p style="text-align:center; color:#94a3b8; font-size:12px; margin:0;">Loading action history...</p>
+            </div>
+        </div>
+
     </div>
 
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
+        }
+
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
         function isMainAdmin() {
@@ -214,6 +281,9 @@
         }
 
         async function loadDashboardStats() {
+            const spinner = document.getElementById('refresh-spinner');
+            if (spinner) spinner.classList.add('fa-spin');
+
             try {
                 const ordersSnap = await db.collection("orders").get();
                 let totalConfirmed = 0;
@@ -230,12 +300,10 @@
                     ord.docId = doc.id;
                     totalConfirmed++;
 
-                    // Case-insensitive status matching to catch both old and new orders
                     let rawStatus = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
 
                     if (rawStatus === "delivered") {
                         deliveredCount++;
-                        // Delivered Order Amount calculation (supporting both totalAmount and total)
                         let amount = parseInt(ord.totalAmount) || parseInt(ord.total) || 0;
                         deliveredRevenue += amount;
                     } else if (rawStatus === "shipped") {
@@ -255,7 +323,6 @@
                 const pendingSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
                 const pendingCount = pendingSnap.size;
 
-                // Update UI Counters
                 document.getElementById('stat-total-orders').innerText = totalConfirmed;
                 document.getElementById('stat-pending').innerText = pendingCount;
                 document.getElementById('stat-processing').innerText = processingCount;
@@ -275,9 +342,12 @@
                 });
 
                 renderRecentOrders(recentOrders.slice(0, 10));
+                loadAuditLogs();
 
             } catch(e) {
                 console.error("Dashboard stats error:", e);
+            } finally {
+                if (spinner) spinner.classList.remove('fa-spin');
             }
         }
 
@@ -316,6 +386,49 @@
                     </tr>
                 `;
             });
+        }
+
+        // Fetch and Render Audit Logs (আবছা একশন লগ)
+        async function loadAuditLogs() {
+            const box = document.getElementById('audit-log-items-box');
+            try {
+                const snap = await db.collection("audit_logs").limit(8).get();
+                if (snap.empty) {
+                    box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:12px; margin:0;'>No recent team actions logged yet.</p>";
+                    return;
+                }
+
+                let logs = [];
+                snap.forEach(doc => {
+                    let d = doc.data();
+                    logs.push(d);
+                });
+
+                logs.sort((a, b) => {
+                    let timeA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
+                    let timeB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
+                    return timeB - timeA;
+                });
+
+                let html = "";
+                logs.slice(0, 6).forEach(l => {
+                    let timeStr = l.timestamp ? (l.timestamp.toDate ? l.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent') : 'Recent';
+                    html += `
+                        <div class="audit-item-row">
+                            <div>
+                                <span class="audit-actor-badge">${l.actor || 'User'} (${l.role || 'staff'})</span>
+                                <span>${l.action || 'Performed an update'}</span> 
+                                <strong style="color:#2c3e50;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
+                            </div>
+                            <span style="font-size:11px; color:#94a3b8;"><i class="far fa-clock"></i> ${timeStr}</span>
+                        </div>
+                    `;
+                });
+                box.innerHTML = html;
+
+            } catch (err) {
+                box.innerHTML = "<p style='color:#94a3b8; font-size:12px; margin:0;'>Activity logging active.</p>";
+            }
         }
 
         window.onload = () => {
