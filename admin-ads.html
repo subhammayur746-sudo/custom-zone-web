@@ -8,28 +8,56 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
+
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
+
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
+        
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
+        .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
         .set-input { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .admin-card { padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Unified Complete Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
         <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
@@ -43,15 +71,14 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Store Banners & Delivery Settings</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Store Banners & Delivery Settings</h2>
 
-        <!-- Flash Offer Bar / Header Promo -->
         <div class="admin-card">
-            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px;">
+            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
                 <i class="fas fa-stopwatch"></i> Cart Flash Offer Countdown Settings
             </h3>
             
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                 <div>
                     <label style="font-size:12px; font-weight:bold;">Offer Benefit Text *</label>
                     <input type="text" id="flash-benefit" class="set-input" placeholder="e.g. FREE Premium Gift Wrapping!">
@@ -73,13 +100,12 @@
             </button>
         </div>
 
-        <!-- Standard Delivery Charges Settings -->
         <div class="admin-card">
-            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px;">
+            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
                 <i class="fas fa-shipping-fast"></i> Delivery Charges Settings
             </h3>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:15px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:15px;">
                 <div>
                     <label style="font-size:12px; font-weight:bold;">Standard Delivery Charge (₹) *</label>
                     <input type="number" id="del-fee" class="set-input" value="0" min="0">
@@ -106,6 +132,13 @@
             window.location.href = "admin-dashboard.html";
         }
 
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+
         async function loadStoreSettings() {
             try {
                 const flashDoc = await db.collection("settings").doc("flash_offer").get();
@@ -122,44 +155,29 @@
                     document.getElementById('del-fee').value = data.fee || 0;
                     document.getElementById('del-free-above').value = data.freeAbove || 499;
                 }
-            } catch(e) {
-                console.error("Error loading settings:", e);
-            }
+            } catch(e) {}
         }
 
         async function saveFlashOfferSettings() {
-            const benefit = document.getElementById('flash-benefit').value.trim();
-            const duration = parseInt(document.getElementById('flash-duration').value) || 5;
-            const enabled = document.getElementById('flash-enabled').checked;
-
             try {
                 await db.collection("settings").doc("flash_offer").set({
-                    benefit: benefit,
-                    duration: duration,
-                    enabled: enabled,
+                    benefit: document.getElementById('flash-benefit').value.trim(),
+                    duration: parseInt(document.getElementById('flash-duration').value) || 5,
+                    enabled: document.getElementById('flash-enabled').checked,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("✅ Flash offer settings updated!");
-            } catch(e) {
-                alert("Failed to update flash offer.");
-            }
+                alert("✅ Flash offer updated!");
+            } catch(e) { alert("Failed to update."); }
         }
 
         async function saveDeliverySettings() {
             const fee = parseInt(document.getElementById('del-fee').value) || 0;
             const freeAbove = parseInt(document.getElementById('del-free-above').value) || 0;
-
             try {
-                await db.collection("settings").doc("delivery").set({
-                    fee: fee,
-                    freeAbove: freeAbove,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                await db.collection("settings").doc("delivery").set({ fee, freeAbove, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
                 localStorage.setItem('cz_delivery_settings', JSON.stringify({ fee, freeAbove }));
                 alert("✅ Delivery charges updated!");
-            } catch(e) {
-                alert("Failed to update delivery settings.");
-            }
+            } catch(e) { alert("Failed to update."); }
         }
 
         window.onload = loadStoreSettings;

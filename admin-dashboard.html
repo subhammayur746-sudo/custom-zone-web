@@ -17,7 +17,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
 
-        /* Sidebar Styling */
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
         .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
@@ -27,16 +26,13 @@
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
 
-        /* Main Content Layout */
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
-        /* Mobile Top Navbar */
         .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
         .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        /* Dashboard Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
         .stat-card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
         .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
@@ -48,14 +44,13 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        /* Audit Log (আবছা টিম হিস্ট্রি সেকশন) */
-        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 18px; margin-top: 25px; opacity: 0.88; transition: opacity 0.2s; }
-        .audit-log-section:hover { opacity: 1; }
-        .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
+        /* Compact Audit Log */
+        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; opacity: 0.9; }
+        .audit-scroll-container { max-height: 190px; overflow-y: auto; padding-right: 4px; }
+        .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
         .audit-item-row:last-child { border-bottom: none; }
         .audit-actor-badge { background: #e2e8f0; color: #1e293b; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
 
-        /* Mobile Breakpoint */
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -71,14 +66,12 @@
 </head>
 <body>
 
-    <!-- Mobile Top Header Bar -->
     <div class="mobile-admin-bar">
         <h3>CZ Admin</h3>
         <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
     </div>
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
 
-    <!-- Unified Complete Admin Sidebar -->
     <div class="sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <h2>CZ Admin</h2>
@@ -107,100 +100,41 @@
             </button>
         </div>
 
-        <!-- Order Progress & Revenue Stats Cards -->
         <div class="stats-grid">
-            
-            <!-- REVENUE CARD: STRICT MAIN ADMIN ONLY (Delivered Orders) -->
             <div class="stat-card" id="card-revenue" style="display:none; border-left:4px solid #16a34a;">
-                <div class="stat-icon-wrap" style="background:#dcfce7; color:#16a34a;">
-                    <i class="fas fa-rupee-sign"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-revenue">₹0</h3>
-                    <p>Delivered Income</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#dcfce7; color:#16a34a;"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-info"><h3 id="stat-revenue">₹0</h3><p>Delivered Income</p></div>
             </div>
-
-            <!-- Total Confirmed Orders -->
             <div class="stat-card" style="border-left:4px solid #28469E;">
-                <div class="stat-icon-wrap" style="background:#e0e7ff; color:#28469E;">
-                    <i class="fas fa-shopping-basket"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-total-orders">0</h3>
-                    <p>Total Confirmed</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#e0e7ff; color:#28469E;"><i class="fas fa-shopping-basket"></i></div>
+                <div class="stat-info"><h3 id="stat-total-orders">0</h3><p>Total Confirmed</p></div>
             </div>
-
-            <!-- Pending Payments -->
             <div class="stat-card" style="border-left:4px solid #d97706;">
-                <div class="stat-icon-wrap" style="background:#fef3c7; color:#d97706;">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-pending">0</h3>
-                    <p>Pending Payments</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#fef3c7; color:#d97706;"><i class="fas fa-clock"></i></div>
+                <div class="stat-info"><h3 id="stat-pending">0</h3><p>Pending Payments</p></div>
             </div>
-
-            <!-- Processing Orders -->
             <div class="stat-card" style="border-left:4px solid #3b82f6;">
-                <div class="stat-icon-wrap" style="background:#dbeafe; color:#3b82f6;">
-                    <i class="fas fa-cogs"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-processing">0</h3>
-                    <p>Processing</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#dbeafe; color:#3b82f6;"><i class="fas fa-cogs"></i></div>
+                <div class="stat-info"><h3 id="stat-processing">0</h3><p>Processing</p></div>
             </div>
-
-            <!-- Packed Orders -->
             <div class="stat-card" style="border-left:4px solid #8b5cf6;">
-                <div class="stat-icon-wrap" style="background:#ede9fe; color:#8b5cf6;">
-                    <i class="fas fa-box-open"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-packed">0</h3>
-                    <p>Packed</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#ede9fe; color:#8b5cf6;"><i class="fas fa-box-open"></i></div>
+                <div class="stat-info"><h3 id="stat-packed">0</h3><p>Packed</p></div>
             </div>
-
-            <!-- Shipped Orders -->
             <div class="stat-card" style="border-left:4px solid #06b6d4;">
-                <div class="stat-icon-wrap" style="background:#cffafe; color:#06b6d4;">
-                    <i class="fas fa-shipping-fast"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-shipped">0</h3>
-                    <p>Shipped</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#cffafe; color:#06b6d4;"><i class="fas fa-shipping-fast"></i></div>
+                <div class="stat-info"><h3 id="stat-shipped">0</h3><p>Shipped</p></div>
             </div>
-
-            <!-- Delivered Orders -->
             <div class="stat-card" style="border-left:4px solid #10b981;">
-                <div class="stat-icon-wrap" style="background:#d1fae5; color:#10b981;">
-                    <i class="fas fa-check-double"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-delivered">0</h3>
-                    <p>Delivered</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#d1fae5; color:#10b981;"><i class="fas fa-check-double"></i></div>
+                <div class="stat-info"><h3 id="stat-delivered">0</h3><p>Delivered</p></div>
             </div>
-
-            <!-- Cancelled Orders -->
             <div class="stat-card" style="border-left:4px solid #ef4444;">
-                <div class="stat-icon-wrap" style="background:#fee2e2; color:#ef4444;">
-                    <i class="fas fa-times-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="stat-cancelled">0</h3>
-                    <p>Cancelled</p>
-                </div>
+                <div class="stat-icon-wrap" style="background:#fee2e2; color:#ef4444;"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-info"><h3 id="stat-cancelled">0</h3><p>Cancelled</p></div>
             </div>
-
         </div>
 
-        <!-- Recent Confirmed Orders Table -->
         <div class="admin-card" style="overflow-x:auto;">
             <h3 style="color:#2c3e50; margin-top:0; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <i class="fas fa-history"></i> Recent Orders Activity
@@ -222,26 +156,25 @@
             </table>
         </div>
 
-        <!-- Audit Log / Recent Team Action History (আবছা ব্যাকগ্রাউন্ডের হিস্ট্রি) -->
+        <!-- Scalable Compact Audit Log Section -->
         <div class="audit-log-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:12px; font-weight:700; color:#334155; text-transform:uppercase;">
-                    <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Recent Actions & Activity History (Audit Log)
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:11.5px; font-weight:700; color:#334155; text-transform:uppercase;">
+                    <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Latest Actions (Last 5 Team Updates)
                 </span>
-                <small style="color:#64748b; font-size:11px;">Auto logged by system</small>
+                <div>
+                    <button onclick="clearAuditHistory()" id="btn-clear-audit" style="background:none; border:none; color:#dc2626; font-size:11px; cursor:pointer; display:none; font-weight:600;"><i class="fas fa-trash-alt"></i> Clear Logs</button>
+                </div>
             </div>
-            <div id="audit-log-items-box">
+            <div class="audit-scroll-container" id="audit-log-items-box">
                 <p style="text-align:center; color:#94a3b8; font-size:12px; margin:0;">Loading action history...</p>
             </div>
         </div>
-
     </div>
 
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-        if (!loggedInAdmin) {
-            window.location.href = "admin-login.html";
-        }
+        if (!loggedInAdmin) window.location.href = "admin-login.html";
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -265,9 +198,9 @@
 
             if (isMainAdmin()) {
                 document.getElementById('card-revenue').style.display = "flex";
+                document.getElementById('btn-clear-audit').style.display = "inline-block";
             } else {
                 document.getElementById('card-revenue').style.display = "none";
-                
                 let perms = loggedInAdmin.permissions || [];
                 if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
                 if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
@@ -286,13 +219,7 @@
 
             try {
                 const ordersSnap = await db.collection("orders").get();
-                let totalConfirmed = 0;
-                let processingCount = 0;
-                let packedCount = 0;
-                let shippedCount = 0;
-                let deliveredCount = 0;
-                let cancelledCount = 0;
-                let deliveredRevenue = 0;
+                let totalConfirmed = 0, processingCount = 0, packedCount = 0, shippedCount = 0, deliveredCount = 0, cancelledCount = 0, deliveredRevenue = 0;
                 let recentOrders = [];
 
                 ordersSnap.forEach(doc => {
@@ -301,30 +228,21 @@
                     totalConfirmed++;
 
                     let rawStatus = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
-
                     if (rawStatus === "delivered") {
                         deliveredCount++;
-                        let amount = parseInt(ord.totalAmount) || parseInt(ord.total) || 0;
-                        deliveredRevenue += amount;
-                    } else if (rawStatus === "shipped") {
-                        shippedCount++;
-                    } else if (rawStatus === "packed") {
-                        packedCount++;
-                    } else if (rawStatus === "cancelled") {
-                        cancelledCount++;
-                    } else {
-                        processingCount++;
-                    }
+                        deliveredRevenue += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0);
+                    } else if (rawStatus === "shipped") shippedCount++;
+                    else if (rawStatus === "packed") packedCount++;
+                    else if (rawStatus === "cancelled") cancelledCount++;
+                    else processingCount++;
 
                     recentOrders.push(ord);
                 });
 
-                // Pending Payments Count
                 const pendingSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
-                const pendingCount = pendingSnap.size;
-
+                
                 document.getElementById('stat-total-orders').innerText = totalConfirmed;
-                document.getElementById('stat-pending').innerText = pendingCount;
+                document.getElementById('stat-pending').innerText = pendingSnap.size;
                 document.getElementById('stat-processing').innerText = processingCount;
                 document.getElementById('stat-packed').innerText = packedCount;
                 document.getElementById('stat-shipped').innerText = shippedCount;
@@ -341,11 +259,11 @@
                     return timeB - timeA;
                 });
 
-                renderRecentOrders(recentOrders.slice(0, 10));
+                renderRecentOrders(recentOrders.slice(0, 8));
                 loadAuditLogs();
 
             } catch(e) {
-                console.error("Dashboard stats error:", e);
+                console.error(e);
             } finally {
                 if (spinner) spinner.classList.remove('fa-spin');
             }
@@ -354,70 +272,48 @@
         function renderRecentOrders(orders) {
             const tbody = document.getElementById('dashboard-recent-orders');
             tbody.innerHTML = "";
-
             if (orders.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#7f8c8d;'>No recent orders found.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#7f8c8d;'>No recent orders.</td></tr>";
                 return;
             }
-
             orders.forEach(ord => {
-                let itemsText = "";
-                if (Array.isArray(ord.items)) {
-                    itemsText = ord.items.map(it => `${it.name} (x${it.quantity || 1})`).join(", ");
-                } else {
-                    itemsText = ord.items ? ord.items.substring(0, 45) + "..." : "-";
-                }
-
+                let itemsText = Array.isArray(ord.items) ? ord.items.map(it => `${it.name} (x${it.quantity || 1})`).join(", ") : (ord.items ? ord.items.substring(0, 40) + "..." : "-");
                 let status = ord.orderStatus || ord.status || "Processing";
-                let statusColor = "#28469E";
-                if (status.toLowerCase() === "delivered") statusColor = "#10b981";
-                else if (status.toLowerCase() === "shipped") statusColor = "#06b6d4";
-                else if (status.toLowerCase() === "packed") statusColor = "#8b5cf6";
-                else if (status.toLowerCase() === "cancelled") statusColor = "#ef4444";
-
+                let color = status.toLowerCase() === "delivered" ? "#10b981" : (status.toLowerCase() === "cancelled" ? "#ef4444" : "#28469E");
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>#${ord.orderId || ord.docId}</strong></td>
                         <td>${ord.customerName || ord.name || 'Customer'}</td>
                         <td>${ord.phone || '-'}</td>
-                        <td style="max-width:250px; font-size:12px; color:#555;">${itemsText}</td>
+                        <td style="max-width:230px; font-size:12px; color:#555;">${itemsText}</td>
                         <td><strong style="color:#16a34a;">₹${ord.totalAmount || ord.total || 0}</strong></td>
-                        <td><span style="background:${statusColor}; color:#fff; padding:3px 9px; border-radius:10px; font-size:11px; font-weight:bold;">${status}</span></td>
+                        <td><span style="background:${color}; color:#fff; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:bold;">${status}</span></td>
                     </tr>
                 `;
             });
         }
 
-        // Fetch and Render Audit Logs (আবছা একশন লগ)
         async function loadAuditLogs() {
             const box = document.getElementById('audit-log-items-box');
             try {
-                const snap = await db.collection("audit_logs").limit(8).get();
+                // Strict limit of 5 records
+                const snap = await db.collection("audit_logs").limit(5).get();
                 if (snap.empty) {
-                    box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:12px; margin:0;'>No recent team actions logged yet.</p>";
+                    box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No recent team actions.</p>";
                     return;
                 }
-
                 let logs = [];
-                snap.forEach(doc => {
-                    let d = doc.data();
-                    logs.push(d);
-                });
-
-                logs.sort((a, b) => {
-                    let timeA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
-                    let timeB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
-                    return timeB - timeA;
-                });
+                snap.forEach(doc => logs.push(doc.data()));
+                logs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                 let html = "";
-                logs.slice(0, 6).forEach(l => {
-                    let timeStr = l.timestamp ? (l.timestamp.toDate ? l.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent') : 'Recent';
+                logs.forEach(l => {
+                    let timeStr = l.timestamp?.toDate ? l.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent';
                     html += `
                         <div class="audit-item-row">
                             <div>
                                 <span class="audit-actor-badge">${l.actor || 'User'} (${l.role || 'staff'})</span>
-                                <span>${l.action || 'Performed an update'}</span> 
+                                <span>${l.action || 'Updated'}</span> 
                                 <strong style="color:#2c3e50;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
                             </div>
                             <span style="font-size:11px; color:#94a3b8;"><i class="far fa-clock"></i> ${timeStr}</span>
@@ -425,9 +321,19 @@
                     `;
                 });
                 box.innerHTML = html;
+            } catch(e) {}
+        }
 
-            } catch (err) {
-                box.innerHTML = "<p style='color:#94a3b8; font-size:12px; margin:0;'>Activity logging active.</p>";
+        async function clearAuditHistory() {
+            if (!confirm("Clear action history log?")) return;
+            try {
+                const snap = await db.collection("audit_logs").get();
+                const batch = db.batch();
+                snap.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                loadAuditLogs();
+            } catch(e) {
+                alert("Failed to clear logs.");
             }
         }
 

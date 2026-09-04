@@ -8,32 +8,59 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
+
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
-        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
+
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
+        .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
         .perm-badge { background: #e8f4f8; color: #2980b9; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 650px; }
         .admin-table th { background: #f8f9fa; padding: 10px; border-bottom: 2px solid #eee; text-align: left; font-size: 13px; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .admin-card { padding: 15px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Unified Complete Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
         <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
@@ -47,24 +74,21 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Staff Management & Permissions</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Staff Management & Permissions</h2>
 
-        <!-- Create / Edit Staff Form -->
         <div class="admin-card">
-            <h3 id="staff-form-title" style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px;">
+            <h3 id="staff-form-title" style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
                 <i class="fas fa-user-plus"></i> Add New Staff Member
             </h3>
-
             <input type="hidden" id="staff-doc-id">
-
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                 <div>
                     <label style="font-size:12px; font-weight:bold;">Staff Full Name *</label>
                     <input type="text" id="staff-name" placeholder="Staff Name" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
                 </div>
                 <div>
-                    <label style="font-size:12px; font-weight:bold;">Username / Login Phone *</label>
-                    <input type="text" id="staff-username" placeholder="e.g. staff1 or 9876543210" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                    <label style="font-size:12px; font-weight:bold;">Username / Phone *</label>
+                    <input type="text" id="staff-username" placeholder="e.g. staff1" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
                 </div>
                 <div>
                     <label style="font-size:12px; font-weight:bold;">Password *</label>
@@ -72,22 +96,18 @@
                 </div>
             </div>
 
-            <!-- Permissions Selector -->
             <div style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:15px;">
                 <label style="font-size:12px; font-weight:bold; color:#2c3e50; display:block; margin-bottom:8px;">
-                    <i class="fas fa-key"></i> Assign Allowed Modules (Permissions):
+                    <i class="fas fa-key"></i> Permissions:
                 </label>
-                <div style="display:flex; flex-wrap:wrap; gap:15px; font-size:13px;">
-                    <label style="cursor:pointer;"><input type="checkbox" id="perm-products" value="products"> Products (Add/Edit)</label>
-                    <label style="cursor:pointer;"><input type="checkbox" id="perm-orders" value="orders"> Orders (Verify/Status)</label>
-                    <label style="cursor:pointer;"><input type="checkbox" id="perm-customers" value="customers"> Customers Directory</label>
-                    <label style="cursor:pointer;"><input type="checkbox" id="perm-invoice" value="invoice"> Manual Invoice</label>
-                    <label style="cursor:pointer;"><input type="checkbox" id="perm-reviews" value="reviews"> Moderate Reviews</label>
-                    <label style="cursor:pointer;"><input type="checkbox" id="perm-coupons" value="coupons"> Coupons & Offers</label>
+                <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:12.5px;">
+                    <label><input type="checkbox" id="perm-products" value="products"> Products</label>
+                    <label><input type="checkbox" id="perm-orders" value="orders"> Orders</label>
+                    <label><input type="checkbox" id="perm-customers" value="customers"> Customers</label>
+                    <label><input type="checkbox" id="perm-invoice" value="invoice"> Invoice</label>
+                    <label><input type="checkbox" id="perm-reviews" value="reviews"> Reviews</label>
+                    <label><input type="checkbox" id="perm-coupons" value="coupons"> Coupons</label>
                 </div>
-                <small style="color:#d35400; display:block; margin-top:8px;">
-                    * <strong>Hard Rule:</strong> Staff members can never delete products, orders, or customers. Only Main Admin can delete.
-                </small>
             </div>
 
             <div style="display:flex; gap:10px;">
@@ -100,18 +120,17 @@
             </div>
         </div>
 
-        <!-- Active Staff List -->
-        <div class="admin-card">
-            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px;">
+        <div class="admin-card" style="overflow-x:auto;">
+            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
                 <i class="fas fa-users-cog"></i> Existing Staff Directory
             </h3>
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>Staff Name</th>
-                        <th>Username / Phone</th>
+                        <th>Username</th>
                         <th>Role</th>
-                        <th>Assigned Permissions</th>
+                        <th>Permissions</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -129,26 +148,15 @@
         if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
         } else if (loggedInAdmin.role === 'staff') {
-            alert("❌ Access Denied: Staff accounts cannot access Staff Management!");
+            alert("❌ Access Denied!");
             window.location.href = "admin-dashboard.html";
         }
 
-        function isMainAdminUser() {
-            return (loggedInAdmin && loggedInAdmin.role !== 'staff');
-        }
-
-        function applyNavRules() {
-            if (loggedInAdmin && loggedInAdmin.role === 'staff') {
-                let perms = loggedInAdmin.permissions || [];
-                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
-                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
-                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
-                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
-                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
-                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
-                document.getElementById('nav-ads').style.display = 'none';
-                document.getElementById('nav-users').style.display = 'none';
-            }
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
         let staffCache = [];
@@ -159,59 +167,40 @@
                 const snap = await db.collection("staff").get();
                 staffCache = [];
                 tbody.innerHTML = "";
-
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:#7f8c8d;'>No staff accounts created yet.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:#7f8c8d; padding:15px;'>No staff accounts yet.</td></tr>";
                     return;
                 }
-
                 snap.forEach(doc => {
                     let s = doc.data();
                     s.docId = doc.id;
                     staffCache.push(s);
                 });
-
                 renderStaffTable();
-
-            } catch(e) {
-                console.error(e);
-                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading staff list.</td></tr>";
-            }
+            } catch(e) { tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading staff.</td></tr>"; }
         }
 
         function renderStaffTable() {
             const tbody = document.getElementById('staff-table-body');
             tbody.innerHTML = "";
-
             staffCache.forEach(s => {
-                let permHTML = "";
-                let isMain = (s.role === 'main_admin' || s.role === 'admin' || s.username === 'admin');
-
-                if (isMain) {
-                    permHTML = `<span class="perm-badge" style="background:#fdedec; color:#e74c3c;">All Modules (Super Admin)</span>`;
-                } else if (Array.isArray(s.permissions) && s.permissions.length > 0) {
-                    permHTML = s.permissions.map(p => `<span class="perm-badge">${p}</span>`).join("");
-                } else {
-                    permHTML = `<span style="color:#7f8c8d; font-size:11px;">No permissions</span>`;
-                }
+                let permHTML = (s.role === 'main_admin' || s.role === 'admin' || s.username === 'admin')
+                    ? `<span class="perm-badge" style="background:#fdedec; color:#e74c3c;">All Modules</span>`
+                    : (Array.isArray(s.permissions) ? s.permissions.map(p => `<span class="perm-badge">${p}</span>`).join("") : '-');
 
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${s.name || s.username}</strong></td>
                         <td>${s.username}</td>
-                        <td><span style="font-weight:bold; color:${isMain ? '#e74c3c' : '#2980b9'};">${s.role || 'staff'}</span></td>
+                        <td><span style="font-weight:bold;">${s.role || 'staff'}</span></td>
                         <td>${permHTML}</td>
+                        <td><span style="background:${s.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${s.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">${s.isActive !== false ? 'Active' : 'Inactive'}</span></td>
                         <td>
-                            <span style="background:${s.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${s.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">
-                                ${s.isActive !== false ? 'Active' : 'Inactive'}
-                            </span>
-                        </td>
-                        <td>
-                            ${!isMain ? `
-                                <button onclick="editStaff('${s.docId}')" style="background:#3498db; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Edit Staff & Permissions"><i class="fas fa-edit"></i> Edit</button>
-                                <button onclick="toggleStaffActive('${s.docId}', ${s.isActive !== false})" style="background:#95a5a6; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer; margin-left:2px;" title="Activate / Deactivate"><i class="fas fa-power-off"></i></button>
-                                <button onclick="deleteStaffPermanent('${s.docId}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer; margin-left:2px;" title="Delete Staff"><i class="fas fa-trash"></i></button>
-                            ` : `<small style="color:#7f8c8d;">Root Account</small>`}
+                            ${s.role !== 'main_admin' && s.username !== 'admin' ? `
+                                <button onclick="editStaff('${s.docId}')" style="background:#3498db; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                                <button onclick="toggleStaffActive('${s.docId}', ${s.isActive !== false})" style="background:#95a5a6; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;"><i class="fas fa-power-off"></i></button>
+                                <button onclick="deleteStaffPermanent('${s.docId}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                            ` : `<small style="color:#7f8c8d;">Root</small>`}
                         </td>
                     </tr>
                 `;
@@ -221,13 +210,10 @@
         function editStaff(docId) {
             let s = staffCache.find(x => x.docId === docId);
             if (!s) return;
-
-            document.getElementById('staff-form-title').innerHTML = `<i class="fas fa-user-edit"></i> Edit Staff: ${s.name || s.username}`;
             document.getElementById('staff-doc-id').value = s.docId;
             document.getElementById('staff-name').value = s.name || "";
             document.getElementById('staff-username').value = s.username || "";
             document.getElementById('staff-password').value = s.password || "";
-
             let perms = s.permissions || [];
             document.getElementById('perm-products').checked = perms.includes('products');
             document.getElementById('perm-orders').checked = perms.includes('orders');
@@ -235,13 +221,11 @@
             document.getElementById('perm-invoice').checked = perms.includes('invoice');
             document.getElementById('perm-reviews').checked = perms.includes('reviews');
             document.getElementById('perm-coupons').checked = perms.includes('coupons');
-
             document.getElementById('btn-cancel-staff').style.display = "inline-block";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function resetStaffForm() {
-            document.getElementById('staff-form-title').innerHTML = `<i class="fas fa-user-plus"></i> Add New Staff Member`;
             document.getElementById('staff-doc-id').value = "";
             document.getElementById('staff-name').value = "";
             document.getElementById('staff-username').value = "";
@@ -256,69 +240,41 @@
             const username = document.getElementById('staff-username').value.trim();
             const password = document.getElementById('staff-password').value.trim();
 
-            if (!username || !password) {
-                alert("Username and Password are required.");
-                return;
-            }
+            if (!username || !password) { alert("Username and Password are required."); return; }
 
             let permissions = [];
-            if (document.getElementById('perm-products').checked) permissions.push('products');
-            if (document.getElementById('perm-orders').checked) permissions.push('orders');
-            if (document.getElementById('perm-customers').checked) permissions.push('customers');
-            if (document.getElementById('perm-invoice').checked) permissions.push('invoice');
-            if (document.getElementById('perm-reviews').checked) permissions.push('reviews');
-            if (document.getElementById('perm-coupons').checked) permissions.push('coupons');
+            ['products','orders','customers','invoice','reviews','coupons'].forEach(p => {
+                if (document.getElementById(`perm-${p}`).checked) permissions.push(p);
+            });
 
             const payload = {
-                name: name || username,
-                username: username,
-                password: password,
-                role: 'staff',
-                permissions: permissions,
-                canDelete: false, // HARD RULE: Staff can never delete
-                isActive: true,
+                name: name || username, username, password, role: 'staff',
+                permissions, canDelete: false, isActive: true,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             try {
-                if (docId) {
-                    await db.collection("staff").doc(docId).update(payload);
-                    alert("✅ Staff permissions updated successfully!");
-                } else {
-                    await db.collection("staff").add(payload);
-                    alert("✅ New staff account created!");
-                }
+                if (docId) await db.collection("staff").doc(docId).update(payload);
+                else await db.collection("staff").add(payload);
+                alert("✅ Staff saved!");
                 resetStaffForm();
                 fetchStaffList();
-            } catch(e) {
-                alert("Error saving staff details.");
-            }
+            } catch(e) { alert("Error saving staff."); }
         }
 
-        async function toggleStaffActive(docId, currentStatus) {
-            try {
-                await db.collection("staff").doc(docId).update({ isActive: !currentStatus });
-                fetchStaffList();
-            } catch(e) {
-                alert("Failed to update status.");
-            }
+        async function toggleStaffActive(docId, current) {
+            await db.collection("staff").doc(docId).update({ isActive: !current });
+            fetchStaffList();
         }
 
         async function deleteStaffPermanent(docId) {
-            if (confirm("Permanently delete this staff account?")) {
-                try {
-                    await db.collection("staff").doc(docId).delete();
-                    fetchStaffList();
-                } catch(e) {
-                    alert("Error deleting staff.");
-                }
+            if (confirm("Delete staff?")) {
+                await db.collection("staff").doc(docId).delete();
+                fetchStaffList();
             }
         }
 
-        window.onload = () => {
-            applyNavRules();
-            fetchStaffList();
-        };
+        window.onload = fetchStaffList;
     </script>
 </body>
 </html>
