@@ -17,7 +17,7 @@
         body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; min-height: 100vh; flex-direction: column; }
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
@@ -29,6 +29,7 @@
 </head>
 <body>
 
+    <!-- Unified 100% Matching Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
         <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
@@ -36,6 +37,9 @@
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" class="active" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
         <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
@@ -72,7 +76,6 @@
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
-        // STRICT SECURITY GUARD: URL Access verification
         if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
         } else if (loggedInAdmin.role === 'staff') {
@@ -87,13 +90,15 @@
             return (loggedInAdmin && loggedInAdmin.role !== 'staff');
         }
 
-        // Apply Sidebar Display based on permissions
         function applyNavRules() {
             if (loggedInAdmin.role === 'staff') {
                 let perms = loggedInAdmin.permissions || [];
                 if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
                 if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
+                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
+                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
         }
@@ -142,12 +147,10 @@
                         <td style="max-width:280px; font-size:12px; color:#555;">${c.savedAddress || '-'}</td>
                         <td><small style="color:#7f8c8d;">${dateStr}</small></td>
                         <td>
-                            <!-- WhatsApp direct connect -->
                             <a href="https://api.whatsapp.com/send?phone=91${c.phone}" target="_blank" style="background:#25d366; color:#fff; padding:5px 9px; border-radius:4px; text-decoration:none; font-size:12px;" title="Chat on WhatsApp">
                                 <i class="fab fa-whatsapp"></i>
                             </a>
 
-                            <!-- Delete Option: STRICT MAIN ADMIN ONLY -->
                             ${canDelete ? `
                                 <button onclick="deleteCustomerRecord('${c.phoneKey}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer; margin-left:4px;" title="Delete Customer">
                                     <i class="fas fa-trash"></i>

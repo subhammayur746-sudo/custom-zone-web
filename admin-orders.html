@@ -17,7 +17,7 @@
         body { display: flex; margin: 0; background: #f4f7f6; font-family: 'Poppins', sans-serif; flex-direction: column; min-height: 100vh; }
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto;}
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; }
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; }
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; }
@@ -36,14 +36,18 @@
 </head>
 <body>
 
+    <!-- Unified 100% Matching Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header"><h2 style="color:#e74c3c; margin:0;">CZ Admin</h2></div>
-        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Home Dashboard</a>
-        <a href="admin-orders.html" class="active"><i class="fas fa-shopping-bag"></i> Manage Orders & Payments</a>
-        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-users.html"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html" class="active" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
         <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -111,17 +115,38 @@
     <script>
         let allOrdersCache = [];
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-        if (!loggedInAdmin) window.location.href = "admin-login.html";
+
+        if (!loggedInAdmin) {
+            window.location.href = "admin-login.html";
+        } else if (loggedInAdmin.role === 'staff') {
+            let perms = loggedInAdmin.permissions || [];
+            if (!perms.includes('orders')) {
+                alert("❌ Access Denied: You do not have permission to access Manage Orders!");
+                window.location.href = "admin-dashboard.html";
+            }
+        }
 
         function adminLogout() {
             localStorage.removeItem('cz_logged_in_user');
             window.location.href = "admin-login.html";
         }
 
-        // Hard rule: staff cannot delete anything, only admin can
         function isMainAdminUser() {
             if (!loggedInAdmin) return false;
             return (loggedInAdmin.role !== 'staff');
+        }
+
+        function applyNavRules() {
+            if (loggedInAdmin.role === 'staff') {
+                let perms = loggedInAdmin.permissions || [];
+                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
+                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
+                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
+                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
+                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                document.getElementById('nav-ads').style.display = 'none';
+                document.getElementById('nav-users').style.display = 'none';
+            }
         }
 
         async function fetchAdminOrders() {
@@ -413,7 +438,10 @@
             document.getElementById('receipt-modal').style.display = 'none';
         }
 
-        window.onload = fetchAdminOrders;
+        window.onload = () => {
+            applyNavRules();
+            fetchAdminOrders();
+        };
     </script>
 </body>
 </html>
