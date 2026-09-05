@@ -44,6 +44,23 @@
         .btn-del { background: #e74c3c; color: #fff; }
         .btn-dis { background: #bdc3c7; color: #7f8c8d; cursor: not-allowed; }
 
+        /* Professional Receipt Slip Print Styles */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-receipt, #printable-receipt * { visibility: visible; }
+            #printable-receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 10px;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .no-print-slip { display: none !important; }
+        }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -129,13 +146,20 @@
         </div>
     </div>
 
-    <!-- Receipt Slip Modal -->
-    <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:99999; justify-content:center; align-items:center; padding:15px;">
-        <div style="background:#fff; width:100%; max-width:550px; padding:25px; border-radius:8px; position:relative; max-height:90vh; overflow-y:auto;" id="printable-receipt">
-            <span onclick="closeReceiptModal()" style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer; font-weight:bold;">&times;</span>
+    <!-- Redesigned High-End Receipt Slip Modal -->
+    <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); z-index:99999; justify-content:center; align-items:center; padding:15px;">
+        <div style="background:#fff; width:100%; max-width:440px; padding:28px 24px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-receipt">
+            <span onclick="closeReceiptModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
+            
             <div id="receipt-content"></div>
-            <div style="text-align:center; margin-top:20px;">
-                <button onclick="window.print()" style="background:#2c3e50; color:#fff; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-weight:bold;"><i class="fas fa-print"></i> Print Slip</button>
+
+            <div class="no-print-slip" style="text-align:center; margin-top:22px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 22px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-print"></i> Print Slip
+                </button>
+                <button onclick="closeReceiptModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -236,7 +260,6 @@
             }
         }
 
-        // Auto Gift Card One-time Voucher Generator Logic
         async function checkAndGenerateGiftCardCoupon(items, customerPhone, customerName) {
             if (!Array.isArray(items)) return;
             for (let item of items) {
@@ -304,9 +327,7 @@
                     finalOrderId: finalOrderId
                 });
 
-                // Auto Trigger Gift Card Code creation if order has Gift Card
                 await checkAndGenerateGiftCardCoupon(p.items, p.phone, p.customerName);
-
                 await logSystemAction("Verified Payment & Created Order", finalOrderId);
 
                 alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created.`);
@@ -441,32 +462,97 @@
             window.open(`https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
+        // REDESIGNED CLASSIC POS/RECEIPT SLIP LOOK
         function viewOrderReceipt(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
-            let itemsHTML = Array.isArray(ord.items) 
-                ? ord.items.map(it => `<tr><td style="padding:6px 0;">${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1}</td><td style="text-align:right;">₹${it.chargedAmount || it.price}</td></tr>`).join("")
-                : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
+            let itemsRows = "";
+            if (Array.isArray(ord.items)) {
+                itemsRows = ord.items.map(it => `
+                    <tr>
+                        <td style="padding:7px 0; border-bottom:1px dashed #e2e8f0; font-size:12.5px; color:#1e293b;">
+                            <strong>${it.name}</strong> ${it.variantName ? `<span style="font-size:11px; color:#64748b;">(${it.variantName})</span>` : ''}
+                            ${it.userText ? `<br><small style="color:#0284c7; font-size:11px;">Custom: "${it.userText}"</small>` : ''}
+                            <div style="font-size:11px; color:#64748b;">Qty: ${it.quantity || 1}</div>
+                        </td>
+                        <td style="text-align:right; vertical-align:top; padding:7px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px; color:#0f172a;">
+                            ₹${it.chargedAmount || it.price}
+                        </td>
+                    </tr>
+                `).join("");
+            } else {
+                let cleanDesc = ord.items ? ord.items.replace(/\[Delivery:.*?\]/g, '').trim() : "Custom Handcrafted Gift";
+                itemsRows = `
+                    <tr>
+                        <td style="padding:7px 0; border-bottom:1px dashed #e2e8f0; font-size:12px; color:#1e293b;">${cleanDesc}</td>
+                        <td style="text-align:right; padding:7px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px;">₹${ord.totalAmount || ord.total || 0}</td>
+                    </tr>
+                `;
+            }
 
             document.getElementById('receipt-content').innerHTML = `
-                <div style="text-align:center; border-bottom:2px dashed #eee; padding-bottom:12px; margin-bottom:12px;">
-                    <h2 style="margin:0; color:#2c3e50;">Custom Zone</h2>
-                    <p style="margin:2px 0; font-size:12px; color:#7f8c8d;">You Imagine. We Customize.</p>
-                    <p style="margin:2px 0; font-size:12px;"><strong>Order Slip: #${ord.orderId || ord.docId}</strong></p>
-                    <small>Date: ${ord.date || 'Recent'}</small>
+                <!-- Receipt Header -->
+                <div style="text-align:center; border-bottom:2px dashed #0f172a; padding-bottom:14px; margin-bottom:14px;">
+                    <img src="assets/images/logo.png" onerror="this.style.display='none'" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px;">
+                    <h2 style="margin:0; font-size:20px; font-weight:800; color:#0f172a; letter-spacing:-0.5px;">CUSTOM ZONE</h2>
+                    <p style="margin:1px 0; font-size:11px; color:#475569; font-weight:500;">You Imagine. We Customize.</p>
+                    <p style="margin:1px 0; font-size:10.5px; color:#64748b;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
+                    
+                    <div style="display:inline-block; background:#0f172a; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:4px; margin-top:8px;">
+                        ORDER SLIP: #${ord.orderId || ord.docId}
+                    </div>
                 </div>
-                <div style="font-size:13px; line-height:1.5; margin-bottom:12px;">
-                    <strong>Customer:</strong> ${ord.customerName || '-'}<br>
-                    <strong>Phone:</strong> ${ord.phone || '-'}<br>
-                    <strong>Address:</strong> ${ord.actualDeliveryAddress || '-'}
+
+                <!-- Customer Details -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; font-size:12px; line-height:1.5; margin-bottom:14px; color:#334155;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                        <span><strong>Date:</strong> ${ord.date || 'Recent'}</span>
+                        <span style="color:#16a34a; font-weight:700;">● ${ord.paymentStatus || 'Paid'}</span>
+                    </div>
+                    <div><strong>Customer:</strong> ${ord.customerName || ord.name || '-'}</div>
+                    <div><strong>Phone:</strong> ${ord.phone || '-'}</div>
+                    <div style="word-break:break-word;"><strong>Address:</strong> ${ord.actualDeliveryAddress || ord.address || '-'}</div>
+                    ${ord.greetingNote ? `<div style="color:#d97706; margin-top:3px;"><strong>Note:</strong> "${ord.greetingNote}"</div>` : ''}
                 </div>
-                <table style="width:100%; border-collapse:collapse; font-size:13px; border-top:1px solid #eee; border-bottom:1px solid #eee; margin-bottom:12px;">
-                    <thead><tr style="text-align:left; color:#7f8c8d;"><th style="padding:6px 0;">Description</th><th style="text-align:right;">Price</th></tr></thead>
-                    <tbody>${itemsHTML}</tbody>
+
+                <!-- Items Table -->
+                <table style="width:100%; border-collapse:collapse; margin-bottom:14px;">
+                    <thead>
+                        <tr style="border-bottom:1.5px solid #0f172a; text-align:left; font-size:11px; text-transform:uppercase; color:#64748b;">
+                            <th style="padding-bottom:5px;">Item Description</th>
+                            <th style="padding-bottom:5px; text-align:right;">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsRows}</tbody>
                 </table>
-                <div style="text-align:right; font-size:14px;">
-                    <strong>Total: ₹${ord.totalAmount || ord.total || 0}</strong>
+
+                <!-- Summary & Total -->
+                <div style="border-top:1.5px solid #0f172a; padding-top:8px; font-size:12.5px; color:#475569;">
+                    <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                        <span>Subtotal:</span>
+                        <strong style="color:#1e293b;">₹${ord.subTotal || ord.totalAmount || 0}</strong>
+                    </div>
+                    ${ord.discountGiven > 0 ? `
+                        <div style="display:flex; justify-content:space-between; padding:2px 0; color:#dc2626;">
+                            <span>Discount / Coupon:</span>
+                            <strong>-₹${ord.discountGiven}</strong>
+                        </div>
+                    ` : ''}
+                    <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                        <span>Delivery Fee:</span>
+                        <strong style="color:#1e293b;">${(ord.deliveryFee && ord.deliveryFee > 0) ? `₹${ord.deliveryFee}` : 'FREE'}</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; border-top:1.5px dashed #0f172a; padding-top:6px; margin-top:4px; font-size:16px; color:#0f172a;">
+                        <strong>Total Amount:</strong>
+                        <strong style="font-size:17px; font-weight:800; color:#16a34a;">₹${ord.totalAmount || ord.total || 0}</strong>
+                    </div>
+                </div>
+
+                <!-- Footer Thank You Note -->
+                <div style="text-align:center; margin-top:18px; border-top:1px dashed #cbd5e1; padding-top:10px; font-size:11px; color:#64748b;">
+                    <p style="margin:0; font-weight:600; color:#0f172a;">Thank you for shopping with Custom Zone!</p>
+                    <small>Visit: customzone.in</small>
                 </div>
             `;
             document.getElementById('receipt-modal').style.display = 'flex';
