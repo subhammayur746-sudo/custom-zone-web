@@ -1,28 +1,27 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "customzone.app",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "customzone",
+  "id": "customzone-pwa",
+  "name": "Custom Zone - You Imagine. We Customize.",
+  "short_name": "Custom Zone",
+  "description": "Customize your handcrafted gift products with us.",
   "start_url": "/",
-  "theme_color": "#ffffff",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1e293b",
+  "dir": "ltr",
   "icons": [
     {
-      "src": "https://customzone.netlify.app/assets/images/logo.png",
+      "src": "assets/images/logo.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "2000x2000",
-      "isSquare": true,
-      "isPng": true,
-      "isWebp": false,
-      "isJpg": false,
-      "width": 2000,
-      "is512x512": false,
-      "is256x256": false,
-      "is192x192": false
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ],
-  "description": "customize your product with us",
-  "id": "customzone"
+  ]
 }

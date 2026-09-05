@@ -141,40 +141,45 @@
             display: none;
         }
 
-        /* 2-Step OTP Modal */
-        .otp-modal-overlay {
+        /* Master Security PIN Modal */
+        .pin-modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.8);
             z-index: 10000;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
-        .otp-modal-card {
+        .pin-modal-card {
             background: #fff;
             width: 100%;
             max-width: 380px;
-            padding: 28px 24px;
+            padding: 30px 24px;
             border-radius: 12px;
             text-align: center;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
         }
-        .otp-input-field {
+        .pin-input-field {
             width: 100%;
             padding: 12px;
             text-align: center;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
-            letter-spacing: 8px;
+            letter-spacing: 12px;
             border: 2px solid #2563eb;
             border-radius: 8px;
-            margin: 15px 0;
+            margin: 18px 0;
             background: #f8fafc;
+        }
+        .pin-input-field:focus {
+            outline: none;
+            border-color: #1d4ed8;
+            background: #fff;
         }
     </style>
 </head>
@@ -219,38 +224,39 @@
         <p id="login-error-msg"></p>
     </div>
 
-    <!-- 2-Step WhatsApp OTP Verification Modal (Super Admin Only) -->
-    <div class="otp-modal-overlay" id="admin-otp-modal">
-        <div class="otp-modal-card">
-            <div style="width:50px; height:50px; background:#dcfce7; color:#16a34a; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto; font-size:24px;">
-                <i class="fab fa-whatsapp"></i>
+    <!-- 2-Step Master Security PIN Modal (Strict Admin Only) -->
+    <div class="pin-modal-overlay" id="admin-pin-modal">
+        <div class="pin-modal-card">
+            <div style="width:52px; height:52px; background:#eff6ff; color:#2563eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto; font-size:24px;">
+                <i class="fas fa-key"></i>
             </div>
-            <h3 style="color:#0f172a; margin-bottom:4px; font-size:18px;">2-Step Verification</h3>
-            <p style="color:#64748b; font-size:12px; margin-bottom:15px; line-height:1.4;">
-                A 6-digit security code has been sent to your WhatsApp number (<strong>+91 6290407730</strong>).
+            <h3 style="color:#0f172a; margin-bottom:4px; font-size:18px; font-weight:800;">Master Security PIN</h3>
+            <p style="color:#64748b; font-size:12px; margin:0; line-height:1.4;">
+                Enter your secret 4-digit Master Security PIN to complete login:
             </p>
 
-            <input type="text" id="admin-entered-otp" class="otp-input-field" maxlength="6" placeholder="------" autocomplete="one-time-code">
+            <input type="password" id="admin-entered-pin" class="pin-input-field" maxlength="4" placeholder="••••" autocomplete="off">
 
-            <div id="otp-error-msg" style="color:#ef4444; font-size:12px; font-weight:600; display:none; margin-bottom:10px;"></div>
+            <div id="pin-error-msg" style="color:#ef4444; font-size:12px; font-weight:600; display:none; margin-bottom:12px;"></div>
 
-            <button onclick="verifyAdminOTP()" id="btn-verify-otp" style="width:100%; padding:12px; background:#16a34a; color:#fff; border:none; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer;">
-                Verify & Enter Dashboard
+            <button onclick="verifyAdminPIN()" id="btn-verify-pin" style="width:100%; padding:12px; background:#2563eb; color:#fff; border:none; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer;">
+                Authorize & Access
             </button>
-            <button onclick="cancelAdminOTP()" style="width:100%; margin-top:8px; padding:8px; background:none; border:none; color:#64748b; font-size:12px; cursor:pointer;">
+            <button onclick="cancelAdminPIN()" style="width:100%; margin-top:8px; padding:8px; background:none; border:none; color:#64748b; font-size:12px; cursor:pointer;">
                 Cancel
             </button>
         </div>
     </div>
 
     <script>
+        // MASTER PIN CONFIGURATION (Secret 4-Digit PIN)
+        const MASTER_SECURITY_PIN = "7730";
+
         // Lockout Settings
         const MAX_FAILED_ATTEMPTS = 5;
         const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 Minutes
         let lockoutInterval = null;
 
-        // Admin 2-Step Temp Storage
-        let generatedAdminOTP = null;
         let pendingMasterAdminSession = null;
 
         window.onload = () => {
@@ -271,7 +277,7 @@
             }
         }
 
-        // 1. RATE LIMITING / LOCKOUT SYSTEM
+        // 1. RATE LIMITING / LOCKOUT LOGIC
         function checkExistingLockout() {
             const lockoutUntil = parseInt(localStorage.getItem('cz_login_lockout_until')) || 0;
             const now = Date.now();
@@ -335,7 +341,7 @@
             document.getElementById('btn-login-submit').disabled = false;
         }
 
-        // 2. MAIN LOGIN HANDLER
+        // 2. PORTAL AUTHENTICATION
         async function handlePortalLogin(e) {
             e.preventDefault();
             checkExistingLockout();
@@ -354,10 +360,9 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
 
             try {
-                // Check Main Admin with New Password (admin@2005)
+                // Admin check with permanent password: admin@2005
                 if (usernameInput.toLowerCase() === "admin" && passwordInput === "admin@2005") {
                     
-                    // Trigger 2-Step WhatsApp OTP for Admin
                     pendingMasterAdminSession = {
                         name: "Master Admin",
                         username: "admin",
@@ -366,11 +371,15 @@
                         permissions: ['products', 'orders', 'customers', 'invoice', 'reviews', 'coupons']
                     };
 
-                    sendWhatsAppOTPForAdmin();
+                    // Prompt for Secret Master PIN
+                    document.getElementById('admin-pin-modal').style.display = 'flex';
+                    document.getElementById('admin-entered-pin').value = "";
+                    document.getElementById('pin-error-msg').style.display = "none";
+                    document.getElementById('admin-entered-pin').focus();
                     return;
                 }
 
-                // Check Staff in Firestore
+                // Staff check in Cloud Firestore
                 const staffQuerySnap = await db.collection("staff").get();
                 let matchedStaff = null;
 
@@ -394,7 +403,7 @@
                         return;
                     }
 
-                    // Reset failed counter on successful staff login
+                    // Reset failed counter
                     localStorage.removeItem('cz_login_failed_attempts');
 
                     const staffSession = {
@@ -421,7 +430,6 @@
                     return;
                 }
 
-                // If authentication fails, register failed attempt
                 registerFailedAttempt();
 
             } catch (err) {
@@ -436,45 +444,26 @@
             }
         }
 
-        // 3. 2-STEP WHATSAPP OTP SYSTEM (FOR ADMIN)
-        function sendWhatsAppOTPForAdmin() {
-            // Generate Secure 6-Digit Numeric Code
-            generatedAdminOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        // 3. MASTER PIN VERIFICATION (SUPER ADMIN)
+        async function verifyAdminPIN() {
+            const enteredPIN = document.getElementById('admin-entered-pin').value.trim();
+            const pinErr = document.getElementById('pin-error-msg');
+            const verifyBtn = document.getElementById('btn-verify-pin');
 
-            const adminPhone = "916290407730";
-            const otpMessage = `*Custom Zone Admin Security Alert*\n\nYour 2-Step Verification Code is: *${generatedAdminOTP}*\n\nDo not share this code with anyone. It expires in 5 minutes.`;
-            const waOtpUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(otpMessage)}`;
-
-            // Trigger WhatsApp direct window for OTP
-            window.open(waOtpUrl, '_blank');
-
-            // Open OTP Modal on screen
-            document.getElementById('admin-otp-modal').style.display = 'flex';
-            document.getElementById('admin-entered-otp').value = "";
-            document.getElementById('admin-entered-otp').focus();
-        }
-
-        async function verifyAdminOTP() {
-            const entered = document.getElementById('admin-entered-otp').value.trim();
-            const errEl = document.getElementById('otp-error-msg');
-            const verifyBtn = document.getElementById('btn-verify-otp');
-
-            if (entered === generatedAdminOTP) {
+            if (enteredPIN === MASTER_SECURITY_PIN) {
                 verifyBtn.innerText = "Access Granted...";
                 verifyBtn.disabled = true;
 
-                // Reset failed attempts
                 localStorage.removeItem('cz_login_failed_attempts');
                 localStorage.removeItem('cz_login_lockout_until');
 
-                // Set Official Master Admin Session
                 localStorage.setItem('cz_logged_in_user', JSON.stringify(pendingMasterAdminSession));
 
                 try {
                     await db.collection("audit_logs").add({
                         actor: "Master Admin",
                         role: "main_admin",
-                        action: "Admin Logged in via 2-Step WhatsApp Verification",
+                        action: "Admin Authenticated via Master Security PIN",
                         targetId: "Portal Security",
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -482,19 +471,24 @@
 
                 window.location.href = "admin-dashboard.html";
             } else {
-                errEl.innerText = "❌ Incorrect verification code. Please check WhatsApp!";
-                errEl.style.display = "block";
+                pinErr.innerText = "❌ Incorrect Master Security PIN!";
+                pinErr.style.display = "block";
+                registerFailedAttempt();
             }
         }
 
-        function cancelAdminOTP() {
-            document.getElementById('admin-otp-modal').style.display = 'none';
-            generatedAdminOTP = null;
+        function cancelAdminPIN() {
+            document.getElementById('admin-pin-modal').style.display = 'none';
             pendingMasterAdminSession = null;
             const btn = document.getElementById('btn-login-submit');
             btn.disabled = false;
             btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Login to Portal`;
         }
+
+        // Allow Enter key to trigger PIN verification
+        document.getElementById('admin-entered-pin').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') verifyAdminPIN();
+        });
     </script>
 </body>
 </html>
