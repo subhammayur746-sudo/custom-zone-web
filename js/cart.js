@@ -220,7 +220,48 @@ function updateNavbarCartCount() {
     countEls.forEach(el => el.innerText = cartItems.length);
 }
 
-// STRICT ONE-TIME USE PER PHONE NUMBER RULE (কুপন ও গিফট কার্ড ভেরিফিকেশন)
+// RESTORED: Dynamic Postal Pincode Lookup API
+async function lookupPincode(pin) {
+    const pinStr = pin.trim();
+    const statusEl = document.getElementById('pin-status');
+    const distInput = document.getElementById('cust-district');
+    const poInput = document.getElementById('cust-postoffice');
+
+    if (pinStr.length === 6) {
+        if (statusEl) {
+            statusEl.style.color = "#28469E";
+            statusEl.innerText = "Finding District & Post Office...";
+        }
+
+        try {
+            const res = await fetch(`https://api.postalpincode.in/pincode/${pinStr}`);
+            const data = await res.json();
+
+            if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+                const poList = data[0].PostOffice;
+                const district = poList[0].District;
+                
+                if (distInput) distInput.value = district;
+                if (poInput && !poInput.value) poInput.value = poList[0].Name;
+                if (statusEl) {
+                    statusEl.style.color = "var(--success-green)";
+                    statusEl.innerText = `✓ Deliverable (${district}, ${poList[0].State})`;
+                }
+            } else {
+                if (statusEl) {
+                    statusEl.style.color = "#e67e22";
+                    statusEl.innerText = "Please enter District & P.O. manually.";
+                }
+            }
+        } catch (err) {
+            if (statusEl) statusEl.innerText = "";
+        }
+    } else {
+        if (statusEl) statusEl.innerText = "";
+    }
+}
+
+// STRICT ONE-TIME USE PER PHONE NUMBER + FIRST10 FALLBACK
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
@@ -280,6 +321,16 @@ async function applyCoupon() {
             appliedCouponCode = rawCode;
             msg.style.color = "var(--success-green)";
             msg.innerText = `✅ Code "${rawCode}" applied! You saved ₹${appliedDiscount}.`;
+            renderCart();
+            return;
+        }
+
+        // RESTORED: Special FIRST10 / FRIST10 Hardcoded Fallback
+        if (rawCode === "FIRST10" || rawCode === "FRIST10") {
+            appliedDiscount = 10;
+            appliedCouponCode = rawCode;
+            msg.style.color = "var(--success-green)";
+            msg.innerText = `✅ Special offer applied! ₹10 Discount.`;
             renderCart();
             return;
         }
@@ -352,7 +403,7 @@ async function submitOrderViaWhatsApp() {
         await db.collection("pending_payments").doc(paymentReference).set(pendingPaymentRecord);
 
         // Lock Coupon for this phone number so it cannot be reused
-        if (appliedCouponCode) {
+        if (appliedCouponCode && appliedCouponCode !== "FIRST10" && appliedCouponCode !== "FRIST10") {
             await db.collection("coupons").doc(appliedCouponCode).update({
                 usedByPhones: firebase.firestore.FieldValue.arrayUnion(phone),
                 isUsed: true
@@ -370,16 +421,15 @@ async function submitOrderViaWhatsApp() {
     }
 }
 
-// SUPER-FAST INSTANT DYNAMIC UPI QR GENERATOR (Zero lag)
+// SUPER-FAST INSTANT UPI QR GENERATOR
 function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const container = document.querySelector('.cart-layout');
     if (!container) return;
 
-    const upiId = "6290407730@ybl"; // Official Custom Zone UPI ID
+    const upiId = "6290407730@ybl";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
-    
-    // Google Charts API generates crisp vector QR code in 0.1 second
-    const dynamicFastQR = `https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
+    const instantVectorQR = `https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
+    const localQR = `assets/images/payment-qr.png`;
 
     const configuredWhatsApp = "916290407730";
     const waPaymentText = `Hello Custom Zone,\nI have sent the payment.\n\n*Payment Reference:* ${paymentRef}\n*Customer:* ${customerName}\n*Amount:* ₹${amount}\n\nPlease verify screenshot.`;
@@ -393,9 +443,8 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
             <h2 style="color:var(--text-primary); margin:0 0 6px 0; font-weight:800; font-size:22px;">Scan & Pay ₹${amount}</h2>
             <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Scan with GooglePay, PhonePe, Paytm or any UPI App:</p>
             
-            <!-- Superfast Vector QR Code -->
             <div style="margin:0 auto 16px auto; width:220px; height:220px; padding:10px; border:2px solid var(--blue-primary); border-radius:12px; background:#FFFFFF; display:flex; align-items:center; justify-content:center;">
-                <img src="${dynamicFastQR}" alt="Instant UPI QR Code" style="width:100%; height:100%; object-fit:contain; display:block;">
+                <img src="${instantVectorQR}" onerror="this.src='${localQR}'" alt="Payment QR" style="width:100%; height:100%; object-fit:contain; display:block;">
             </div>
 
             <p style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:16px;">UPI ID: ${upiId}</p>

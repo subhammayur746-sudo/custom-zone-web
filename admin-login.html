@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Custom Zone</title>
+    <title>Admin & Staff Login - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -14,159 +14,257 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: radial-gradient(circle at center, #4e1e4c, #3B163A);
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 15px;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+            padding: 20px; 
         }
-        .login-card {
-            background: #ffffff;
-            padding: 40px 30px;
-            border-radius: 14px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            border-top: 6px solid #F0C986;
+        .login-card { 
+            background: #ffffff; 
+            width: 100%; 
+            max-width: 420px; 
+            padding: 35px 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+            text-align: center; 
         }
-        .login-card img {
-            width: 75px;
-            height: 75px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #F0C986;
-            margin-bottom: 12px;
+        .login-logo { 
+            width: 65px; 
+            height: 65px; 
+            border-radius: 50%; 
+            margin-bottom: 12px; 
+            object-fit: contain; 
         }
-        .login-card h2 {
-            margin: 0 0 6px 0;
-            color: #3B163A;
-            font-size: 24px;
-            font-weight: 800;
+        .login-card h2 { 
+            color: #0f172a; 
+            font-size: 22px; 
+            font-weight: 800; 
+            margin-bottom: 4px; 
         }
-        .login-card p {
-            color: #636e72;
-            font-size: 13px;
-            margin-bottom: 25px;
+        .login-card p { 
+            color: #64748b; 
+            font-size: 12.5px; 
+            margin-bottom: 24px; 
         }
-        .form-group {
-            margin-bottom: 18px;
-            text-align: left;
+        .form-group { 
+            margin-bottom: 18px; 
+            text-align: left; 
         }
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #3B163A;
+        .form-group label { 
+            display: block; 
+            font-size: 12px; 
+            font-weight: 700; 
+            color: #334155; 
+            margin-bottom: 6px; 
         }
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #dcdde1;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
+        .input-wrap { 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
         }
-        .form-group input:focus {
-            border-color: #F0C986;
-            box-shadow: 0 0 8px rgba(240, 201, 134, 0.4);
+        .input-wrap i.prefix-icon { 
+            position: absolute; 
+            left: 12px; 
+            color: #94a3b8; 
+            font-size: 14px; 
         }
-        .btn-login {
-            background: #3B163A;
-            color: #F0C986;
-            border: none;
-            padding: 13px;
-            width: 100%;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: 0.3s;
+        .input-wrap input { 
+            width: 100%; 
+            padding: 11px 40px 11px 36px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 13.5px; 
+            color: #0f172a; 
+            background: #f8fafc; 
+            transition: 0.2s; 
         }
-        .btn-login:hover {
-            background: #260c25;
-            color: #ffffff;
-            transform: translateY(-1px);
+        .input-wrap input:focus { 
+            outline: none; 
+            border-color: #2563eb; 
+            background: #ffffff; 
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.1); 
+        }
+        .toggle-password-btn { 
+            position: absolute; 
+            right: 12px; 
+            background: none; 
+            border: none; 
+            color: #64748b; 
+            cursor: pointer; 
+            font-size: 15px; 
+            padding: 4px; 
+        }
+        .toggle-password-btn:hover { 
+            color: #0f172a; 
+        }
+        .btn-login { 
+            width: 100%; 
+            padding: 12px; 
+            background: #2563eb; 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            margin-top: 8px; 
+        }
+        .btn-login:hover { 
+            background: #1d4ed8; 
+        }
+        #login-error-msg { 
+            color: #ef4444; 
+            font-size: 12px; 
+            margin-top: 14px; 
+            font-weight: 600; 
+            display: none; 
         }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        <img src="assets/images/logo.png" alt="Custom Zone Logo">
-        <h2>Admin Access</h2>
-        <p>Enter your credentials to manage Custom Zone</p>
+        <img src="assets/images/logo.png" onerror="this.src='assets/images/logo2.png'" class="login-logo" alt="Custom Zone">
+        <h2>CZ Management Portal</h2>
+        <p>Admin & Staff Authorized Access</p>
 
-        <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+        <form id="admin-login-form" onsubmit="handlePortalLogin(event)">
             <div class="form-group">
-                <label>Admin Username / Email</label>
-                <input type="text" id="login-email" placeholder="admin" required autocomplete="off">
+                <label>Username / Login Phone *</label>
+                <div class="input-wrap">
+                    <i class="fas fa-user prefix-icon"></i>
+                    <input type="text" id="portal-username" placeholder="Enter username or registered phone" required autocomplete="username">
+                </div>
             </div>
+
             <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••" required autocomplete="off">
+                <label>Password *</label>
+                <div class="input-wrap">
+                    <i class="fas fa-lock prefix-icon"></i>
+                    <input type="password" id="portal-password" placeholder="Enter password" required autocomplete="current-password">
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('portal-password', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
-            <button type="submit" class="btn-login" id="btn-login-submit">Login to Dashboard</button>
-            <p id="login-error-msg" style="color:#e74c3c; font-size:13px; margin-top:12px; font-weight:bold; display:none;"></p>
+
+            <button type="submit" class="btn-login" id="btn-login-submit">
+                <i class="fas fa-sign-in-alt"></i> Login to Portal
+            </button>
         </form>
+
+        <p id="login-error-msg"></p>
     </div>
 
     <script>
-        localStorage.removeItem('cz_logged_in_user');
+        // Password Eye Show/Hide Toggle
+        function togglePasswordVisibility(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            const icon = btnEl.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
 
-        async function handleAdminLogin(e) {
+        async function handlePortalLogin(e) {
             e.preventDefault();
-            const emailInput = document.getElementById('login-email').value.trim();
-            const passwordInput = document.getElementById('login-password').value.trim();
+            const usernameInput = document.getElementById('portal-username').value.trim();
+            const passwordInput = document.getElementById('portal-password').value.trim();
             const errorMsg = document.getElementById('login-error-msg');
-            const submitBtn = document.getElementById('btn-login-submit');
+            const btn = document.getElementById('btn-login-submit');
 
             errorMsg.style.display = "none";
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Verifying...";
-
-            if ((emailInput.toLowerCase() === "admin" || emailInput.toLowerCase() === "admin@customzone.com") && passwordInput === "admin@2005") {
-                const sessionUser = {
-                    name: "Master Admin",
-                    username: "admin",
-                    role: "Master Admin",
-                    permissions: ["all"]
-                };
-                localStorage.setItem('cz_logged_in_user', JSON.stringify(sessionUser));
-                window.location.href = "admin-dashboard.html";
-                return;
-            }
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
 
             try {
-                const userDoc = await db.collection("staff").doc(emailInput.toLowerCase()).get();
-                if (userDoc.exists && userDoc.data().password === passwordInput) {
-                    const userData = userDoc.data();
-                    localStorage.setItem('cz_logged_in_user', JSON.stringify({
-                        name: userData.name || emailInput,
-                        username: emailInput,
-                        role: userData.role || "Staff",
-                        permissions: userData.permissions || []
-                    }));
+                // 1. Check Root Master Admin Credentials
+                if (usernameInput.toLowerCase() === "admin" && passwordInput === "admin123") {
+                    const masterAdminUser = {
+                        name: "Master Admin",
+                        username: "admin",
+                        role: "main_admin",
+                        canDelete: true,
+                        permissions: ['products', 'orders', 'customers', 'invoice', 'reviews', 'coupons']
+                    };
+                    localStorage.setItem('cz_logged_in_user', JSON.stringify(masterAdminUser));
                     window.location.href = "admin-dashboard.html";
-                } else {
-                    errorMsg.style.display = "block";
-                    errorMsg.innerText = "❌ Invalid username or password.";
+                    return;
                 }
-            } catch (err) {
-                console.error(err);
+
+                // 2. Query Staff Database in Cloud Firestore
+                const staffQuerySnap = await db.collection("staff").get();
+                let matchedStaff = null;
+
+                staffQuerySnap.forEach(doc => {
+                    const s = doc.data();
+                    const cleanDbUser = (s.username || "").trim().toLowerCase();
+                    const cleanInputUser = usernameInput.toLowerCase();
+
+                    // Match username or login phone
+                    if ((cleanDbUser === cleanInputUser || s.phone === usernameInput) && (s.password || "").trim() === passwordInput) {
+                        matchedStaff = s;
+                        matchedStaff.docId = doc.id;
+                    }
+                });
+
+                if (matchedStaff) {
+                    if (matchedStaff.isActive === false) {
+                        errorMsg.innerText = "❌ This staff account has been deactivated by Admin.";
+                        errorMsg.style.display = "block";
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Login to Portal`;
+                        return;
+                    }
+
+                    // Prepare Staff Session Payload
+                    const staffSession = {
+                        name: matchedStaff.name || matchedStaff.username,
+                        username: matchedStaff.username,
+                        role: matchedStaff.role || "staff",
+                        canDelete: false, // Strict Rule: Staff can NEVER delete data
+                        permissions: Array.isArray(matchedStaff.permissions) ? matchedStaff.permissions : []
+                    };
+
+                    localStorage.setItem('cz_logged_in_user', JSON.stringify(staffSession));
+                    
+                    // Log Login Activity to Audit Log
+                    try {
+                        await db.collection("audit_logs").add({
+                            actor: staffSession.name,
+                            role: staffSession.role,
+                            action: "Logged into Admin Portal",
+                            targetId: staffSession.username,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } catch(err) {}
+
+                    window.location.href = "admin-dashboard.html";
+                    return;
+                }
+
+                // If no match found
+                errorMsg.innerText = "❌ Invalid Username or Password. Please try again.";
                 errorMsg.style.display = "block";
-                errorMsg.innerText = "❌ Invalid username or password.";
+
+            } catch (err) {
+                console.error("Login verification error:", err);
+                errorMsg.innerText = "⚠️ Network or authentication error. Please try again.";
+                errorMsg.style.display = "block";
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Login to Dashboard";
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Login to Portal`;
             }
         }
     </script>
