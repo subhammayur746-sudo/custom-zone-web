@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
@@ -17,7 +16,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
 
-        /* Sidebar Styling */
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
         .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
@@ -27,10 +25,8 @@
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
 
-        /* Main Content Layout */
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
-        /* Mobile Top Navbar */
         .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
         .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
@@ -48,7 +44,6 @@
         .btn-del { background: #e74c3c; color: #fff; }
         .btn-dis { background: #bdc3c7; color: #7f8c8d; cursor: not-allowed; }
 
-        /* Mobile Breakpoint */
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -61,14 +56,12 @@
 </head>
 <body>
 
-    <!-- Mobile Header -->
     <div class="mobile-admin-bar">
         <h3>CZ Admin</h3>
         <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
     </div>
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
 
-    <!-- Unified Sidebar -->
     <div class="sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <h2>CZ Admin</h2>
@@ -87,7 +80,7 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Payment Verification & All Orders</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Payment Verification & All Customer Orders</h2>
 
         <!-- Step 1: Unverified Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
@@ -100,7 +93,7 @@
                     <tr>
                         <th>Payment Ref</th>
                         <th>Customer Details</th>
-                        <th>Actual Delivery Address</th>
+                        <th>Delivery Address</th>
                         <th>Amount</th>
                         <th>Action</th>
                     </tr>
@@ -136,7 +129,7 @@
         </div>
     </div>
 
-    <!-- Modal for Printing / Viewing Receipt -->
+    <!-- Receipt Slip Modal -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:99999; justify-content:center; align-items:center; padding:15px;">
         <div style="background:#fff; width:100%; max-width:550px; padding:25px; border-radius:8px; position:relative; max-height:90vh; overflow-y:auto;" id="printable-receipt">
             <span onclick="closeReceiptModal()" style="position:absolute; top:12px; right:15px; font-size:24px; cursor:pointer; font-weight:bold;">&times;</span>
@@ -207,7 +200,6 @@
             loadConfirmedOrders();
         }
 
-        // 1. Fetch Pending Payments
         async function loadPendingPayments() {
             const tbody = document.getElementById('pending-payments-tbody');
             const badge = document.getElementById('pending-count-badge');
@@ -244,6 +236,36 @@
             }
         }
 
+        // Auto Gift Card One-time Voucher Generator Logic
+        async function checkAndGenerateGiftCardCoupon(items, customerPhone, customerName) {
+            if (!Array.isArray(items)) return;
+            for (let item of items) {
+                let itemName = (item.name || "").toLowerCase();
+                if (itemName.includes("gift card") || itemName.includes("voucher")) {
+                    let cardValue = parseInt(item.price) || parseInt(item.chargedAmount) || 100;
+                    let randomCode = "GIFT-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+                    
+                    await db.collection("coupons").doc(randomCode).set({
+                        code: randomCode,
+                        discount: cardValue,
+                        discountAmount: cardValue,
+                        minOrder: cardValue,
+                        isActive: true,
+                        isOneTime: true,
+                        isUsed: false,
+                        type: "gift_card",
+                        issuedTo: customerName,
+                        recipientPhone: customerPhone,
+                        recipientName: item.userText || customerName,
+                        usedByPhones: [],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    await logSystemAction(`Auto-generated Gift Card Voucher ${randomCode} (₹${cardValue}) for`, customerName);
+                }
+            }
+        }
+
         async function verifyAndMarkPaid(paymentRef) {
             if (!confirm(`Confirm receipt of payment for ${paymentRef}? This will generate the official Order ID.`)) return;
 
@@ -264,6 +286,7 @@
                     subTotal: p.subTotal || p.totalAmount,
                     deliveryFee: p.deliveryFee || 0,
                     discountGiven: p.discountGiven || 0,
+                    couponUsed: p.couponUsed || "None",
                     totalAmount: p.totalAmount,
                     actualDeliveryAddress: p.actualDeliveryAddress || "",
                     greetingNote: p.greetingNote || "",
@@ -281,6 +304,9 @@
                     finalOrderId: finalOrderId
                 });
 
+                // Auto Trigger Gift Card Code creation if order has Gift Card
+                await checkAndGenerateGiftCardCoupon(p.items, p.phone, p.customerName);
+
                 await logSystemAction("Verified Payment & Created Order", finalOrderId);
 
                 alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created.`);
@@ -292,7 +318,6 @@
             }
         }
 
-        // 2. Fetch ALL Orders
         async function loadConfirmedOrders() {
             const tbody = document.getElementById('confirmed-orders-tbody');
             try {
@@ -312,16 +337,10 @@
                     allOrdersCache.push(ord);
                 });
 
-                allOrdersCache.sort((a, b) => {
-                    let timeA = a.verifiedAt ? (a.verifiedAt.seconds || 0) : (a.timestamp ? (a.timestamp.seconds || 0) : 0);
-                    let timeB = b.verifiedAt ? (b.verifiedAt.seconds || 0) : (b.timestamp ? (b.timestamp.seconds || 0) : 0);
-                    return timeB - timeA;
-                });
-
+                allOrdersCache.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
                 renderOrdersTable(allOrdersCache);
 
             } catch(e) {
-                console.error("Orders fetch error:", e);
                 tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading orders.</td></tr>";
             }
         }
@@ -372,27 +391,10 @@
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
-                            <button class="btn-act btn-receipt" onclick="viewOrderReceipt('${ord.docId}')" title="Print Order Slip">
-                                <i class="fas fa-receipt"></i> Slip
-                            </button>
-
-                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice">
-                                <i class="fas fa-file-invoice"></i> Invoice
-                            </a>
-
-                            <button class="btn-act btn-wa" onclick="sendWhatsAppStatusUpdate('${ord.docId}')" title="Send WhatsApp Update">
-                                <i class="fab fa-whatsapp"></i>
-                            </button>
-
-                            ${canDelete ? `
-                                <button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete Order">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : `
-                                <button class="btn-act btn-dis" onclick="alert('❌ Access Denied: Staff members cannot delete orders!')" title="Delete Restricted for Staff">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            `}
+                            <button class="btn-act btn-receipt" onclick="viewOrderReceipt('${ord.docId}')" title="Print Slip"><i class="fas fa-receipt"></i> Slip</button>
+                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
+                            <button class="btn-act btn-wa" onclick="sendWhatsAppStatusUpdate('${ord.docId}')" title="WhatsApp Update"><i class="fab fa-whatsapp"></i></button>
+                            ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : `<button class="btn-act btn-dis" onclick="alert('❌ Staff cannot delete!')"><i class="fas fa-trash"></i></button>`}
                         </td>
                     </tr>
                 `;
@@ -412,46 +414,30 @@
 
         async function updateOrderStatusSync(docId, newStatus) {
             try {
-                await db.collection("orders").doc(docId).update({ 
-                    orderStatus: newStatus,
-                    status: newStatus 
-                });
+                await db.collection("orders").doc(docId).update({ orderStatus: newStatus, status: newStatus });
                 await logSystemAction(`Updated Order Status to ${newStatus}`, docId);
                 alert(`✓ Order status updated to "${newStatus}"`);
-            } catch(e) {
-                alert("Failed to update status.");
-            }
+            } catch(e) { alert("Failed to update status."); }
         }
 
         async function deleteOrderPermanent(docId) {
-            if (!isMainAdminUser()) {
-                alert("❌ Access Denied: Staff members cannot delete any data!");
-                return;
-            }
-
-            if (confirm(`Permanently delete order #${docId}? This action cannot be undone.`)) {
+            if (!isMainAdminUser()) { alert("❌ Access Denied!"); return; }
+            if (confirm(`Permanently delete order #${docId}?`)) {
                 try {
                     await db.collection("orders").doc(docId).delete();
                     await logSystemAction("Permanently Deleted Order", docId);
                     alert("✓ Order deleted successfully!");
                     fetchAdminOrders();
-                } catch(e) {
-                    alert("Error deleting order.");
-                }
+                } catch(e) { alert("Error deleting order."); }
             }
         }
 
         function sendWhatsAppStatusUpdate(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
-            if (!ord || !ord.phone) {
-                alert("Customer phone number not available.");
-                return;
-            }
+            if (!ord || !ord.phone) { alert("Customer phone not found."); return; }
             let phoneClean = ord.phone.replace(/[^0-9]/g, '');
             if (phoneClean.length === 10) phoneClean = "91" + phoneClean;
-
-            let st = ord.orderStatus || ord.status || 'Processing';
-            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order #${ord.orderId || ord.docId} status is now: *${st}*.\n\nThank you for choosing Custom Zone! 🎁✨`;
+            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order #${ord.orderId || ord.docId} status is now: *${ord.orderStatus || ord.status || 'Processing'}*.\n\nThank you for choosing Custom Zone! 🎁✨`;
             window.open(`https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
@@ -459,12 +445,9 @@
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
-            let itemsHTML = "";
-            if (Array.isArray(ord.items)) {
-                itemsHTML = ord.items.map(it => `<tr><td style="padding:6px 0;">${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1}</td><td style="text-align:right;">₹${it.chargedAmount || it.price}</td></tr>`).join("");
-            } else {
-                itemsHTML = `<tr><td colspan="2">${ord.items ? ord.items.replace(/\n/g, '<br>') : '-'}</td></tr>`;
-            }
+            let itemsHTML = Array.isArray(ord.items) 
+                ? ord.items.map(it => `<tr><td style="padding:6px 0;">${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1}</td><td style="text-align:right;">₹${it.chargedAmount || it.price}</td></tr>`).join("")
+                : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
 
             document.getElementById('receipt-content').innerHTML = `
                 <div style="text-align:center; border-bottom:2px dashed #eee; padding-bottom:12px; margin-bottom:12px;">
@@ -474,30 +457,23 @@
                     <small>Date: ${ord.date || 'Recent'}</small>
                 </div>
                 <div style="font-size:13px; line-height:1.5; margin-bottom:12px;">
-                    <strong>Customer:</strong> ${ord.customerName || ord.name || '-'}<br>
+                    <strong>Customer:</strong> ${ord.customerName || '-'}<br>
                     <strong>Phone:</strong> ${ord.phone || '-'}<br>
-                    <strong>Address:</strong> ${ord.actualDeliveryAddress || ord.address || '-'}
+                    <strong>Address:</strong> ${ord.actualDeliveryAddress || '-'}
                 </div>
                 <table style="width:100%; border-collapse:collapse; font-size:13px; border-top:1px solid #eee; border-bottom:1px solid #eee; margin-bottom:12px;">
-                    <thead><tr style="text-align:left; color:#7f8c8d;"><th style="padding:6px 0;">Item Description</th><th style="text-align:right;">Price</th></tr></thead>
+                    <thead><tr style="text-align:left; color:#7f8c8d;"><th style="padding:6px 0;">Description</th><th style="text-align:right;">Price</th></tr></thead>
                     <tbody>${itemsHTML}</tbody>
                 </table>
                 <div style="text-align:right; font-size:14px;">
-                    <strong>Total Amount: ₹${ord.totalAmount || ord.total || 0}</strong><br>
-                    <small style="color:green;">Payment Status: ${ord.paymentStatus || 'Paid'}</small>
+                    <strong>Total: ₹${ord.totalAmount || ord.total || 0}</strong>
                 </div>
             `;
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        function closeReceiptModal() {
-            document.getElementById('receipt-modal').style.display = 'none';
-        }
-
-        window.onload = () => {
-            applyNavRules();
-            fetchAdminOrders();
-        };
+        function closeReceiptModal() { document.getElementById('receipt-modal').style.display = 'none'; }
+        window.onload = () => { applyNavRules(); fetchAdminOrders(); };
     </script>
 </body>
 </html>
