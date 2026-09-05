@@ -31,6 +31,7 @@
             border-radius: 12px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
             text-align: center; 
+            position: relative;
         }
         .login-logo { 
             width: 65px; 
@@ -117,12 +118,63 @@
         .btn-login:hover { 
             background: #1d4ed8; 
         }
+        .btn-login:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
         #login-error-msg { 
             color: #ef4444; 
             font-size: 12px; 
             margin-top: 14px; 
             font-weight: 600; 
             display: none; 
+        }
+        .lockout-banner {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #f87171;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        /* 2-Step OTP Modal */
+        .otp-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.75);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .otp-modal-card {
+            background: #fff;
+            width: 100%;
+            max-width: 380px;
+            padding: 28px 24px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+        .otp-input-field {
+            width: 100%;
+            padding: 12px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 8px;
+            border: 2px solid #2563eb;
+            border-radius: 8px;
+            margin: 15px 0;
+            background: #f8fafc;
         }
     </style>
 </head>
@@ -133,12 +185,18 @@
         <h2>CZ Management Portal</h2>
         <p>Admin & Staff Authorized Access</p>
 
+        <!-- Brute-force Lockout Notice -->
+        <div class="lockout-banner" id="lockout-notice">
+            <i class="fas fa-lock"></i> Account temporarily locked!<br>
+            Try again in: <span id="lockout-timer">15:00</span>
+        </div>
+
         <form id="admin-login-form" onsubmit="handlePortalLogin(event)">
             <div class="form-group">
                 <label>Username / Login Phone *</label>
                 <div class="input-wrap">
                     <i class="fas fa-user prefix-icon"></i>
-                    <input type="text" id="portal-username" placeholder="Enter username or registered phone" required autocomplete="username">
+                    <input type="text" id="portal-username" placeholder="Enter username or phone" required autocomplete="username">
                 </div>
             </div>
 
@@ -161,8 +219,44 @@
         <p id="login-error-msg"></p>
     </div>
 
+    <!-- 2-Step WhatsApp OTP Verification Modal (Super Admin Only) -->
+    <div class="otp-modal-overlay" id="admin-otp-modal">
+        <div class="otp-modal-card">
+            <div style="width:50px; height:50px; background:#dcfce7; color:#16a34a; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 10px auto; font-size:24px;">
+                <i class="fab fa-whatsapp"></i>
+            </div>
+            <h3 style="color:#0f172a; margin-bottom:4px; font-size:18px;">2-Step Verification</h3>
+            <p style="color:#64748b; font-size:12px; margin-bottom:15px; line-height:1.4;">
+                A 6-digit security code has been sent to your WhatsApp number (<strong>+91 6290407730</strong>).
+            </p>
+
+            <input type="text" id="admin-entered-otp" class="otp-input-field" maxlength="6" placeholder="------" autocomplete="one-time-code">
+
+            <div id="otp-error-msg" style="color:#ef4444; font-size:12px; font-weight:600; display:none; margin-bottom:10px;"></div>
+
+            <button onclick="verifyAdminOTP()" id="btn-verify-otp" style="width:100%; padding:12px; background:#16a34a; color:#fff; border:none; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer;">
+                Verify & Enter Dashboard
+            </button>
+            <button onclick="cancelAdminOTP()" style="width:100%; margin-top:8px; padding:8px; background:none; border:none; color:#64748b; font-size:12px; cursor:pointer;">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <script>
-        // Password Eye Show/Hide Toggle
+        // Lockout Settings
+        const MAX_FAILED_ATTEMPTS = 5;
+        const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 Minutes
+        let lockoutInterval = null;
+
+        // Admin 2-Step Temp Storage
+        let generatedAdminOTP = null;
+        let pendingMasterAdminSession = null;
+
+        window.onload = () => {
+            checkExistingLockout();
+        };
+
         function togglePasswordVisibility(inputId, btnEl) {
             const input = document.getElementById(inputId);
             const icon = btnEl.querySelector('i');
@@ -177,8 +271,79 @@
             }
         }
 
+        // 1. RATE LIMITING / LOCKOUT SYSTEM
+        function checkExistingLockout() {
+            const lockoutUntil = parseInt(localStorage.getItem('cz_login_lockout_until')) || 0;
+            const now = Date.now();
+
+            if (lockoutUntil > now) {
+                applyLockoutUI(lockoutUntil);
+            } else {
+                localStorage.removeItem('cz_login_lockout_until');
+                removeLockoutUI();
+            }
+        }
+
+        function registerFailedAttempt() {
+            let attempts = parseInt(localStorage.getItem('cz_login_failed_attempts')) || 0;
+            attempts++;
+            localStorage.setItem('cz_login_failed_attempts', attempts);
+
+            const remaining = MAX_FAILED_ATTEMPTS - attempts;
+
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                const lockoutUntil = Date.now() + LOCKOUT_DURATION_MS;
+                localStorage.setItem('cz_login_lockout_until', lockoutUntil);
+                localStorage.removeItem('cz_login_failed_attempts');
+                applyLockoutUI(lockoutUntil);
+            } else {
+                const errorMsg = document.getElementById('login-error-msg');
+                errorMsg.innerText = `❌ Invalid credentials! ${remaining} attempt(s) left before account lockout.`;
+                errorMsg.style.display = "block";
+            }
+        }
+
+        function applyLockoutUI(lockoutUntil) {
+            const banner = document.getElementById('lockout-notice');
+            const timerEl = document.getElementById('lockout-timer');
+            const submitBtn = document.getElementById('btn-login-submit');
+            const errorMsg = document.getElementById('login-error-msg');
+
+            banner.style.display = "block";
+            submitBtn.disabled = true;
+            errorMsg.style.display = "none";
+
+            if (lockoutInterval) clearInterval(lockoutInterval);
+
+            lockoutInterval = setInterval(() => {
+                const timeLeft = lockoutUntil - Date.now();
+                if (timeLeft <= 0) {
+                    clearInterval(lockoutInterval);
+                    removeLockoutUI();
+                    localStorage.removeItem('cz_login_lockout_until');
+                    localStorage.removeItem('cz_login_failed_attempts');
+                } else {
+                    const minutes = Math.floor(timeLeft / (60 * 1000));
+                    const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+                    timerEl.innerText = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                }
+            }, 1000);
+        }
+
+        function removeLockoutUI() {
+            document.getElementById('lockout-notice').style.display = "none";
+            document.getElementById('btn-login-submit').disabled = false;
+        }
+
+        // 2. MAIN LOGIN HANDLER
         async function handlePortalLogin(e) {
             e.preventDefault();
+            checkExistingLockout();
+
+            if (parseInt(localStorage.getItem('cz_login_lockout_until')) > Date.now()) {
+                return;
+            }
+
             const usernameInput = document.getElementById('portal-username').value.trim();
             const passwordInput = document.getElementById('portal-password').value.trim();
             const errorMsg = document.getElementById('login-error-msg');
@@ -189,21 +354,23 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
 
             try {
-                // 1. Check Root Master Admin Credentials
+                // Check Main Admin with New Password (admin@2005)
                 if (usernameInput.toLowerCase() === "admin" && passwordInput === "admin@2005") {
-                    const masterAdminUser = {
+                    
+                    // Trigger 2-Step WhatsApp OTP for Admin
+                    pendingMasterAdminSession = {
                         name: "Master Admin",
                         username: "admin",
                         role: "main_admin",
                         canDelete: true,
                         permissions: ['products', 'orders', 'customers', 'invoice', 'reviews', 'coupons']
                     };
-                    localStorage.setItem('cz_logged_in_user', JSON.stringify(masterAdminUser));
-                    window.location.href = "admin-dashboard.html";
+
+                    sendWhatsAppOTPForAdmin();
                     return;
                 }
 
-                // 2. Query Staff Database in Cloud Firestore
+                // Check Staff in Firestore
                 const staffQuerySnap = await db.collection("staff").get();
                 let matchedStaff = null;
 
@@ -212,7 +379,6 @@
                     const cleanDbUser = (s.username || "").trim().toLowerCase();
                     const cleanInputUser = usernameInput.toLowerCase();
 
-                    // Match username or login phone
                     if ((cleanDbUser === cleanInputUser || s.phone === usernameInput) && (s.password || "").trim() === passwordInput) {
                         matchedStaff = s;
                         matchedStaff.docId = doc.id;
@@ -228,23 +394,24 @@
                         return;
                     }
 
-                    // Prepare Staff Session Payload
+                    // Reset failed counter on successful staff login
+                    localStorage.removeItem('cz_login_failed_attempts');
+
                     const staffSession = {
                         name: matchedStaff.name || matchedStaff.username,
                         username: matchedStaff.username,
                         role: matchedStaff.role || "staff",
-                        canDelete: false, // Strict Rule: Staff can NEVER delete data
+                        canDelete: false,
                         permissions: Array.isArray(matchedStaff.permissions) ? matchedStaff.permissions : []
                     };
 
                     localStorage.setItem('cz_logged_in_user', JSON.stringify(staffSession));
                     
-                    // Log Login Activity to Audit Log
                     try {
                         await db.collection("audit_logs").add({
                             actor: staffSession.name,
                             role: staffSession.role,
-                            action: "Logged into Admin Portal",
+                            action: "Staff Logged into Admin Portal",
                             targetId: staffSession.username,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
@@ -254,18 +421,79 @@
                     return;
                 }
 
-                // If no match found
-                errorMsg.innerText = "❌ Invalid Username or Password. Please try again.";
-                errorMsg.style.display = "block";
+                // If authentication fails, register failed attempt
+                registerFailedAttempt();
 
             } catch (err) {
                 console.error("Login verification error:", err);
                 errorMsg.innerText = "⚠️ Network or authentication error. Please try again.";
                 errorMsg.style.display = "block";
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Login to Portal`;
+                if (!parseInt(localStorage.getItem('cz_login_lockout_until'))) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Login to Portal`;
+                }
             }
+        }
+
+        // 3. 2-STEP WHATSAPP OTP SYSTEM (FOR ADMIN)
+        function sendWhatsAppOTPForAdmin() {
+            // Generate Secure 6-Digit Numeric Code
+            generatedAdminOTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+            const adminPhone = "916290407730";
+            const otpMessage = `*Custom Zone Admin Security Alert*\n\nYour 2-Step Verification Code is: *${generatedAdminOTP}*\n\nDo not share this code with anyone. It expires in 5 minutes.`;
+            const waOtpUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(otpMessage)}`;
+
+            // Trigger WhatsApp direct window for OTP
+            window.open(waOtpUrl, '_blank');
+
+            // Open OTP Modal on screen
+            document.getElementById('admin-otp-modal').style.display = 'flex';
+            document.getElementById('admin-entered-otp').value = "";
+            document.getElementById('admin-entered-otp').focus();
+        }
+
+        async function verifyAdminOTP() {
+            const entered = document.getElementById('admin-entered-otp').value.trim();
+            const errEl = document.getElementById('otp-error-msg');
+            const verifyBtn = document.getElementById('btn-verify-otp');
+
+            if (entered === generatedAdminOTP) {
+                verifyBtn.innerText = "Access Granted...";
+                verifyBtn.disabled = true;
+
+                // Reset failed attempts
+                localStorage.removeItem('cz_login_failed_attempts');
+                localStorage.removeItem('cz_login_lockout_until');
+
+                // Set Official Master Admin Session
+                localStorage.setItem('cz_logged_in_user', JSON.stringify(pendingMasterAdminSession));
+
+                try {
+                    await db.collection("audit_logs").add({
+                        actor: "Master Admin",
+                        role: "main_admin",
+                        action: "Admin Logged in via 2-Step WhatsApp Verification",
+                        targetId: "Portal Security",
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch(e) {}
+
+                window.location.href = "admin-dashboard.html";
+            } else {
+                errEl.innerText = "❌ Incorrect verification code. Please check WhatsApp!";
+                errEl.style.display = "block";
+            }
+        }
+
+        function cancelAdminOTP() {
+            document.getElementById('admin-otp-modal').style.display = 'none';
+            generatedAdminOTP = null;
+            pendingMasterAdminSession = null;
+            const btn = document.getElementById('btn-login-submit');
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-sign-in-alt"></i> Login to Portal`;
         }
     </script>
 </body>
