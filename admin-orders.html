@@ -52,11 +52,11 @@
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
         }
 
-        /* 1-PAGE PORTRAIT PERFECT SLIP PRINTING */
+        /* 1-PAGE PORTRAIT PERFECT PRINTING */
         @media print {
             @page {
                 size: portrait;
-                margin: 6mm 10mm;
+                margin: 8mm 10mm;
             }
             html, body {
                 background: #ffffff !important;
@@ -86,7 +86,7 @@
                 top: auto !important;
                 transform: none !important;
                 width: 100% !important;
-                max-width: 460px !important;
+                max-width: 580px !important;
                 margin: 0 auto !important;
                 padding: 16px 20px !important;
                 border: 1.5px dashed #0f172a !important;
@@ -176,14 +176,14 @@
         </div>
     </div>
 
-    <!-- Print Slip Modal -->
+    <!-- Print Modal -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); z-index:99999; justify-content:center; align-items:center; padding:15px;">
-        <div style="background:#fff; width:100%; max-width:440px; padding:25px 20px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-slip-area">
+        <div style="background:#fff; width:100%; max-width:560px; padding:25px 20px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-slip-area">
             <span onclick="closeReceiptModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
             <div id="slip-content-body"></div>
             <div class="no-print-slip" style="text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center;">
                 <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:9px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px;">
-                    <i class="fas fa-print"></i> Print Slip
+                    <i class="fas fa-print"></i> Print Invoice
                 </button>
                 <button onclick="closeReceiptModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:9px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
                     Close
@@ -229,7 +229,8 @@
                     let p = d.data();
                     productsCatalogMap[p.name] = {
                         vendorName: p.vendorName || "In-House",
-                        vendorCost: parseInt(p.vendorCost) || 0
+                        vendorCost: parseInt(p.vendorCost) || 0,
+                        image: (p.images && p.images.length > 0) ? p.images[0] : 'assets/images/logo.png'
                     };
                 });
             } catch(e) {}
@@ -305,6 +306,18 @@
                     }
                 }
 
+                // Generate Sequential Vendor Invoice ID (CZ-V-0001, CZ-V-0002...)
+                let vendorInvoiceId = "";
+                if (assignedVendor !== "In-House") {
+                    const countDoc = await db.collection("settings").doc("vendor_invoice_counter").get();
+                    let currentCount = 1;
+                    if (countDoc.exists && countDoc.data().count) {
+                        currentCount = countDoc.data().count + 1;
+                    }
+                    await db.collection("settings").doc("vendor_invoice_counter").set({ count: currentCount });
+                    vendorInvoiceId = "CZ-V-" + String(currentCount).padStart(4, '0');
+                }
+
                 const confirmedPayload = {
                     orderId: finalOrderId,
                     paymentReference: p.paymentReference,
@@ -320,6 +333,7 @@
                     greetingNote: p.greetingNote || "",
                     vendorName: assignedVendor,
                     vendorCost: totalVendorCost,
+                    vendorInvoiceId: vendorInvoiceId,
                     paymentStatus: "Paid",
                     orderStatus: "Processing",
                     verifiedBy: loggedInAdmin.username || "Admin",
@@ -400,16 +414,16 @@
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
-                            <!-- Official Invoice Generator Button -->
+                            <!-- Official Customer Invoice -->
                             <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
 
                             <!-- Customer Slip & WhatsApp -->
                             <button class="btn-act btn-receipt" onclick="viewCustomerSlip('${ord.docId}')" title="Customer Slip"><i class="fas fa-receipt"></i> Slip</button>
                             <button class="btn-act btn-wa" onclick="sendCustomerWhatsApp('${ord.docId}')" title="Customer WA"><i class="fab fa-whatsapp"></i> Cust</button>
                             
-                            <!-- Vendor Sourcing Slip & WhatsApp -->
+                            <!-- Vendor Sourcing Invoice (CZ-V-0001) & WhatsApp -->
                             ${ord.vendorName && ord.vendorName !== "In-House" ? `
-                                <button class="btn-act btn-vendor-slip" onclick="viewVendorSlip('${ord.docId}')" title="Vendor Slip"><i class="fas fa-file-invoice"></i> Vendor PO</button>
+                                <button class="btn-act btn-vendor-slip" onclick="viewVendorInvoice('${ord.docId}')" title="Vendor Invoice"><i class="fas fa-file-invoice"></i> Vendor Inv</button>
                                 <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendVendorWhatsApp('${ord.docId}')" title="Vendor WA"><i class="fab fa-whatsapp"></i> Vendor</button>
                             ` : ''}
 
@@ -486,42 +500,80 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        function viewVendorSlip(docId) {
+        // VENDOR WORK INVOICE (CZ-V-XXXX SEQUENCE + PICTURE + PRIVATE RATE + NOTE)
+        function viewVendorInvoice(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
-            let itemsRows = Array.isArray(ord.items) ? ord.items.map(it => `
-                <tr>
-                    <td style="padding:6px 0; border-bottom:1px dashed #e2e8f0; font-size:12px;">
-                        <strong>${it.name}</strong> ${it.variantName ? `<span style="color:#4338ca;">(${it.variantName})</span>` : ''}
-                        ${it.userText ? `<br><strong style="color:#b45309;">Custom: "${it.userText}"</strong>` : ''}
-                        <div style="font-size:11px; color:#64748b;">Qty: <strong>${it.quantity || 1} PCS</strong></div>
-                    </td>
-                    <td style="text-align:right; vertical-align:top; padding:6px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:12.5px;">₹${ord.vendorCost || 0}</td>
-                </tr>
-            `).join("") : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
+            let vInvId = ord.vendorInvoiceId || ("CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0'));
+
+            let itemsRows = "";
+            if (Array.isArray(ord.items)) {
+                itemsRows = ord.items.map(it => {
+                    let prodMeta = productsCatalogMap[it.name] || {};
+                    let prodImg = it.image || prodMeta.image || 'assets/images/logo.png';
+                    return `
+                        <tr>
+                            <td style="padding:8px 0; border-bottom:1px dashed #e2e8f0; width:55px;">
+                                <img src="${prodImg}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; display:block;">
+                            </td>
+                            <td style="padding:8px 10px; border-bottom:1px dashed #e2e8f0; font-size:12px;">
+                                <strong style="color:#0f172a; font-size:13px;">${it.name}</strong>
+                                ${it.variantName ? `<br><span style="color:#4338ca; font-weight:600;">Specification: ${it.variantName}</span>` : ''}
+                                ${it.userText ? `<br><span style="color:#b45309; font-weight:700;">Custom Print Text: "${it.userText}"</span>` : ''}
+                                <div style="font-size:11px; color:#64748b; margin-top:2px;">Quantity to Make: <strong>${it.quantity || 1} PCS</strong></div>
+                            </td>
+                            <td style="text-align:right; vertical-align:middle; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px; color:#3730a3;">
+                                ₹${ord.vendorCost || 0}
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
+            } else {
+                itemsRows = `<tr><td colspan="3">${ord.items || '-'}</td></tr>`;
+            }
 
             document.getElementById('slip-content-body').innerHTML = `
                 <div style="text-align:center; border-bottom:2px dashed #3730a3; padding-bottom:12px; margin-bottom:12px;">
                     <img src="assets/images/logo.png" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px; display:inline-block;" alt="Logo">
-                    <h2 style="margin:0; font-size:18px; font-weight:800; color:#3730a3;">VENDOR WORK ORDER (PO)</h2>
-                    <p style="margin:1px 0; font-size:11px; color:#475569;">Issued by Custom Zone Production Desk</p>
-                    <div style="background:#3730a3; color:#fff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; margin-top:6px; display:inline-block;">JOB REF: #${ord.orderId || ord.docId}</div>
+                    <h2 style="margin:0; font-size:18px; font-weight:800; color:#3730a3;">VENDOR WORK ORDER INVOICE</h2>
+                    <p style="margin:1px 0; font-size:11px; color:#475569;">Custom Zone Sourcing & Production Desk</p>
+                    <div style="background:#3730a3; color:#fff; font-size:11px; font-weight:800; padding:3px 10px; border-radius:4px; margin-top:6px; display:inline-block;">INVOICE NO: ${vInvId}</div>
                 </div>
-                <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:8px 10px; font-size:11.5px; margin-bottom:10px; line-height:1.4;">
-                    <div><strong>Vendor:</strong> ${ord.vendorName}</div>
-                    <div><strong>Date:</strong> ${ord.date || 'Recent'}</div>
-                    <div><strong>Customer:</strong> ${ord.customerName} (${ord.actualDeliveryAddress || '-'})</div>
+
+                <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:10px 12px; font-size:12px; margin-bottom:12px; line-height:1.5;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span><strong>Vendor Partner:</strong> <strong style="color:#3730a3;">${ord.vendorName}</strong></span>
+                        <span><strong>Date:</strong> ${ord.date || 'Recent'}</span>
+                    </div>
+                    <div style="border-top:1px dashed #c7d2fe; padding-top:4px; margin-top:4px;">
+                        <div><strong>Deliver To (Customer):</strong> ${ord.customerName}</div>
+                        <div><strong>Phone Number:</strong> ${ord.phone || '-'}</div>
+                        <div style="word-break:break-word;"><strong>Complete Address:</strong> ${ord.actualDeliveryAddress || '-'}</div>
+                    </div>
                 </div>
-                <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-                    <thead><tr style="border-bottom:1.5px solid #3730a3; font-size:11px; text-transform:uppercase; color:#4338ca;"><th style="text-align:left; padding-bottom:4px;">Product & Specs</th><th style="text-align:right; padding-bottom:4px;">Vendor Cost</th></tr></thead>
+
+                <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+                    <thead>
+                        <tr style="border-bottom:1.5px solid #3730a3; font-size:11px; text-transform:uppercase; color:#4338ca;">
+                            <th style="text-align:left; padding-bottom:4px;">Pic</th>
+                            <th style="text-align:left; padding-bottom:4px;">Product Specifications</th>
+                            <th style="text-align:right; padding-bottom:4px;">Payable Rate</th>
+                        </tr>
+                    </thead>
                     <tbody>${itemsRows}</tbody>
                 </table>
+
                 <div style="border-top:1.5px solid #3730a3; padding-top:6px; font-size:12px;">
-                    <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800;">
-                        <span>Payable to Vendor:</span>
+                    <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:800;">
+                        <span>Total Payable to Vendor:</span>
                         <span style="color:#3730a3;">₹${ord.vendorCost || 0}</span>
                     </div>
+                </div>
+
+                <!-- Mandatory Policy Note -->
+                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px; margin-top:14px; font-size:11px; color:#991b1b; line-height:1.4;">
+                    <strong>NOTE:</strong> WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.
                 </div>
             `;
             document.getElementById('receipt-modal').style.display = 'flex';
@@ -546,11 +598,13 @@
             let p = vendorPhone.replace(/[^0-9]/g, '');
             if (p.length === 10) p = "91" + p;
 
+            let vInvId = ord.vendorInvoiceId || ("CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0'));
+
             let itemsTxt = Array.isArray(ord.items) 
-                ? ord.items.map(it => `• Item: ${it.name}\n  Option: ${it.variantName || 'Standard'}\n  Customization: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS`).join('\n\n')
+                ? ord.items.map(it => `• Item: ${it.name}\n  Specification: ${it.variantName || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS`).join('\n\n')
                 : ord.items;
 
-            let msg = `*NEW WORK ORDER FROM CUSTOM ZONE*\nRef: #${ord.orderId || ord.docId}\nVendor: ${ord.vendorName}\n\n*Items to Produce:*\n${itemsTxt}\n\n*Agreed Vendor Rate:* ₹${ord.vendorCost || 0}\n*Delivery Address:* ${ord.actualDeliveryAddress || '-'}\n\nPlease confirm order receipt.`;
+            let msg = `*NEW VENDOR WORK ORDER INVOICE*\nInvoice No: *${vInvId}*\nVendor: *${ord.vendorName}*\n\n*Product Specifications:*\n${itemsTxt}\n\n*Payable Rate to Vendor:* ₹${ord.vendorCost || 0}\n\n*Deliver To (Customer):*\nName: ${ord.customerName}\nPhone: ${ord.phone}\nAddress: ${ord.actualDeliveryAddress || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 

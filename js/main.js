@@ -313,6 +313,7 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
+// 2-STEP VARIANT SELECTOR (SIZE -> COLOR)
 function renderTwoStepVariants(product) {
     const variantBox = document.getElementById('pdm-variant-two-step-container');
     if (!variantBox) return;
@@ -388,6 +389,7 @@ function onColorSelected(name, price, actual, img) {
     }
 }
 
+// LINKED BULK PRICING FORMULA
 function recalculateLinkedPrice(product) {
     let baseVariantPrice = currentSelectedVariant ? parseInt(currentSelectedVariant.price) : (parseInt(product.discountPrice) || parseInt(product.price));
     
@@ -457,7 +459,7 @@ function openProductDetailsModal(productId) {
             <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
                 <div class="pdm-qty-tier-title" style="display:flex; justify-content:space-between; margin-bottom:6px;">
                     <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span>
-                    <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Auto-Applied</span>
+                    <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Linked</span>
                 </div>
                 <div class="pdm-qty-pills" style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button type="button" class="pdm-qty-pill-btn active" onclick="selectProductQtyTier(1, this)">
@@ -791,7 +793,7 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
         : (product.images ? product.images[0] : 'assets/images/logo.png');
         
     let variantName = selectedVariant 
-        ? `${selectedVariant.size ? selectedVariant.size + ' - ' : ''}${selectedVariant.name}`
+        ? `${selectedVariant.size ? 'Size: ' + selectedVariant.size + ' | ' : ''}${selectedVariant.name}`
         : "";
 
     let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
