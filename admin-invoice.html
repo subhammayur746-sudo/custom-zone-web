@@ -143,7 +143,7 @@
                         <tr>
                             <td>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <input type="text" class="inv-input item-desc" placeholder="Product name" value="Customized Photo Frame">
+                                    <input type="text" class="inv-input item-desc" placeholder="Product name" value="Customized Gift Item">
                                     <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕</button>
                                 </div>
                             </td>
@@ -254,14 +254,17 @@
             else calculateInvoiceTotal();
         };
 
+        // 100% BULLETPROOF AUTO-FILL FOR BOTH OLD AND NEW ORDERS
         async function loadOrderDetailsIntoInvoice(orderId) {
             try {
                 let doc = await db.collection("orders").doc(orderId).get();
                 let ord = doc.exists ? doc.data() : null;
+
                 if (!ord) {
                     const snap = await db.collection("orders").where("orderId", "==", orderId).limit(1).get();
                     if (!snap.empty) ord = snap.docs[0].data();
                 }
+
                 if (!ord) return;
 
                 document.getElementById('inv-no').value = `INV-${orderId.replace(/[^0-9]/g, '') || '101'}`;
@@ -274,6 +277,7 @@
                 const tbody = document.getElementById('invoice-items-body');
                 tbody.innerHTML = "";
 
+                // Case 1: Array of items (New format)
                 if (Array.isArray(ord.items) && ord.items.length > 0) {
                     ord.items.forEach(it => {
                         let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
@@ -291,9 +295,40 @@
                             </tr>
                         `;
                     });
+                } 
+                // Case 2: String formatted items (Old orders like #CZ7457)
+                else {
+                    let rawItems = ord.items ? String(ord.items) : "";
+                    let lines = rawItems.split('\n').filter(l => l.trim().length > 0);
+
+                    if (lines.length === 0) {
+                        lines = [rawItems || "Custom Printed Soft Phone Cover"];
+                    }
+
+                    lines.forEach(line => {
+                        let cleanName = line.replace(/^- /, '').replace(/\[Delivery:.*?\]/g, '').replace(/\(₹[0-9]+\)/g, '').trim();
+                        let totalOrdAmount = parseInt(ord.totalAmount) || parseInt(ord.total) || 0;
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <input type="text" class="inv-input item-desc" value="${cleanName}">
+                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕</button>
+                                    </div>
+                                </td>
+                                <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
+                                <td><input type="number" class="inv-input item-price" value="${totalOrdAmount}" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
+                                <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹${totalOrdAmount}</td>
+                            </tr>
+                        `;
+                    });
                 }
+
                 calculateInvoiceTotal();
-            } catch(e) {}
+            } catch(e) {
+                console.error("Error auto-filling invoice:", e);
+            }
         }
 
         function addInvoiceItemRow() {

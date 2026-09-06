@@ -43,14 +43,41 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        /* Compact Audit Log on Dashboard */
+        /* Notification Bell Badge */
+        .notif-bell-btn {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #2c3e50;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        .notif-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: none;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
+        }
+
         .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; opacity: 0.95; }
         .audit-scroll-container { max-height: 190px; overflow-y: auto; padding-right: 4px; }
         .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
         .audit-item-row:last-child { border-bottom: none; }
         .audit-actor-badge { background: #e2e8f0; color: #1e293b; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
 
-        /* Full Audit Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
         .modal-box { background: #fff; width: 100%; max-width: 880px; border-radius: 10px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-header { padding: 16px 20px; background: #2c3e50; color: #fff; display: flex; justify-content: space-between; align-items: center; }
@@ -100,9 +127,18 @@
                 <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Order Progress</h2>
                 <small style="color:#64748b;">Logged in as: <strong id="logged-user-name" style="color:#28469E;">Admin</strong> (<span id="logged-user-role">Role</span>)</small>
             </div>
-            <button id="btn-refresh-stats" onclick="loadDashboardStats()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
-                <i class="fas fa-sync-alt" id="refresh-spinner"></i> Refresh Stats
-            </button>
+            
+            <div style="display:flex; align-items:center; gap:10px;">
+                <!-- Real-time Unverified Orders Notification Bell -->
+                <a href="admin-orders.html" class="notif-bell-btn" title="Unverified Pending Payments">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="admin-pending-badge">0</span>
+                </a>
+
+                <button id="btn-refresh-stats" onclick="loadDashboardStats()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-sync-alt" id="refresh-spinner"></i> Refresh Stats
+                </button>
+            </div>
         </div>
 
         <div class="stats-grid">
@@ -161,17 +197,14 @@
             </table>
         </div>
 
-        <!-- Compact Audit Log Section -->
         <div class="audit-log-section">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                 <span style="font-size:11.5px; font-weight:700; color:#334155; text-transform:uppercase;">
                     <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Latest Actions (Recent 5 Updates)
                 </span>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <button onclick="openFullAuditModal()" style="background:#2c3e50; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
-                        <i class="fas fa-external-link-alt"></i> View Full History & Export
-                    </button>
-                </div>
+                <button onclick="openFullAuditModal()" style="background:#2c3e50; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-external-link-alt"></i> View Full History & Export
+                </button>
             </div>
             <div class="audit-scroll-container" id="audit-log-items-box">
                 <p style="text-align:center; color:#94a3b8; font-size:12px; margin:0;">Loading action history...</p>
@@ -179,7 +212,7 @@
         </div>
     </div>
 
-    <!-- Full Audit Modal with Search, Filter, Export to Excel and Purge -->
+    <!-- Full Audit Modal with CSV Export -->
     <div class="modal-overlay" id="full-audit-modal">
         <div class="modal-box">
             <div class="modal-header">
@@ -187,10 +220,8 @@
                 <span onclick="closeFullAuditModal()" style="font-size:22px; cursor:pointer; font-weight:bold;">&times;</span>
             </div>
             <div class="modal-body">
-                <!-- Action Controls -->
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
                     <input type="text" id="audit-filter-input" onkeyup="filterFullAuditLogs()" placeholder="🔍 Search user, action, target item..." style="padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:12px; min-width:250px;">
-                    
                     <div style="display:flex; gap:8px;">
                         <button onclick="exportAuditLogsToCSV()" style="background:#16a34a; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
                             <i class="fas fa-file-excel"></i> Export to Excel (CSV)
@@ -200,7 +231,6 @@
                         </button>
                     </div>
                 </div>
-
                 <div style="overflow-x:auto;">
                     <table class="admin-table">
                         <thead>
@@ -290,10 +320,20 @@
                     recentOrders.push(ord);
                 });
 
+                // Pending payments detection & Notification badge count
                 const pendingSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
+                const pendingSize = pendingSnap.size;
                 
+                const notifBadge = document.getElementById('admin-pending-badge');
+                if (pendingSize > 0) {
+                    notifBadge.innerText = pendingSize;
+                    notifBadge.style.display = "inline-block";
+                } else {
+                    notifBadge.style.display = "none";
+                }
+
                 document.getElementById('stat-total-orders').innerText = totalConfirmed;
-                document.getElementById('stat-pending').innerText = pendingSnap.size;
+                document.getElementById('stat-pending').innerText = pendingSize;
                 document.getElementById('stat-processing').innerText = processingCount;
                 document.getElementById('stat-packed').innerText = packedCount;
                 document.getElementById('stat-shipped').innerText = shippedCount;
@@ -372,7 +412,6 @@
             } catch(e) {}
         }
 
-        // FULL AUDIT LOG MODAL HANDLERS
         async function openFullAuditModal() {
             document.getElementById('full-audit-modal').style.display = 'flex';
             const tbody = document.getElementById('full-audit-tbody');
@@ -434,7 +473,6 @@
             renderFullAuditTable(filtered);
         }
 
-        // Export Entire Audit Logs to Excel CSV
         function exportAuditLogsToCSV() {
             if (fullAuditHistoryCache.length === 0) {
                 alert("No audit logs to export.");
@@ -467,7 +505,6 @@
             document.body.removeChild(link);
         }
 
-        // Safe Purge: Clears cloud audit logs after saving backup
         async function purgeAuditLogsProtection() {
             if (!isMainAdmin()) {
                 alert("❌ Access Denied: Only Main Admin can purge audit logs!");

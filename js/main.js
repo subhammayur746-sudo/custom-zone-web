@@ -455,9 +455,26 @@ function openProductDetailsModal(productId) {
         };
     }
 
+    // BUY NOW: Strict Auth Guard - Prompts login modal if not logged in
     if (btnBuy) {
         btnBuy.onclick = () => {
+            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
             let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+
+            if (!customer) {
+                pendingAction = { 
+                    type: 'buy_now', 
+                    id: product.id, 
+                    text: customVal, 
+                    variant: currentSelectedVariant, 
+                    qty: currentSelectedQty, 
+                    price: currentApplicablePrice 
+                };
+                closeProductDetailsModal();
+                openAuthModal(true);
+                return;
+            }
+
             handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice);
             window.location.href = "cart.html";
         };
@@ -947,6 +964,9 @@ async function handleCustomerAuthSubmit() {
         if (pendingAction) {
             if (pendingAction.type === 'cart') {
                 handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null);
+            } else if (pendingAction.type === 'buy_now') {
+                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null);
+                window.location.href = "cart.html";
             } else if (pendingAction.type === 'wishlist') {
                 toggleWishlistCloud(pendingAction.id);
             }

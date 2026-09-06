@@ -63,7 +63,6 @@ async function initDynamicFomoTimer() {
     } catch (e) {}
 }
 
-// Load Active Store Coupons
 async function loadAvailableCoupons() {
     const badge = document.getElementById('available-coupons-badge');
     if(!badge) return;
@@ -220,7 +219,6 @@ function updateNavbarCartCount() {
     countEls.forEach(el => el.innerText = cartItems.length);
 }
 
-// RESTORED: Dynamic Postal Pincode Lookup API
 async function lookupPincode(pin) {
     const pinStr = pin.trim();
     const statusEl = document.getElementById('pin-status');
@@ -261,18 +259,20 @@ async function lookupPincode(pin) {
     }
 }
 
-// STRICT ONE-TIME USE PER PHONE NUMBER + FIRST10 FALLBACK
+// STRICT 100% BULLETPROOF ONE-TIME USE PER PHONE NUMBER VERIFICATION
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
     const customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-    const phoneInput = document.getElementById('cust-phone')?.value.trim() || customer?.phone || "";
+    let phoneInput = document.getElementById('cust-phone')?.value.trim() || customer?.phone || "";
+    phoneInput = phoneInput.replace(/[^0-9]/g, '');
+    if (phoneInput.length > 10) phoneInput = phoneInput.slice(-10);
 
     if(!rawCode) { alert("Please enter a coupon code."); return; }
     if(currentSubTotal === 0) { alert("Cart is empty."); return; }
 
     if (!phoneInput || phoneInput.length < 10) {
-        alert("Please provide your 10-digit delivery phone number first to verify coupon eligibility.");
+        alert("Please provide your 10-digit WhatsApp number first to verify coupon eligibility.");
         document.getElementById('cust-phone')?.focus();
         return;
     }
@@ -282,22 +282,42 @@ async function applyCoupon() {
     msg.innerText = "Verifying code & phone eligibility...";
 
     try {
+        // Deep Cloud Verification for Coupon Usage
+        const pastOrdersSnap = await db.collection("orders")
+            .where("phone", "==", phoneInput)
+            .where("couponUsed", "==", rawCode)
+            .limit(1)
+            .get();
+
+        const pendingOrdersSnap = await db.collection("pending_payments")
+            .where("phone", "==", phoneInput)
+            .where("couponUsed", "==", rawCode)
+            .limit(1)
+            .get();
+
+        if (!pastOrdersSnap.empty || !pendingOrdersSnap.empty) {
+            msg.style.color = "var(--danger-red)";
+            msg.innerText = `❌ You have already used "${rawCode}" with phone number ${phoneInput}! (Only 1 time allowed)`;
+            appliedDiscount = 0;
+            appliedCouponCode = "";
+            renderCart();
+            return;
+        }
+
         let doc = await db.collection("coupons").doc(rawCode).get();
         if (doc.exists && doc.data().isActive !== false) {
             const coupon = doc.data();
-
-            // 1. One Time Per Phone Number Strict Check
             let usedPhones = coupon.usedByPhones || [];
+
             if (usedPhones.includes(phoneInput)) {
                 msg.style.color = "var(--danger-red)";
-                msg.innerText = `❌ You have already used this coupon code with phone ${phoneInput}! (One time per number)`;
+                msg.innerText = `❌ You have already used "${rawCode}" with phone ${phoneInput}!`;
                 appliedDiscount = 0;
                 appliedCouponCode = "";
                 renderCart();
                 return;
             }
 
-            // 2. One Time Gift Card Voucher Check
             if (coupon.isOneTime && coupon.isUsed) {
                 msg.style.color = "var(--danger-red)";
                 msg.innerText = "❌ This Gift Card Voucher has already been redeemed!";
@@ -307,7 +327,6 @@ async function applyCoupon() {
                 return;
             }
 
-            // 3. Minimum Order Requirement
             if(currentSubTotal < (coupon.minOrder || 0)) {
                 msg.style.color = "var(--danger-red)";
                 msg.innerText = `❌ Requires a minimum order of ₹${coupon.minOrder}.`;
@@ -325,7 +344,6 @@ async function applyCoupon() {
             return;
         }
 
-        // RESTORED: Special FIRST10 / FRIST10 Hardcoded Fallback
         if (rawCode === "FIRST10" || rawCode === "FRIST10") {
             appliedDiscount = 10;
             appliedCouponCode = rawCode;
@@ -343,11 +361,10 @@ async function applyCoupon() {
 
     } catch(e) {
         msg.style.color = "var(--danger-red)";
-        msg.innerText = "Error applying code.";
+        msg.innerText = "Error verifying coupon.";
     }
 }
 
-// Place Order & Generate Instant QR Code
 async function submitOrderViaWhatsApp() {
     let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
@@ -361,14 +378,17 @@ async function submitOrderViaWhatsApp() {
     if (cartItems.length === 0) { alert("Your cart is empty."); return; }
 
     const name = document.getElementById('cust-name').value.trim();
-    const phone = document.getElementById('cust-phone').value.trim();
+    let phone = document.getElementById('cust-phone').value.trim();
+    phone = phone.replace(/[^0-9]/g, '');
+    if (phone.length > 10) phone = phone.slice(-10);
+
     const pin = document.getElementById('cust-pin').value.trim();
     const district = document.getElementById('cust-district').value.trim();
     const postOffice = document.getElementById('cust-postoffice').value.trim();
     const address = document.getElementById('cust-address').value.trim();
     const greeting = document.getElementById('cust-greeting-note')?.value.trim() || '';
 
-    if (!name || !phone || !pin || !district || !postOffice || !address) { 
+    if (!name || phone.length < 10 || !pin || !district || !postOffice || !address) { 
         alert("Please fill all required delivery fields (*)."); 
         return; 
     }
@@ -402,7 +422,6 @@ async function submitOrderViaWhatsApp() {
     try {
         await db.collection("pending_payments").doc(paymentReference).set(pendingPaymentRecord);
 
-        // Lock Coupon for this phone number so it cannot be reused
         if (appliedCouponCode && appliedCouponCode !== "FIRST10" && appliedCouponCode !== "FRIST10") {
             await db.collection("coupons").doc(appliedCouponCode).update({
                 usedByPhones: firebase.firestore.FieldValue.arrayUnion(phone),
@@ -421,15 +440,15 @@ async function submitOrderViaWhatsApp() {
     }
 }
 
-// SUPER-FAST INSTANT UPI QR GENERATOR
+// PROPERLY FITTED QR BOX WITH PROFILE LINK IN NOTE
 function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const container = document.querySelector('.cart-layout');
     if (!container) return;
 
     const upiId = "6290407730@ybl";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
-    const instantVectorQR = `https://chart.googleapis.com/chart?chs=260x260&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
-    const localQR = `assets/images/payment-qr.png`;
+    const dynamicFastQR = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
+    const localStandeeQR = `assets/images/payment-qr.png`;
 
     const configuredWhatsApp = "916290407730";
     const waPaymentText = `Hello Custom Zone,\nI have sent the payment.\n\n*Payment Reference:* ${paymentRef}\n*Customer:* ${customerName}\n*Amount:* ₹${amount}\n\nPlease verify screenshot.`;
@@ -443,20 +462,24 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
             <h2 style="color:var(--text-primary); margin:0 0 6px 0; font-weight:800; font-size:22px;">Scan & Pay ₹${amount}</h2>
             <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Scan with GooglePay, PhonePe, Paytm or any UPI App:</p>
             
-            <div style="margin:0 auto 16px auto; width:220px; height:220px; padding:10px; border:2px solid var(--blue-primary); border-radius:12px; background:#FFFFFF; display:flex; align-items:center; justify-content:center;">
-                <img src="${instantVectorQR}" onerror="this.src='${localQR}'" alt="Payment QR" style="width:100%; height:100%; object-fit:contain; display:block;">
+            <!-- Perfect Fitted QR Display Box -->
+            <div style="margin: 0 auto 16px auto; max-width: 260px; padding: 10px; border: 2px solid var(--blue-primary); border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+                <img src="${localStandeeQR}" onerror="this.src='${dynamicFastQR}'" alt="Payment QR" style="width: 100%; height: auto; object-fit: contain; display: block; border-radius: 6px;">
             </div>
 
             <p style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:16px;">UPI ID: ${upiId}</p>
 
-            <div style="max-width:400px; margin:0 auto 16px auto;">
+            <div style="max-width:420px; margin:0 auto 16px auto;">
                 <a href="${waUrl}" target="_blank" style="background:var(--success-green); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; padding:13px 20px; border-radius:8px; font-weight:700; font-size:14px; text-decoration:none;">
                     <i class="fab fa-whatsapp" style="font-size:18px;"></i> Send Payment Screenshot on WhatsApp
                 </a>
             </div>
 
-            <div style="background:#FFFBEB; border:1px solid #FCD34D; padding:12px; border-radius:8px; max-width:480px; margin:0 auto; font-size:11.5px; color:#92400E; text-align:left; line-height:1.4;">
-                <strong>⚠️ Verification Note:</strong> Your official <strong>Order ID</strong> will be confirmed automatically once our admin team verifies your payment screenshot.
+            <!-- Customer Profile Tracking Link Note -->
+            <div style="background:#FFFBEB; border:1px solid #FCD34D; padding:14px; border-radius:8px; max-width:480px; margin:0 auto; font-size:12px; color:#92400E; text-align:left; line-height:1.5;">
+                <strong>⚠️ Verification Note:</strong> Your official <strong>Order ID</strong> will be confirmed automatically once our admin team verifies your payment screenshot. 
+                <br><br>
+                👉 Track status directly anytime in your <a href="profile.html" style="color:#1D4ED8; font-weight:bold; text-decoration:underline;">Customer Profile & Orders Status</a>.
             </div>
         </div>
     `;
