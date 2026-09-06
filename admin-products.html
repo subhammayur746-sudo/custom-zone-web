@@ -46,8 +46,8 @@
         .thumb-preview-box img { width: 100%; height: 100%; object-fit: cover; }
         .thumb-preview-box .remove-thumb-btn { position: absolute; top: 2px; right: 2px; background: rgba(231, 76, 60, 0.9); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .variant-item-box, .qty-tier-item-box { background: #fafbfc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
-        .variant-grid-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px; }
+        .variant-item-box, .qty-tier-item-box, .size-item-box { background: #fafbfc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
+        .variant-grid-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
         
         .table-responsive-container { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 6px; }
         .admin-table { width: 100%; border-collapse: collapse; min-width: 750px; background: #fff; }
@@ -61,7 +61,7 @@
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
             .admin-card { padding: 15px; }
-            .variant-grid-fields { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .variant-grid-fields { grid-template-columns: 1fr; gap: 8px; }
         }
     </style>
 </head>
@@ -91,14 +91,12 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory, Vendors & Options</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory, Options & Sizes</h2>
 
         <div class="admin-card">
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
             <input type="hidden" id="prod-doc-id">
-            <input type="hidden" id="prod-old-discount-price">
-            <input type="hidden" id="prod-old-actual-price">
 
             <div class="form-grid-row">
                 <div class="form-group" style="margin:0;">
@@ -128,12 +126,12 @@
             <!-- Customer Pricing Row -->
             <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
-                    <label>Customer MRP / Actual Price (₹) *</label>
+                    <label>Base MRP / Strike Price (₹) *</label>
                     <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 299" min="1" required>
                     <small style="color:#7f8c8d; font-size:11px;">Shown strikethrough to customer</small>
                 </div>
                 <div class="form-group" style="margin:0;">
-                    <label>Customer Selling Price (₹) *</label>
+                    <label>Base Selling Price (₹) *</label>
                     <input type="number" id="prod-discount-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 199" min="1" required>
                     <small style="color:#27ae60; font-size:11px; font-weight:bold;" id="live-discount-preview">No discount applied</small>
                 </div>
@@ -162,6 +160,7 @@
                 </div>
             </div>
 
+            <!-- Product Main Images -->
             <div class="form-group" style="margin-top:15px;">
                 <label><i class="fas fa-images"></i> Product Photos (Direct Upload):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
@@ -177,21 +176,36 @@
                 <textarea id="prod-admin-note" rows="2" placeholder="Private inventory notes..." style="background:#fff;"></textarea>
             </div>
 
-            <!-- RESPONSIVE 2-STEP VARIANTS SECTION (SIZE + COLOR) -->
-            <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
+            <!-- OPTIONAL SIZE CONFIGURATION WITH EXTRA PRICE -->
+            <div style="background:#fefce8; border:2px dashed #ca8a04; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
-                    <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
-                        <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options (Size & Color)
+                    <label style="font-weight:bold; color:#854d0e; margin:0; cursor:pointer;">
+                        <input type="checkbox" id="toggle-sizes" onchange="toggleSizeSection(this.checked)"> Enable Size / Dimension Options (Optional for Shirts, Frames etc.)
                     </label>
-                    <span style="font-size:11px; background:#2c3e50; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 10 Combinations</span>
+                    <span style="font-size:11px; background:#ca8a04; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Custom Extra Price</span>
                 </div>
-                <div id="variants-container" style="display:none;">
-                    <div id="variant-items-list"></div>
-                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Variant</button>
+                <div id="sizes-container" style="display:none;">
+                    <p style="font-size:11.5px; color:#a16207; margin-bottom:10px;">Specify sizes and any additional price to add to the base rate (e.g. XL costs +₹50 extra).</p>
+                    <div id="size-items-list"></div>
+                    <button type="button" onclick="addSizeRow()" id="btn-add-size-row" style="background:#ca8a04; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Size Option</button>
                 </div>
             </div>
 
-            <!-- RESPONSIVE QUANTITY PRICING SECTION -->
+            <!-- COLOR/DESIGN VARIANTS WITH MULTI-IMAGE UPLOAD -->
+            <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
+                    <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
+                        <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Color / Design Variants (With Multi-Photo Support)
+                    </label>
+                    <span style="font-size:11px; background:#2c3e50; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 10 Options</span>
+                </div>
+                <div id="variants-container" style="display:none;">
+                    <div id="variant-items-list"></div>
+                    <button type="button" onclick="addVariantRow()" id="btn-add-variant-row" style="background:#3498db; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Color/Design Option</button>
+                </div>
+            </div>
+
+            <!-- BULK PACKAGE PRICING SECTION -->
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
@@ -224,7 +238,7 @@
                             <th style="width:70px;">Image</th>
                             <th>Product Details & Vendor</th>
                             <th>Category</th>
-                            <th>Pricing / Tiers</th>
+                            <th>Pricing / Options</th>
                             <th>Status</th>
                             <th style="width:120px;">Action</th>
                         </tr>
@@ -281,23 +295,6 @@
                     allVendorsCache.push(v);
                     select.innerHTML += `<option value="${v.name}">${v.name} (${v.phone || 'No WA'})</option>`;
                 });
-            } catch(e) {}
-        }
-
-        async function logSystemAction(action, targetId, oldPrice = null, newPrice = null) {
-            try {
-                let logData = {
-                    actor: loggedInUser.name || loggedInUser.username || "User",
-                    role: loggedInUser.role || "staff",
-                    action: action,
-                    targetId: targetId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                if (oldPrice !== null && newPrice !== null) {
-                    logData.oldPrice = oldPrice;
-                    logData.newPrice = newPrice;
-                }
-                await db.collection("audit_logs").add(logData);
             } catch(e) {}
         }
 
@@ -383,6 +380,40 @@
             renderImagePreviews();
         }
 
+        // --- SIZE OPTIONS LOGIC ---
+        function toggleSizeSection(isEnabled) {
+            const box = document.getElementById('sizes-container');
+            box.style.display = isEnabled ? 'block' : 'none';
+            if (isEnabled && document.querySelectorAll('.size-item-box').length === 0) {
+                addSizeRow("M", 0);
+                addSizeRow("L", 0);
+                addSizeRow("XL", 50);
+            }
+        }
+
+        function addSizeRow(name = "", extraPrice = 0) {
+            const list = document.getElementById('size-items-list');
+            const div = document.createElement('div');
+            div.className = 'size-item-box';
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:140px;">
+                        <label style="font-size:10.5px; font-weight:bold;">Size / Dimension Name:</label>
+                        <input type="text" placeholder="e.g., S, M, XL, 12x8 inch" value="${name}" class="size-name" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    </div>
+                    <div style="flex:1; min-width:140px;">
+                        <label style="font-size:10.5px; font-weight:bold;">Extra Price to Add (₹):</label>
+                        <input type="number" placeholder="0 for no extra" value="${extraPrice}" class="size-extra-price" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    </div>
+                    <div style="padding-top:16px;">
+                        <button type="button" onclick="this.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:3px; font-size:11px; cursor:pointer;">✕ Delete</button>
+                    </div>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
+        // --- COLOR/DESIGN VARIANTS LOGIC WITH MULTI-IMAGE SUPPORT ---
         function toggleVariantSection(isEnabled) {
             const box = document.getElementById('variants-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -391,37 +422,27 @@
             }
         }
 
-        function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "", size = "Standard") {
+        function addVariantRow(name = "", price = "", actualPrice = "", images = []) {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
             if (currentCount >= 10) {
-                alert("Maximum 10 variant combinations allowed per product.");
+                alert("Maximum 10 variant options allowed per product.");
                 return;
             }
+
+            const imagesJson = JSON.stringify(Array.isArray(images) ? images : (images ? [images] : []));
 
             const div = document.createElement('div');
             div.className = 'variant-item-box';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <strong style="font-size:12px; color:#2c3e50;">Variant Combination #${currentCount + 1}</strong>
+                    <strong style="font-size:12px; color:#2c3e50;">Option #${currentCount + 1}</strong>
                     <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div class="variant-grid-fields">
                     <div>
-                        <label style="font-size:10.5px; font-weight:bold;">Size / Dimension:</label>
-                        <select class="var-size" style="width:100%; padding:7px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                            <option value="Standard" ${size === 'Standard' ? 'selected' : ''}>Standard</option>
-                            <option value="Free Size" ${size === 'Free Size' ? 'selected' : ''}>Free Size</option>
-                            <option value="S" ${size === 'S' ? 'selected' : ''}>S (Small)</option>
-                            <option value="M" ${size === 'M' ? 'selected' : ''}>M (Medium)</option>
-                            <option value="L" ${size === 'L' ? 'selected' : ''}>L (Large)</option>
-                            <option value="XL" ${size === 'XL' ? 'selected' : ''}>XL</option>
-                            <option value="XXL" ${size === 'XXL' ? 'selected' : ''}>XXL</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size:10.5px; font-weight:bold;">Color / Design Name:</label>
-                        <input type="text" placeholder="e.g. Red / Matte Black" value="${name}" class="var-name" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                        <label style="font-size:10.5px; font-weight:bold;">Color / Design / Option Name:</label>
+                        <input type="text" placeholder="e.g. Crimson Red / Matte Black" value="${name}" class="var-name" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
                     <div>
                         <label style="font-size:10.5px; font-weight:bold;">MRP (₹):</label>
@@ -432,47 +453,80 @@
                         <input type="number" placeholder="Sale Price" value="${price}" class="var-price" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                    <input type="file" accept="image/*" onchange="handleVariantImageUpload(this)" style="font-size:11px; flex:1;">
-                    <input type="hidden" class="var-img-data" value="${img}">
-                    <img src="${img || ''}" class="var-img-preview" style="width:34px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #ccc; display:${img ? 'block' : 'none'};">
+                
+                <!-- Variant Multi-Image Upload -->
+                <div style="margin-top:8px; border-top:1px dashed #ddd; padding-top:8px;">
+                    <label style="font-size:11px; font-weight:bold; color:#475569;"><i class="fas fa-images"></i> Upload Variant Photos (Multiple supported):</label>
+                    <input type="file" accept="image/*" multiple onchange="handleVariantMultiImageUpload(this)" style="font-size:11px; display:block; margin-top:4px;">
+                    <input type="hidden" class="var-images-data" value='${imagesJson.replace(/'/g, "&apos;")}'>
+                    <div class="var-images-preview-row" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;"></div>
                 </div>
             `;
             list.appendChild(div);
+            renderVariantThumbnails(div.querySelector('.var-images-preview-row'), Array.isArray(images) ? images : (images ? [images] : []));
             updateVariantAddButton();
         }
 
-        function handleVariantImageUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
+        function handleVariantMultiImageUpload(input) {
+            const files = Array.from(input.files);
+            if (!files.length) return;
             const parent = input.parentElement;
-            const hiddenInput = parent.querySelector('.var-img-data');
-            const previewImg = parent.querySelector('.var-img-preview');
+            const hiddenInput = parent.querySelector('.var-images-data');
+            const previewRow = parent.querySelector('.var-images-preview-row');
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const maxDim = 500;
-                    let w = img.width;
-                    let h = img.height;
-                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
-                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+            let currentImgs = [];
+            try { currentImgs = JSON.parse(hiddenInput.value) || []; } catch(e) {}
 
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 600;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                        else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
 
-                    const compressed = canvas.toDataURL('image/jpeg', 0.7);
-                    hiddenInput.value = compressed;
-                    previewImg.src = compressed;
-                    previewImg.style.display = 'block';
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+
+                        const compressed = canvas.toDataURL('image/jpeg', 0.72);
+                        currentImgs.push(compressed);
+                        hiddenInput.value = JSON.stringify(currentImgs);
+                        renderVariantThumbnails(previewRow, currentImgs);
+                    };
                 };
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            });
+            input.value = "";
+        }
+
+        function renderVariantThumbnails(container, imgs) {
+            container.innerHTML = "";
+            imgs.forEach((src, idx) => {
+                const box = document.createElement('div');
+                box.style.cssText = "position:relative; width:45px; height:45px; border-radius:4px; overflow:hidden; border:1px solid #cbd5e1;";
+                box.innerHTML = `
+                    <img src="${src}" style="width:100%; height:100%; object-fit:cover;">
+                    <span onclick="removeVariantImage(this, ${idx})" style="position:absolute; top:0; right:0; background:rgba(239,68,68,0.85); color:#fff; width:14px; height:14px; font-size:9px; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</span>
+                `;
+                container.appendChild(box);
+            });
+        }
+
+        function removeVariantImage(btn, idx) {
+            const parentBox = btn.closest('.var-images-preview-row').parentElement;
+            const hiddenInput = parentBox.querySelector('.var-images-data');
+            let imgs = [];
+            try { imgs = JSON.parse(hiddenInput.value) || []; } catch(e) {}
+            imgs.splice(idx, 1);
+            hiddenInput.value = JSON.stringify(imgs);
+            renderVariantThumbnails(parentBox.querySelector('.var-images-preview-row'), imgs);
         }
 
         function updateVariantAddButton() {
@@ -482,6 +536,7 @@
             if (btn) btn.style.display = count >= 10 ? 'none' : 'inline-block';
         }
 
+        // --- BULK TIER LOGIC ---
         function toggleQtyPricingSection(isEnabled) {
             const box = document.getElementById('qty-pricing-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -547,12 +602,16 @@
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
                 let vendorBadge = p.vendorName ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;"><i class="fas fa-truck-loading"></i> Vendor: ${p.vendorName} (Cost: ₹${p.vendorCost || 0})</span>` : '';
                 
+                let sizeBadge = (p.hasSizes && p.sizes && p.sizes.length > 0)
+                    ? `<span style="background:#ca8a04; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.sizes.length} Sizes</span> `
+                    : '';
+
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) 
-                    ? `<span style="background:#2c3e50; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.variants.length} Variants</span>`
+                    ? `<span style="background:#2c3e50; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.variants.length} Colors</span> `
                     : '';
 
                 let qtyBadge = (p.hasQtyPricing && p.qtyTiers && p.qtyTiers.length > 0) 
-                    ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.qtyTiers.length} Qty Tiers</span>` 
+                    ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">Bulk Package</span>` 
                     : '';
 
                 let discountPrice = parseInt(p.discountPrice || p.price) || 0;
@@ -569,7 +628,7 @@
                             ${vendorBadge}
                         </td>
                         <td><span style="background:#f8f9fa; color:#2c3e50; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px; border:1px solid #eee;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
-                        <td><strong style="color:#27ae60; font-size:14px;">₹${discountPrice}</strong><br>${variantBadge} ${qtyBadge}</td>
+                        <td><strong style="color:#27ae60; font-size:14px;">₹${discountPrice}</strong><br>${sizeBadge}${variantBadge}${qtyBadge}</td>
                         <td>
                             <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
@@ -626,6 +685,22 @@
             uploadedProductImages = prod.images ? [...prod.images] : [];
             renderImagePreviews();
 
+            // Load Sizes
+            const toggleSizes = document.getElementById('toggle-sizes');
+            const sizeList = document.getElementById('size-items-list');
+            sizeList.innerHTML = "";
+            if (prod.hasSizes && Array.isArray(prod.sizes) && prod.sizes.length > 0) {
+                toggleSizes.checked = true;
+                document.getElementById('sizes-container').style.display = 'block';
+                prod.sizes.forEach(s => {
+                    addSizeRow(s.name, s.extraPrice || 0);
+                });
+            } else {
+                toggleSizes.checked = false;
+                document.getElementById('sizes-container').style.display = 'none';
+            }
+
+            // Load Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -634,13 +709,15 @@
                 toggle.checked = true;
                 toggleVariantSection(true);
                 prod.variants.forEach(v => {
-                    addVariantRow(v.name, v.type || "Color", v.price, v.actualPrice || "", v.image || "", v.size || "Standard");
+                    let varImgs = v.images || (v.image ? [v.image] : []);
+                    addVariantRow(v.name, v.price, v.actualPrice || "", varImgs);
                 });
             } else {
                 toggle.checked = false;
                 toggleVariantSection(false);
             }
 
+            // Load Qty Tiers
             const toggleQty = document.getElementById('toggle-qty-pricing');
             const qtyList = document.getElementById('qty-tier-items-list');
             qtyList.innerHTML = "";
@@ -674,6 +751,11 @@
             document.getElementById('prod-admin-note').value = "";
             uploadedProductImages = [];
             renderImagePreviews();
+
+            document.getElementById('toggle-sizes').checked = false;
+            document.getElementById('size-items-list').innerHTML = "";
+            document.getElementById('sizes-container').style.display = 'none';
+
             document.getElementById('toggle-variants').checked = false;
             document.getElementById('variant-items-list').innerHTML = "";
             toggleVariantSection(false);
@@ -700,36 +782,51 @@
             const discountPrice = parseInt(document.getElementById('prod-discount-price').value) || 0;
             const customType = document.getElementById('prod-custom-type').value;
             const adminNote = document.getElementById('prod-admin-note').value.trim();
+            const isSizesEnabled = document.getElementById('toggle-sizes').checked;
             const isVariantsEnabled = document.getElementById('toggle-variants').checked;
             const isQtyPricingEnabled = document.getElementById('toggle-qty-pricing').checked;
 
             if (!name) { alert("Please provide product name."); return; }
             if (actualPrice <= 0 || discountPrice <= 0) { alert("Please enter valid prices."); return; }
 
+            // Extract Sizes
+            let sizes = [];
+            if (isSizesEnabled) {
+                const sizeRows = document.querySelectorAll('.size-item-box');
+                sizeRows.forEach(r => {
+                    let sName = r.querySelector('.size-name').value.trim();
+                    let sExtra = parseInt(r.querySelector('.size-extra-price').value) || 0;
+                    if (sName) {
+                        sizes.push({ name: sName, extraPrice: sExtra });
+                    }
+                });
+            }
+
+            // Extract Color Variants
             let variants = [];
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
                 rows.forEach(r => {
-                    let vSize = r.querySelector('.var-size').value;
                     let vName = r.querySelector('.var-name').value.trim();
                     let vActual = parseInt(r.querySelector('.var-actual-price').value) || actualPrice;
                     let vPrice = parseInt(r.querySelector('.var-price').value) || discountPrice;
-                    let vImg = r.querySelector('.var-img-data').value.trim();
+                    let vImages = [];
+                    try { vImages = JSON.parse(r.querySelector('.var-images-data').value) || []; } catch(e) {}
 
                     if (vName) {
                         variants.push({
                             name: vName,
-                            size: vSize,
-                            type: 'Color',
                             actualPrice: vActual,
                             price: vPrice,
-                            image: vImg,
+                            image: vImages.length > 0 ? vImages[0] : "",
+                            images: vImages,
                             isActive: true
                         });
                     }
                 });
             }
 
+            // Extract Bulk Tiers
             let qtyTiers = [];
             if (isQtyPricingEnabled) {
                 const qtyRows = document.querySelectorAll('.qty-tier-item-box');
@@ -754,6 +851,8 @@
                 customType: customType,
                 images: uploadedProductImages,
                 adminNote: adminNote,
+                hasSizes: isSizesEnabled && sizes.length > 0,
+                sizes: sizes,
                 hasVariants: isVariantsEnabled && variants.length > 0,
                 variants: variants.slice(0, 10),
                 hasQtyPricing: isQtyPricingEnabled && qtyTiers.length > 0,
@@ -769,11 +868,9 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
-                    await logSystemAction("Updated Product Details & Vendor", name);
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    await logSystemAction("Added New Product", name);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();
