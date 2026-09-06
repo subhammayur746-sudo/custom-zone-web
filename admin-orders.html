@@ -33,17 +33,17 @@
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
         .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 950px; }
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
         
-        .btn-act { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-act { border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 11.5px; margin-right: 3px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .btn-invoice { background: #3498db; color: #fff; }
         .btn-receipt { background: #8e44ad; color: #fff; }
         .btn-vendor-slip { background: #3730a3; color: #fff; }
         .btn-wa { background: #25d366; color: #fff; }
         .btn-del { background: #e74c3c; color: #fff; }
 
-        /* PERFECT PRINT STYLES (CENTERED + LOGO PRESERVED) */
         @media print {
             body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
@@ -137,7 +137,7 @@
                         <th>Vendor Partner</th>
                         <th>Items & Total</th>
                         <th>Status</th>
-                        <th style="min-width:260px;">Actions</th>
+                        <th style="min-width:300px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
@@ -147,7 +147,7 @@
         </div>
     </div>
 
-    <!-- Centered Thermal / A4 Print Modal -->
+    <!-- Print Slip Modal -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); z-index:99999; justify-content:center; align-items:center; padding:15px;">
         <div style="background:#fff; width:100%; max-width:440px; padding:25px 20px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-slip-area">
             <span onclick="closeReceiptModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
@@ -344,10 +344,12 @@
                     ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">${ord.vendorName}</span><br><small style="color:#4338ca; font-size:10.5px;">Cost: ₹${ord.vendorCost || 0}</small>`
                     : `<span style="color:#64748b; font-size:11px;">In-House</span>`;
 
+                let orderDisplayId = ord.orderId || ord.docId;
+
                 tbody.innerHTML += `
                     <tr>
                         <td>
-                            <strong style="color:#2980b9; font-size:13.5px;">#${ord.orderId || ord.docId}</strong><br>
+                            <strong style="color:#2980b9; font-size:13.5px;">#${orderDisplayId}</strong><br>
                             <small style="color:#7f8c8d;">${ord.date || 'Recent'}</small>
                         </td>
                         <td>
@@ -369,12 +371,19 @@
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
+                            <!-- Official Invoice Generator Button -->
+                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
+
+                            <!-- Customer Slip & WhatsApp -->
                             <button class="btn-act btn-receipt" onclick="viewCustomerSlip('${ord.docId}')" title="Customer Slip"><i class="fas fa-receipt"></i> Slip</button>
                             <button class="btn-act btn-wa" onclick="sendCustomerWhatsApp('${ord.docId}')" title="Customer WA"><i class="fab fa-whatsapp"></i> Cust</button>
+                            
+                            <!-- Vendor Sourcing Slip & WhatsApp -->
                             ${ord.vendorName && ord.vendorName !== "In-House" ? `
                                 <button class="btn-act btn-vendor-slip" onclick="viewVendorSlip('${ord.docId}')" title="Vendor Slip"><i class="fas fa-file-invoice"></i> Vendor PO</button>
                                 <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendVendorWhatsApp('${ord.docId}')" title="Vendor WA"><i class="fab fa-whatsapp"></i> Vendor</button>
                             ` : ''}
+
                             ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
                         </td>
                     </tr>
@@ -406,7 +415,6 @@
             }
         }
 
-        // CUSTOMER SLIP (WITH LOGO & CENTERED LAYOUT)
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -449,7 +457,6 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // VENDOR SLIP
         function viewVendorSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
