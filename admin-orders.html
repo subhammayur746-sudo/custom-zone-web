@@ -44,7 +44,6 @@
         .btn-del { background: #e74c3c; color: #fff; }
         .btn-dis { background: #bdc3c7; color: #7f8c8d; cursor: not-allowed; }
 
-        /* Professional Receipt Slip Print Styles */
         @media print {
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt * { visibility: visible; }
@@ -99,7 +98,6 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Payment Verification & All Customer Orders</h2>
 
-        <!-- Step 1: Unverified Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                 <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot & Mark Paid)</h3>
@@ -121,10 +119,9 @@
             </table>
         </div>
 
-        <!-- Step 2: All Confirmed Orders -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders (Past & New Records)</h3>
+                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders</h3>
                 <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Phone..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
             </div>
             
@@ -140,19 +137,16 @@
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
-                    <tr><td colspan="6" style="text-align:center;">Loading all orders from database...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Loading orders...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Redesigned High-End Receipt Slip Modal -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); z-index:99999; justify-content:center; align-items:center; padding:15px;">
         <div style="background:#fff; width:100%; max-width:440px; padding:28px 24px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-receipt">
             <span onclick="closeReceiptModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
-            
             <div id="receipt-content"></div>
-
             <div class="no-print-slip" style="text-align:center; margin-top:22px; display:flex; gap:10px; justify-content:center;">
                 <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 22px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
                     <i class="fas fa-print"></i> Print Slip
@@ -247,9 +241,12 @@
                             <td><strong>${p.customerName}</strong><br><small>${p.phone}</small></td>
                             <td style="max-width:250px; font-size:12px;">${p.actualDeliveryAddress || '-'}</td>
                             <td><strong style="color:#27ae60; font-size:14px;">₹${p.totalAmount}</strong></td>
-                            <td>
-                                <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                                    <i class="fas fa-check-circle"></i> Verify & Mark Paid
+                            <td style="white-space:nowrap;">
+                                <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                                    <i class="fas fa-check-circle"></i> Verify
+                                </button>
+                                <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;" title="Delete Test Record">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -257,6 +254,19 @@
                 });
             } catch(e) {
                 tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading pending payments.</td></tr>";
+            }
+        }
+
+        async function deletePendingPayment(paymentRef) {
+            if (!isMainAdminUser()) { alert("❌ Only Admin can delete!"); return; }
+            if (confirm(`Permanently delete pending payment ${paymentRef}? This will remove it from customer profile too.`)) {
+                try {
+                    await db.collection("pending_payments").doc(paymentRef).delete();
+                    alert("✓ Pending test order deleted!");
+                    loadPendingPayments();
+                } catch(e) {
+                    alert("Failed to delete.");
+                }
             }
         }
 
@@ -445,9 +455,16 @@
             if (!isMainAdminUser()) { alert("❌ Access Denied!"); return; }
             if (confirm(`Permanently delete order #${docId}?`)) {
                 try {
+                    let ordDoc = await db.collection("orders").doc(docId).get();
+                    if (ordDoc.exists) {
+                        let pRef = ordDoc.data().paymentReference;
+                        if (pRef) {
+                            await db.collection("pending_payments").doc(pRef).delete();
+                        }
+                    }
                     await db.collection("orders").doc(docId).delete();
                     await logSystemAction("Permanently Deleted Order", docId);
-                    alert("✓ Order deleted successfully!");
+                    alert("✓ Order deleted successfully from all records!");
                     fetchAdminOrders();
                 } catch(e) { alert("Error deleting order."); }
             }
@@ -462,7 +479,6 @@
             window.open(`https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // REDESIGNED CLASSIC POS/RECEIPT SLIP LOOK
         function viewOrderReceipt(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -492,19 +508,16 @@
             }
 
             document.getElementById('receipt-content').innerHTML = `
-                <!-- Receipt Header -->
                 <div style="text-align:center; border-bottom:2px dashed #0f172a; padding-bottom:14px; margin-bottom:14px;">
                     <img src="assets/images/logo.png" onerror="this.style.display='none'" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px;">
                     <h2 style="margin:0; font-size:20px; font-weight:800; color:#0f172a; letter-spacing:-0.5px;">CUSTOM ZONE</h2>
                     <p style="margin:1px 0; font-size:11px; color:#475569; font-weight:500;">You Imagine. We Customize.</p>
                     <p style="margin:1px 0; font-size:10.5px; color:#64748b;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
-                    
                     <div style="display:inline-block; background:#0f172a; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:4px; margin-top:8px;">
                         ORDER SLIP: #${ord.orderId || ord.docId}
                     </div>
                 </div>
 
-                <!-- Customer Details -->
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; font-size:12px; line-height:1.5; margin-bottom:14px; color:#334155;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
                         <span><strong>Date:</strong> ${ord.date || 'Recent'}</span>
@@ -516,7 +529,6 @@
                     ${ord.greetingNote ? `<div style="color:#d97706; margin-top:3px;"><strong>Note:</strong> "${ord.greetingNote}"</div>` : ''}
                 </div>
 
-                <!-- Items Table -->
                 <table style="width:100%; border-collapse:collapse; margin-bottom:14px;">
                     <thead>
                         <tr style="border-bottom:1.5px solid #0f172a; text-align:left; font-size:11px; text-transform:uppercase; color:#64748b;">
@@ -527,7 +539,6 @@
                     <tbody>${itemsRows}</tbody>
                 </table>
 
-                <!-- Summary & Total -->
                 <div style="border-top:1.5px solid #0f172a; padding-top:8px; font-size:12.5px; color:#475569;">
                     <div style="display:flex; justify-content:space-between; padding:2px 0;">
                         <span>Subtotal:</span>
@@ -549,7 +560,6 @@
                     </div>
                 </div>
 
-                <!-- Footer Thank You Note -->
                 <div style="text-align:center; margin-top:18px; border-top:1px dashed #cbd5e1; padding-top:10px; font-size:11px; color:#64748b;">
                     <p style="margin:0; font-weight:600; color:#0f172a;">Thank you for shopping with Custom Zone!</p>
                     <small>Visit: customzone.in</small>

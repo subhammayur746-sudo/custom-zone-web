@@ -259,7 +259,6 @@ async function lookupPincode(pin) {
     }
 }
 
-// STRICT 100% BULLETPROOF ONE-TIME USE PER PHONE NUMBER VERIFICATION
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
@@ -439,17 +438,15 @@ async function submitOrderViaWhatsApp() {
     }
 }
 
-// FITTED QR WITH EXACT .JPEG EXTENSION & REAL-TIME CACHE BUSTER
 function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const container = document.querySelector('.cart-layout');
     if (!container) return;
 
     const upiId = "subhammayur746@oksbi";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
-    const dynamicFastQR = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
-    
-    // EXACT PATH FROM YOUR VS CODE SCREENSHOT (.jpeg with cache breaker)
-    const localStandeeQR = `assets/images/payment-qr.jpeg?t=${Date.now()}`;
+    const dynamicFastQR = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=5&data=${encodeURIComponent(upiPayUrl)}`;
+    const localStandeeQR = `assets/images/payment-qr.jpeg`;
+    const rootStandeeQR = `payment-qr.jpeg`;
 
     const configuredWhatsApp = "916290407730";
     const waPaymentText = `Hello Custom Zone,\nI have sent the payment.\n\n*Payment Reference:* ${paymentRef}\n*Customer:* ${customerName}\n*Amount:* ₹${amount}\n\nPlease verify screenshot.`;
@@ -463,9 +460,11 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
             <h2 style="color:var(--text-primary); margin:0 0 6px 0; font-weight:800; font-size:22px;">Scan & Pay ₹${amount}</h2>
             <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Scan with GooglePay, PhonePe, Paytm or any UPI App:</p>
             
-            <!-- Crisp Fitted Standee QR Box -->
-            <div style="margin: 0 auto 16px auto; max-width: 270px; padding: 10px; border: 2px solid var(--blue-primary); border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center;">
-                <img src="${localStandeeQR}" onerror="this.src='${dynamicFastQR}'" alt="Payment QR" style="width: 100%; height: auto; object-fit: contain; display: block; border-radius: 6px;">
+            <div style="margin: 0 auto 16px auto; width: 260px; min-height: 260px; padding: 10px; border: 2px solid var(--blue-primary); border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <img src="${localStandeeQR}" 
+                     onerror="this.onerror=null; this.src='${rootStandeeQR}'; this.onerror=()=>this.src='${dynamicFastQR}';" 
+                     alt="Payment QR" 
+                     style="width: 100%; height: auto; max-height: 320px; object-fit: contain; display: block; border-radius: 6px;">
             </div>
 
             <p style="font-size:13px; font-weight:bold; color:var(--blue-primary); margin-bottom:16px;">UPI ID: ${upiId}</p>

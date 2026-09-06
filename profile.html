@@ -33,7 +33,6 @@
 </head>
 <body>
 
-    <!-- Professional Navbar -->
     <header class="navbar">
         <div class="nav-brand-section">
             <a href="index.html" class="logo-link">
@@ -59,7 +58,6 @@
     </header>
 
     <div class="profile-container">
-        <!-- Customer Details Box -->
         <div class="profile-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:14px;">
@@ -82,13 +80,12 @@
             </div>
         </div>
 
-        <!-- Orders & Verification History -->
         <h3 style="color:#1e293b; margin-bottom:14px; font-size:16px;">
             <i class="fas fa-box-open" style="color:#28469E;"></i> All My Orders & Payment Verification Status
         </h3>
 
         <div id="customer-orders-container">
-            <p style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Fetching all your placed orders...</p>
+            <p style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Fetching your orders...</p>
         </div>
     </div>
 
@@ -114,7 +111,6 @@
             window.location.href = "index.html";
         }
 
-        // FETCH ALL ORDERS (MULTIPLE RECORDS SUPPORTED)
         async function fetchCustomerAllOrders() {
             const container = document.getElementById('customer-orders-container');
             let cleanPhone = currentCustomer.phone.replace(/[^0-9]/g, '');
@@ -126,31 +122,37 @@
             document.getElementById('profile-address').innerText = currentCustomer.savedAddress || "Not provided";
 
             try {
-                // 1. Fetch from Pending Payments (Unverified/Awaiting Admin Verification)
-                const pendingSnap = await db.collection("pending_payments")
-                    .where("phone", "==", cleanPhone)
-                    .get();
-
-                // 2. Fetch from Confirmed Orders
-                const confirmedSnap = await db.collection("orders")
-                    .where("phone", "==", cleanPhone)
-                    .get();
-
-                let allOrders = [];
-
-                pendingSnap.forEach(doc => {
-                    let d = doc.data();
-                    d.type = "pending";
-                    d.displayId = d.paymentReference || doc.id;
-                    allOrders.push(d);
-                });
+                // 1. Fetch Confirmed Orders
+                const confirmedSnap = await db.collection("orders").where("phone", "==", cleanPhone).get();
+                let confirmedList = [];
+                let confirmedRefs = new Set();
 
                 confirmedSnap.forEach(doc => {
                     let d = doc.data();
                     d.type = "confirmed";
                     d.displayId = d.orderId || doc.id;
-                    allOrders.push(d);
+                    confirmedList.push(d);
+                    if (d.paymentReference) confirmedRefs.add(d.paymentReference);
                 });
+
+                // 2. Fetch Pending Payments (EXCLUDING ones already converted or marked Paid)
+                const pendingSnap = await db.collection("pending_payments")
+                    .where("phone", "==", cleanPhone)
+                    .where("paymentStatus", "==", "Pending")
+                    .get();
+
+                let pendingList = [];
+                pendingSnap.forEach(doc => {
+                    let d = doc.data();
+                    // Avoid showing pending if already confirmed
+                    if (!confirmedRefs.has(d.paymentReference)) {
+                        d.type = "pending";
+                        d.displayId = d.paymentReference || doc.id;
+                        pendingList.push(d);
+                    }
+                });
+
+                let allOrders = [...confirmedList, ...pendingList];
 
                 if (allOrders.length === 0) {
                     container.innerHTML = `
@@ -164,7 +166,6 @@
                     return;
                 }
 
-                // Sort: Newest orders first
                 allOrders.sort((a, b) => {
                     let timeA = a.createdAt?.seconds || a.verifiedAt?.seconds || 0;
                     let timeB = b.createdAt?.seconds || b.verifiedAt?.seconds || 0;
@@ -201,7 +202,7 @@
                             <div class="order-head-row">
                                 <div>
                                     <strong style="color:#0f172a; font-size:13.5px;">${isPending ? 'Payment Ref' : 'Order ID'}: #${ord.displayId}</strong>
-                                    <div style="font-size:11px; color:#64748b; margin-top:2px;">Placed on: ${ord.date || 'Recent'}</div>
+                                    <div style="font-size:11px; color:#64748b; margin-top:2px;">Date: ${ord.date || 'Recent'}</div>
                                 </div>
                                 <div>
                                     <span class="status-badge ${badgeClass}">${status}</span>
@@ -213,13 +214,13 @@
                             </div>
 
                             <div style="display:flex; justify-content:space-between; align-items:center; font-size:12.5px; border-top:1px dashed #e2e8f0; padding-top:8px;">
-                                <span style="color:#64748b;">Total Paid / Payable:</span>
+                                <span style="color:#64748b;">Amount:</span>
                                 <strong style="color:#16a34a; font-size:14px;">₹${ord.totalAmount || ord.total || 0}</strong>
                             </div>
 
                             ${isPending ? `
                                 <div style="background:#fffbeb; border:1px solid #fde68a; padding:8px 10px; border-radius:4px; font-size:11px; color:#92400e; margin-top:8px;">
-                                    ℹ️ Our team is verifying your payment screenshot on WhatsApp. Your official <strong>Order ID</strong> will be generated right after verification.
+                                    ℹ️ Our team is verifying your payment screenshot. Order ID will be generated right after verification.
                                 </div>
                             ` : ''}
                         </div>
