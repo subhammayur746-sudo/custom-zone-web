@@ -52,7 +52,6 @@
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
         }
 
-        /* 1-PAGE PORTRAIT PERFECT PRINTING */
         @media print {
             @page {
                 size: portrait;
@@ -127,7 +126,7 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Orders, Verification & Vendor Sourcing</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Orders, Verification & Multi-Vendor Routing</h2>
 
         <!-- Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
@@ -154,8 +153,8 @@
         <!-- Confirmed Orders -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders</h3>
-                <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
+                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders & Vendor Partners</h3>
+                <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Vendor, Product..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
             </div>
             
             <table class="admin-table">
@@ -163,10 +162,10 @@
                     <tr>
                         <th>Order ID / Date</th>
                         <th>Customer & Phone</th>
-                        <th>Vendor Partner</th>
+                        <th>Assigned Vendors</th>
                         <th>Items & Total</th>
                         <th>Status</th>
-                        <th style="min-width:300px;">Actions</th>
+                        <th style="min-width:320px;">Actions (Customer & Separate Vendor PO)</th>
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
@@ -183,7 +182,7 @@
             <div id="slip-content-body"></div>
             <div class="no-print-slip" style="text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center;">
                 <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:9px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px;">
-                    <i class="fas fa-print"></i> Print Invoice
+                    <i class="fas fa-print"></i> Print Document
                 </button>
                 <button onclick="closeReceiptModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:9px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
                     Close
@@ -221,14 +220,19 @@
                 const vSnap = await db.collection("staff").where("role", "==", "vendor").get();
                 vSnap.forEach(d => {
                     let data = d.data();
-                    vendorsMap[data.name] = data.phone || "";
+                    vendorsMap[data.name.trim().toLowerCase()] = {
+                        name: data.name,
+                        phone: data.phone || data.username || ""
+                    };
                 });
 
                 const pSnap = await db.collection("products").get();
                 pSnap.forEach(d => {
                     let p = d.data();
-                    productsCatalogMap[p.name] = {
-                        vendorName: p.vendorName || "In-House",
+                    let cleanKey = (p.name || "").trim().toLowerCase();
+                    productsCatalogMap[cleanKey] = {
+                        name: p.name,
+                        vendorName: p.vendorName ? p.vendorName.trim() : "In-House",
                         vendorCost: parseInt(p.vendorCost) || 0,
                         image: (p.images && p.images.length > 0) ? p.images[0] : 'assets/images/logo.png'
                     };
@@ -287,6 +291,7 @@
             }
         }
 
+        // CONFIRM ORDER WITH ITEM-WISE VENDOR METADATA
         async function verifyAndMarkPaid(paymentRef) {
             if (!confirm(`Verify payment for ${paymentRef}?`)) return;
             try {
@@ -295,27 +300,24 @@
                 const p = pDoc.data();
                 const finalOrderId = "CZ" + Math.floor(10000 + Math.random() * 90000);
 
-                let assignedVendor = "In-House";
-                let totalVendorCost = 0;
-                if (Array.isArray(p.items) && p.items.length > 0) {
-                    let firstItem = p.items[0];
-                    let prodInfo = productsCatalogMap[firstItem.name];
-                    if (prodInfo && prodInfo.vendorName) {
-                        assignedVendor = prodInfo.vendorName;
-                        totalVendorCost = prodInfo.vendorCost * (firstItem.quantity || 1);
-                    }
-                }
+                let updatedItems = [];
+                let itemVendorsSet = new Set();
 
-                // Generate Sequential Vendor Invoice ID (CZ-V-0001, CZ-V-0002...)
-                let vendorInvoiceId = "";
-                if (assignedVendor !== "In-House") {
-                    const countDoc = await db.collection("settings").doc("vendor_invoice_counter").get();
-                    let currentCount = 1;
-                    if (countDoc.exists && countDoc.data().count) {
-                        currentCount = countDoc.data().count + 1;
-                    }
-                    await db.collection("settings").doc("vendor_invoice_counter").set({ count: currentCount });
-                    vendorInvoiceId = "CZ-V-" + String(currentCount).padStart(4, '0');
+                if (Array.isArray(p.items)) {
+                    p.items.forEach(it => {
+                        let cKey = (it.name || "").trim().toLowerCase();
+                        let pMeta = productsCatalogMap[cKey];
+                        let itemVendor = (pMeta && pMeta.vendorName) ? pMeta.vendorName : (it.vendorName || "In-House");
+                        let itemCost = (pMeta && pMeta.vendorCost) ? pMeta.vendorCost : (it.vendorCost || 0);
+
+                        updatedItems.push({
+                            ...it,
+                            vendorName: itemVendor,
+                            vendorCost: itemCost
+                        });
+
+                        if (itemVendor !== "In-House") itemVendorsSet.add(itemVendor);
+                    });
                 }
 
                 const confirmedPayload = {
@@ -324,16 +326,14 @@
                     customerId: p.customerId || "N/A",
                     customerName: p.customerName,
                     phone: p.phone,
-                    items: p.items,
+                    items: updatedItems.length > 0 ? updatedItems : p.items,
                     subTotal: p.subTotal || p.totalAmount,
                     deliveryFee: p.deliveryFee || 0,
                     discountGiven: p.discountGiven || 0,
                     totalAmount: p.totalAmount,
                     actualDeliveryAddress: p.actualDeliveryAddress || "",
                     greetingNote: p.greetingNote || "",
-                    vendorName: assignedVendor,
-                    vendorCost: totalVendorCost,
-                    vendorInvoiceId: vendorInvoiceId,
+                    vendorsList: Array.from(itemVendorsSet),
                     paymentStatus: "Paid",
                     orderStatus: "Processing",
                     verifiedBy: loggedInAdmin.username || "Admin",
@@ -373,21 +373,90 @@
             } catch(e) { tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading orders.</td></tr>"; }
         }
 
+        // DYNAMIC VENDOR DISCOVERY (WORKS FOR BOTH OLD & NEW ORDERS)
+        function getOrderVendorsMap(ord) {
+            let map = {}; // { "Ramesh Art": [item1, item2], "In-House": [item3] }
+
+            if (Array.isArray(ord.items) && ord.items.length > 0) {
+                ord.items.forEach(it => {
+                    let cKey = (it.name || "").trim().toLowerCase();
+                    let pMeta = productsCatalogMap[cKey];
+                    let vName = (it.vendorName && it.vendorName !== "In-House") 
+                        ? it.vendorName 
+                        : (pMeta && pMeta.vendorName ? pMeta.vendorName : "In-House");
+                    
+                    let unitCost = (it.vendorCost && it.vendorCost > 0) 
+                        ? it.vendorCost 
+                        : (pMeta && pMeta.vendorCost ? pMeta.vendorCost : 0);
+
+                    if (!map[vName]) map[vName] = [];
+                    map[vName].push({
+                        ...it,
+                        vendorCost: unitCost,
+                        image: it.image || (pMeta ? pMeta.image : 'assets/images/logo.png')
+                    });
+                });
+            } else {
+                let vName = ord.vendorName || "In-House";
+                map[vName] = [{
+                    name: ord.items || "Customized Item",
+                    vendorCost: ord.vendorCost || 0,
+                    quantity: 1
+                }];
+            }
+            return map;
+        }
+
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('confirmed-orders-tbody');
             tbody.innerHTML = "";
             let canDelete = isMainAdminUser();
 
             orders.forEach(ord => {
-                let itemsDetail = Array.isArray(ord.items) 
-                    ? ord.items.map(it => `• ${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1}`).join("<br>")
-                    : (ord.items || '-');
-
-                let vendorDisplay = ord.vendorName && ord.vendorName !== "In-House"
-                    ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">${ord.vendorName}</span><br><small style="color:#4338ca; font-size:10.5px;">Cost: ₹${ord.vendorCost || 0}</small>`
-                    : `<span style="color:#64748b; font-size:11px;">In-House</span>`;
-
                 let orderDisplayId = ord.orderId || ord.docId;
+                let vendorsOrderMap = getOrderVendorsMap(ord);
+                let vendorNames = Object.keys(vendorsOrderMap);
+
+                // Build Vendor Badges
+                let vendorBadgesHTML = "";
+                vendorNames.forEach(vn => {
+                    if (vn === "In-House") {
+                        vendorBadgesHTML += `<span style="background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-bottom:3px;">In-House</span><br>`;
+                    } else {
+                        let totalCostForV = vendorsOrderMap[vn].reduce((sum, x) => sum + (x.vendorCost * (x.quantity || 1)), 0);
+                        vendorBadgesHTML += `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-bottom:3px;"><i class="fas fa-truck-loading"></i> ${vn} (₹${totalCostForV})</span><br>`;
+                    }
+                });
+
+                // Items list with individual vendor tag
+                let itemsDetail = "";
+                if (Array.isArray(ord.items)) {
+                    itemsDetail = ord.items.map(it => {
+                        let cKey = (it.name || "").trim().toLowerCase();
+                        let pMeta = productsCatalogMap[cKey];
+                        let itemV = it.vendorName || (pMeta ? pMeta.vendorName : "In-House");
+                        return `• ${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1} <span style="font-size:10px; color:#64748b;">[${itemV}]</span>`;
+                    }).join("<br>");
+                } else {
+                    itemsDetail = ord.items || '-';
+                }
+
+                // Action Buttons (Dynamic for each external vendor)
+                let vendorActionsHTML = "";
+                vendorNames.forEach(vn => {
+                    if (vn !== "In-House") {
+                        vendorActionsHTML += `
+                            <div style="margin-top:4px;">
+                                <button class="btn-act btn-vendor-slip" onclick="viewIsolatedVendorInvoice('${ord.docId}', '${vn.replace(/'/g, "\\'")}')" title="Vendor Invoice for ${vn}">
+                                    <i class="fas fa-file-invoice"></i> PO: ${vn.split(' ')[0]}
+                                </button>
+                                <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendIsolatedVendorWhatsApp('${ord.docId}', '${vn.replace(/'/g, "\\'")}')" title="WhatsApp to ${vn}">
+                                    <i class="fab fa-whatsapp"></i> ${vn.split(' ')[0]}
+                                </button>
+                            </div>
+                        `;
+                    }
+                });
 
                 tbody.innerHTML += `
                     <tr>
@@ -399,9 +468,9 @@
                             <strong>${ord.customerName || 'Customer'}</strong><br>
                             <small>${ord.phone || '-'}</small>
                         </td>
-                        <td>${vendorDisplay}</td>
+                        <td>${vendorBadgesHTML}</td>
                         <td>
-                            <div style="font-size:11.5px; max-width:200px; max-height:70px; overflow-y:auto;">${itemsDetail}</div>
+                            <div style="font-size:11.5px; max-width:210px; max-height:75px; overflow-y:auto; line-height:1.4;">${itemsDetail}</div>
                             <strong style="color:#27ae60; font-size:13px;">₹${ord.totalAmount || 0}</strong>
                         </td>
                         <td>
@@ -414,20 +483,13 @@
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
-                            <!-- Official Customer Invoice -->
-                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
-
-                            <!-- Customer Slip & WhatsApp -->
-                            <button class="btn-act btn-receipt" onclick="viewCustomerSlip('${ord.docId}')" title="Customer Slip"><i class="fas fa-receipt"></i> Slip</button>
-                            <button class="btn-act btn-wa" onclick="sendCustomerWhatsApp('${ord.docId}')" title="Customer WA"><i class="fab fa-whatsapp"></i> Cust</button>
-                            
-                            <!-- Vendor Sourcing Invoice (CZ-V-0001) & WhatsApp -->
-                            ${ord.vendorName && ord.vendorName !== "In-House" ? `
-                                <button class="btn-act btn-vendor-slip" onclick="viewVendorInvoice('${ord.docId}')" title="Vendor Invoice"><i class="fas fa-file-invoice"></i> Vendor Inv</button>
-                                <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendVendorWhatsApp('${ord.docId}')" title="Vendor WA"><i class="fab fa-whatsapp"></i> Vendor</button>
-                            ` : ''}
-
-                            ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                            <div>
+                                <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Generate Invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
+                                <button class="btn-act btn-receipt" onclick="viewCustomerSlip('${ord.docId}')" title="Customer Slip"><i class="fas fa-receipt"></i> Slip</button>
+                                <button class="btn-act btn-wa" onclick="sendCustomerWhatsApp('${ord.docId}')" title="Customer WA"><i class="fab fa-whatsapp"></i> Cust</button>
+                                ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
+                            </div>
+                            ${vendorActionsHTML}
                         </td>
                     </tr>
                 `;
@@ -437,9 +499,11 @@
         function filterOrdersTable() {
             let term = document.getElementById('order-search').value.toLowerCase().trim();
             let filtered = allOrdersCache.filter(o => {
+                let vMap = getOrderVendorsMap(o);
+                let vNames = Object.keys(vMap).join(' ').toLowerCase();
                 return (o.orderId && o.orderId.toLowerCase().includes(term)) ||
                        (o.customerName && o.customerName.toLowerCase().includes(term)) ||
-                       (o.vendorName && o.vendorName.toLowerCase().includes(term)) ||
+                       (vNames.includes(term)) ||
                        (o.phone && o.phone.includes(term));
             });
             renderOrdersTable(filtered);
@@ -458,6 +522,7 @@
             }
         }
 
+        // 1. FULL CUSTOMER RETAIL SLIP
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -500,38 +565,45 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // VENDOR WORK INVOICE (CZ-V-XXXX SEQUENCE + PICTURE + PRIVATE RATE + NOTE)
-        function viewVendorInvoice(docId) {
+        // 2. ISOLATED VENDOR INVOICE (ONLY PRODUCTS SOURCED FROM THIS SPECIFIC VENDOR)
+        function viewIsolatedVendorInvoice(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
-            let vInvId = ord.vendorInvoiceId || ("CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0'));
+            let vendorsMapForOrder = getOrderVendorsMap(ord);
+            let specificVendorItems = vendorsMapForOrder[vendorName] || [];
 
-            let itemsRows = "";
-            if (Array.isArray(ord.items)) {
-                itemsRows = ord.items.map(it => {
-                    let prodMeta = productsCatalogMap[it.name] || {};
-                    let prodImg = it.image || prodMeta.image || 'assets/images/logo.png';
-                    return `
-                        <tr>
-                            <td style="padding:8px 0; border-bottom:1px dashed #e2e8f0; width:55px;">
-                                <img src="${prodImg}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; display:block;">
-                            </td>
-                            <td style="padding:8px 10px; border-bottom:1px dashed #e2e8f0; font-size:12px;">
-                                <strong style="color:#0f172a; font-size:13px;">${it.name}</strong>
-                                ${it.variantName ? `<br><span style="color:#4338ca; font-weight:600;">Specification: ${it.variantName}</span>` : ''}
-                                ${it.userText ? `<br><span style="color:#b45309; font-weight:700;">Custom Print Text: "${it.userText}"</span>` : ''}
-                                <div style="font-size:11px; color:#64748b; margin-top:2px;">Quantity to Make: <strong>${it.quantity || 1} PCS</strong></div>
-                            </td>
-                            <td style="text-align:right; vertical-align:middle; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px; color:#3730a3;">
-                                ₹${ord.vendorCost || 0}
-                            </td>
-                        </tr>
-                    `;
-                }).join("");
-            } else {
-                itemsRows = `<tr><td colspan="3">${ord.items || '-'}</td></tr>`;
+            if (specificVendorItems.length === 0) {
+                alert(`No products found for vendor "${vendorName}" in this order.`);
+                return;
             }
+
+            let vInvId = "CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0');
+            let totalPayableToThisVendor = 0;
+
+            let itemsRows = specificVendorItems.map(it => {
+                let qty = it.quantity || 1;
+                let unitCost = it.vendorCost || 0;
+                let lineCost = unitCost * qty;
+                totalPayableToThisVendor += lineCost;
+
+                return `
+                    <tr>
+                        <td style="padding:8px 0; border-bottom:1px dashed #e2e8f0; width:55px;">
+                            <img src="${it.image || 'assets/images/logo.png'}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; display:block;">
+                        </td>
+                        <td style="padding:8px 10px; border-bottom:1px dashed #e2e8f0; font-size:12px;">
+                            <strong style="color:#0f172a; font-size:13px;">${it.name}</strong>
+                            ${it.variantName ? `<br><span style="color:#4338ca; font-weight:600;">Specification: ${it.variantName}</span>` : ''}
+                            ${it.userText ? `<br><span style="color:#b45309; font-weight:700;">Custom Print Text: "${it.userText}"</span>` : ''}
+                            <div style="font-size:11px; color:#64748b; margin-top:2px;">Quantity to Make: <strong>${qty} PCS</strong></div>
+                        </td>
+                        <td style="text-align:right; vertical-align:middle; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px; color:#3730a3;">
+                            ₹${lineCost}
+                        </td>
+                    </tr>
+                `;
+            }).join("");
 
             document.getElementById('slip-content-body').innerHTML = `
                 <div style="text-align:center; border-bottom:2px dashed #3730a3; padding-bottom:12px; margin-bottom:12px;">
@@ -543,7 +615,7 @@
 
                 <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:10px 12px; font-size:12px; margin-bottom:12px; line-height:1.5;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <span><strong>Vendor Partner:</strong> <strong style="color:#3730a3;">${ord.vendorName}</strong></span>
+                        <span><strong>Vendor Partner:</strong> <strong style="color:#3730a3;">${vendorName}</strong></span>
                         <span><strong>Date:</strong> ${ord.date || 'Recent'}</span>
                     </div>
                     <div style="border-top:1px dashed #c7d2fe; padding-top:4px; margin-top:4px;">
@@ -567,11 +639,10 @@
                 <div style="border-top:1.5px solid #3730a3; padding-top:6px; font-size:12px;">
                     <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:800;">
                         <span>Total Payable to Vendor:</span>
-                        <span style="color:#3730a3;">₹${ord.vendorCost || 0}</span>
+                        <span style="color:#3730a3;">₹${totalPayableToThisVendor}</span>
                     </div>
                 </div>
 
-                <!-- Mandatory Policy Note -->
                 <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px; margin-top:14px; font-size:11px; color:#991b1b; line-height:1.4;">
                     <strong>NOTE:</strong> WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.
                 </div>
@@ -590,21 +661,35 @@
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        function sendVendorWhatsApp(docId) {
+        // 3. SEND ISOLATED WHATSAPP TO SPECIFIC VENDOR
+        function sendIsolatedVendorWhatsApp(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
-            let vendorPhone = vendorsMap[ord.vendorName] || "";
-            if (!vendorPhone) { alert(`WhatsApp number not found for vendor "${ord.vendorName}".`); return; }
+
+            let vEntry = vendorsMap[vendorName.trim().toLowerCase()];
+            let vendorPhone = vEntry ? vEntry.phone : "";
+
+            if (!vendorPhone) {
+                alert(`WhatsApp number not found for vendor "${vendorName}". Please make sure phone is saved in Staff & Vendors page.`);
+                return;
+            }
+
             let p = vendorPhone.replace(/[^0-9]/g, '');
             if (p.length === 10) p = "91" + p;
 
-            let vInvId = ord.vendorInvoiceId || ("CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0'));
+            let vendorsMapForOrder = getOrderVendorsMap(ord);
+            let specificItems = vendorsMapForOrder[vendorName] || [];
 
-            let itemsTxt = Array.isArray(ord.items) 
-                ? ord.items.map(it => `• Item: ${it.name}\n  Specification: ${it.variantName || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS`).join('\n\n')
-                : ord.items;
+            let totalVendorPayable = 0;
+            let itemsTxt = specificItems.map(it => {
+                let lineCost = (it.vendorCost || 0) * (it.quantity || 1);
+                totalVendorPayable += lineCost;
+                return `• Item: ${it.name}\n  Specification: ${it.variantName || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS\n  Rate: ₹${lineCost}`;
+            }).join('\n\n');
 
-            let msg = `*NEW VENDOR WORK ORDER INVOICE*\nInvoice No: *${vInvId}*\nVendor: *${ord.vendorName}*\n\n*Product Specifications:*\n${itemsTxt}\n\n*Payable Rate to Vendor:* ₹${ord.vendorCost || 0}\n\n*Deliver To (Customer):*\nName: ${ord.customerName}\nPhone: ${ord.phone}\nAddress: ${ord.actualDeliveryAddress || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;
+            let vInvId = "CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0');
+
+            let msg = `*NEW VENDOR WORK ORDER INVOICE*\nInvoice No: *${vInvId}*\nVendor Partner: *${vendorName}*\n\n*Product Specifications (Assigned to You):*\n${itemsTxt}\n\n*Total Agreed Vendor Rate:* ₹${totalVendorPayable}\n\n*Deliver To (Customer):*\nName: ${ord.customerName}\nPhone: ${ord.phone}\nAddress: ${ord.actualDeliveryAddress || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 

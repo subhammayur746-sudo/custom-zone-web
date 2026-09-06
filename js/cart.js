@@ -88,17 +88,46 @@ async function loadAvailableCoupons() {
     } catch(e) { badge.style.display = "none"; }
 }
 
+// FULL ADDRESS AUTO-FILL (PIN, DISTRICT, POST OFFICE, AREA ALL SEPARATED)
 function autoFillCustomerAddress() {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) return;
 
     const nameInput = document.getElementById('cust-name');
     const phoneInput = document.getElementById('cust-phone');
+    const pinInput = document.getElementById('cust-pin');
+    const districtInput = document.getElementById('cust-district');
+    const poInput = document.getElementById('cust-postoffice');
     const addressInput = document.getElementById('cust-address');
 
     if (nameInput && customer.name) nameInput.value = customer.name;
     if (phoneInput && customer.phone) phoneInput.value = customer.phone;
-    if (addressInput && customer.savedAddress) addressInput.value = customer.savedAddress;
+
+    if (customer.pin && pinInput) pinInput.value = customer.pin;
+    if (customer.district && districtInput) districtInput.value = customer.district;
+    if (customer.postOffice && poInput) poInput.value = customer.postOffice;
+    
+    if (addressInput) {
+        addressInput.value = customer.flatAddress || customer.savedAddress || "";
+    }
+
+    // Fallback: If customer has old unified string format like "Street, P.O: X, Dist - Pin"
+    if ((!customer.pin || !customer.district) && customer.savedAddress) {
+        try {
+            let raw = customer.savedAddress;
+            let pinMatch = raw.match(/\b\d{6}\b/);
+            if (pinMatch && pinInput && !pinInput.value) pinInput.value = pinMatch[0];
+
+            let poMatch = raw.match(/P\.O\s*:\s*([^,]+)/i);
+            if (poMatch && poInput && !poInput.value) poInput.value = poMatch[1].trim();
+
+            let distMatch = raw.match(/,\s*([^,-]+)\s*-\s*\d{6}/);
+            if (distMatch && districtInput && !districtInput.value) districtInput.value = distMatch[1].trim();
+
+            let cleanStreet = raw.split(/,\s*P\.O/i)[0];
+            if (addressInput) addressInput.value = customer.flatAddress || cleanStreet || raw;
+        } catch(e) {}
+    }
 }
 
 function renderCart() {
@@ -141,7 +170,7 @@ function renderCart() {
         let imgSrc = item.image && item.image.trim() !== "" ? item.image : fallbackImg;
 
         let variantBadge = item.variantName && item.variantName.trim() !== "" 
-            ? `<span style="background:var(--blue-light); color:var(--blue-primary); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; border:1px solid var(--card-border); display:inline-block; margin-top:2px;">Option: ${item.variantName}</span>` 
+            ? `<span style="background:var(--blue-light); color:var(--blue-primary); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; border:1px solid var(--card-border); display:inline-block; margin-top:2px;">${item.variantName}</span>` 
             : "";
 
         let customHTML = "";
