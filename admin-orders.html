@@ -44,31 +44,60 @@
         .btn-wa { background: #25d366; color: #fff; }
         .btn-del { background: #e74c3c; color: #fff; }
 
-        @media print {
-            body { background: #fff !important; margin: 0; padding: 0; }
-            body * { visibility: hidden; }
-            #printable-slip-area, #printable-slip-area * { visibility: visible; }
-            #printable-slip-area {
-                position: absolute;
-                left: 50% !important;
-                top: 20px !important;
-                transform: translateX(-50%) !important;
-                width: 90mm !important;
-                max-width: 90mm !important;
-                margin: 0 auto !important;
-                padding: 10px !important;
-                box-shadow: none !important;
-                border: 1px solid #ddd !important;
-            }
-            .no-print-slip { display: none !important; }
-        }
-
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
+        }
+
+        /* 1-PAGE PORTRAIT PERFECT SLIP PRINTING */
+        @media print {
+            @page {
+                size: portrait;
+                margin: 6mm 10mm;
+            }
+            html, body {
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #receipt-modal {
+                position: static !important;
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #printable-slip-area, #printable-slip-area * {
+                visibility: visible !important;
+            }
+            #printable-slip-area {
+                position: relative !important;
+                left: auto !important;
+                top: auto !important;
+                transform: none !important;
+                width: 100% !important;
+                max-width: 460px !important;
+                margin: 0 auto !important;
+                padding: 16px 20px !important;
+                border: 1.5px dashed #0f172a !important;
+                border-radius: 8px !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .no-print-slip {
+                display: none !important;
+            }
         }
     </style>
 </head>

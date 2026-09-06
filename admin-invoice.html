@@ -18,12 +18,12 @@
         body { display: flex; margin: 0; background: #f1f5f9; min-height: 100vh; flex-direction: column; }
 
         .sidebar { width: 250px; background: #1e293b; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
         .sidebar-header h2 { color: #ef4444; font-size: 22px; font-weight: 800; margin: 0; }
         .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         
         .sidebar a { display: block; color: #94a3b8; padding: 13px 20px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; transition: 0.2s; }
-        .sidebar a:hover, .sidebar a.active { background: #334155; color: #fff; border-left-color: #10b981; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #10b981; }
         .sidebar a i { margin-right: 10px; width: 18px; text-align: center; }
 
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
@@ -33,9 +33,24 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .invoice-sheet { background: #ffffff; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 820px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
+        .invoice-sheet { background: #ffffff; padding: 35px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 820px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
         .inv-input { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; background: #f8fafc; color: #0f172a; }
         
+        .inv-textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #f8fafc;
+            color: #0f172a;
+            resize: vertical;
+            min-height: 38px;
+            line-height: 1.4;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
         .inv-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
         .inv-table th { background: #f1f5f9; color: #475569; font-weight: 700; padding: 9px 10px; border-bottom: 2px solid #cbd5e1; text-align: left; font-size: 11.5px; text-transform: uppercase; }
         .inv-table td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: middle; }
@@ -46,20 +61,33 @@
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
-            .invoice-sheet { padding: 18px; }
+            .invoice-sheet { padding: 18px 14px; }
             .inv-table { min-width: 500px; }
             .table-wrap-mobile { overflow-x: auto; width: 100%; }
         }
 
+        /* 100% BULLETPROOF PRINT / PDF FORMATTING */
         @media print {
-            @page { size: A4; margin: 12mm 15mm; }
-            body { background: #fff !important; color: #000 !important; font-size: 11pt !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { size: A4 portrait; margin: 10mm 12mm; }
+            html, body { background: #fff !important; color: #000 !important; font-size: 10.5pt !important; width: 100% !important; height: auto !important; }
             .sidebar, .no-print, .btn-remove-row, .mobile-admin-bar { display: none !important; }
             .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
-            .invoice-sheet { box-shadow: none !important; border: none !important; padding: 0 !important; }
-            .inv-input { border: none !important; background: transparent !important; padding: 0 !important; font-size: 11pt !important; color: #000 !important; }
+            .invoice-sheet { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+            
+            .inv-input, .inv-textarea {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 10.5pt !important;
+                color: #000 !important;
+                resize: none !important;
+                overflow: visible !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+            }
+            .inv-table { width: 100% !important; }
             .inv-table th { background: #1e293b !important; color: #fff !important; padding: 6px 10px !important; }
-            .inv-table td { padding: 7px 10px !important; }
+            .inv-table td { padding: 8px 10px !important; }
             .auth-sign-block { display: flex !important; }
         }
     </style>
@@ -85,16 +113,17 @@
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
         <div class="invoice-sheet" id="invoice-printable-area">
             
+            <!-- Header with Logo -->
             <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:15px; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <img src="assets/images/logo.png" onerror="this.style.display='none'" alt="Logo" style="width:52px; height:52px; object-fit:contain; border-radius:6px;">
+                    <img src="assets/images/logo.png" onerror="this.src='assets/images/logo2.png'" alt="Logo" style="width:55px; height:55px; object-fit:contain; border-radius:6px; display:inline-block;">
                     <div>
                         <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0; line-height:1.1;">CUSTOM ZONE</h1>
                         <p style="font-size:11.5px; color:#475569; margin:2px 0 0 0;">You Imagine. We Customize.</p>
@@ -105,12 +134,13 @@
                 <div style="text-align:right;">
                     <div style="background:#0f172a; color:#fff; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:4px; margin-bottom:6px; display:inline-block;">TAX INVOICE</div>
                     <div style="font-size:12px; color:#334155; line-height:1.6;">
-                        <p style="margin:0;"><strong>Invoice:</strong> <input type="text" id="inv-no" value="INV-1001" class="inv-input" style="width:95px; font-weight:700; text-align:right;"></p>
-                        <p style="margin:0;"><strong>Date:</strong> <input type="text" id="inv-date" value="" class="inv-input" style="width:95px; text-align:right;"></p>
+                        <p style="margin:0;"><strong>Invoice:</strong> <input type="text" id="inv-no" value="INV-1001" class="inv-input" style="width:105px; font-weight:700; text-align:right;"></p>
+                        <p style="margin:0;"><strong>Date:</strong> <input type="text" id="inv-date" value="" class="inv-input" style="width:105px; text-align:right;"></p>
                     </div>
                 </div>
             </div>
 
+            <!-- Recipient Information (Fixed Address Wrapping) -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 15px; margin-bottom:18px;">
                 <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; color:#64748b; display:block; margin-bottom:6px;">Billed To / Recipient:</span>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:8px;">
@@ -125,26 +155,27 @@
                 </div>
                 <div>
                     <label style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Delivery Address</label>
-                    <input type="text" id="inv-cust-address" class="inv-input" placeholder="Full Delivery Address">
+                    <textarea id="inv-cust-address" class="inv-textarea" rows="2" placeholder="Full Delivery Address"></textarea>
                 </div>
             </div>
 
+            <!-- Items Table (Full Wrap Description) -->
             <div class="table-wrap-mobile">
                 <table class="inv-table">
                     <thead>
                         <tr>
-                            <th style="width:50%;">Description</th>
+                            <th style="width:52%;">Description</th>
                             <th style="width:14%; text-align:center;">Qty</th>
-                            <th style="width:18%; text-align:right;">Rate (₹)</th>
-                            <th style="width:18%; text-align:right;">Amount (₹)</th>
+                            <th style="width:17%; text-align:right;">Rate (₹)</th>
+                            <th style="width:17%; text-align:right;">Amount (₹)</th>
                         </tr>
                     </thead>
                     <tbody id="invoice-items-body">
                         <tr>
                             <td>
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <input type="text" class="inv-input item-desc" placeholder="Product name" value="Customized Gift Item">
-                                    <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕</button>
+                                <div style="display:flex; align-items:flex-start; gap:6px;">
+                                    <textarea class="inv-textarea item-desc" rows="1" placeholder="Product name" oninput="autoExpandTextarea(this)">Customized Gift Item</textarea>
+                                    <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                 </div>
                             </td>
                             <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
@@ -156,11 +187,12 @@
             </div>
 
             <div class="no-print" style="margin-top:10px;">
-                <button type="button" onclick="addInvoiceItemRow()" style="background:#f1f5f9; border:1px dashed #94a3b8; color:#0f172a; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
+                <button type="button" onclick="addInvoiceItemRow()" style="background:#f1f5f9; border:1px dashed #94a3b8; color:#0f172a; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
                     + Add Item
                 </button>
             </div>
 
+            <!-- Invoice Summary Calculation -->
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:20px; padding-top:12px; border-top:1px solid #e2e8f0; flex-wrap:wrap; gap:15px;">
                 <div style="max-width:320px; font-size:11px; color:#64748b; line-height:1.5;">
                     <strong style="color:#0f172a; display:block; margin-bottom:2px;">Terms:</strong>
@@ -183,12 +215,13 @@
                     </div>
                     <div style="display:flex; justify-content:space-between; border-top:2px solid #0f172a; padding-top:6px; margin-top:4px; font-size:15px; color:#0f172a;">
                         <strong>Grand Total:</strong>
-                        <strong id="inv-grand-total" style="font-size:17px; font-weight:800;">₹0</strong>
+                        <strong id="inv-grand-total" style="font-size:17px; font-weight:800; color:#16a34a;">₹0</strong>
                     </div>
                 </div>
             </div>
 
-            <div class="auth-sign-block" style="display:none; justify-content:space-between; align-items:flex-end; margin-top:30px; padding-top:15px; border-top:1px dashed #cbd5e1;">
+            <!-- Signatory Footer -->
+            <div class="auth-sign-block" style="display:none; justify-content:space-between; align-items:flex-end; margin-top:35px; padding-top:15px; border-top:1px dashed #cbd5e1;">
                 <div style="font-size:10.5px; color:#64748b;">
                     <p style="margin:0; font-weight:700; color:#0f172a;">Thank you for your order!</p>
                     <p style="margin:0;">customzone.in</p>
@@ -199,9 +232,10 @@
                 </div>
             </div>
 
+            <!-- Action Buttons -->
             <div class="no-print" style="margin-top:25px; text-align:center; border-top:1px solid #e2e8f0; padding-top:18px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer;">
-                    <i class="fas fa-print"></i> Print / PDF
+                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer;">
+                    <i class="fas fa-print"></i> Print / Save as PDF
                 </button>
                 <button onclick="sendInvoiceOnWhatsApp()" style="background:#16a34a; color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer;">
                     <i class="fab fa-whatsapp"></i> Send on WhatsApp
@@ -224,6 +258,11 @@
             }
         }
 
+        function autoExpandTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
+        }
+
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
             const backdrop = document.getElementById('sidebar-backdrop');
@@ -231,30 +270,15 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
-        function applyNavRules() {
-            if (loggedInAdmin && loggedInAdmin.role === 'staff') {
-                let perms = loggedInAdmin.permissions || [];
-                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
-                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
-                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
-                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
-                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
-                document.getElementById('nav-ads').style.display = 'none';
-                document.getElementById('nav-users').style.display = 'none';
-            }
-        }
-
         document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
 
         window.onload = () => {
-            applyNavRules();
             const urlParams = new URLSearchParams(window.location.search);
             const orderId = urlParams.get('orderId');
             if (orderId) loadOrderDetailsIntoInvoice(orderId);
             else calculateInvoiceTotal();
         };
 
-        // 100% BULLETPROOF AUTO-FILL FOR BOTH OLD AND NEW ORDERS
         async function loadOrderDetailsIntoInvoice(orderId) {
             try {
                 let doc = await db.collection("orders").doc(orderId).get();
@@ -267,26 +291,30 @@
 
                 if (!ord) return;
 
-                document.getElementById('inv-no').value = `INV-${orderId.replace(/[^0-9]/g, '') || '101'}`;
+                document.getElementById('inv-no').value = `INV-${(ord.orderId || orderId).replace(/[^0-9]/g, '') || '101'}`;
                 document.getElementById('inv-cust-name').value = ord.customerName || ord.name || "";
                 document.getElementById('inv-cust-phone').value = ord.phone || "";
-                document.getElementById('inv-cust-address').value = ord.actualDeliveryAddress || ord.address || "";
+                
+                const addrEl = document.getElementById('inv-cust-address');
+                addrEl.value = ord.actualDeliveryAddress || ord.address || "";
+                autoExpandTextarea(addrEl);
+
                 document.getElementById('inv-delivery').value = ord.deliveryFee || 0;
                 document.getElementById('inv-discount').value = ord.discountGiven || 0;
 
                 const tbody = document.getElementById('invoice-items-body');
                 tbody.innerHTML = "";
 
-                // Case 1: Array of items (New format)
                 if (Array.isArray(ord.items) && ord.items.length > 0) {
                     ord.items.forEach(it => {
                         let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
+                        let cleanName = `${it.name}${it.variantName ? ` (${it.variantName})` : ''}${it.userText ? ` [Custom: ${it.userText}]` : ''}`;
                         tbody.innerHTML += `
                             <tr>
                                 <td>
-                                    <div style="display:flex; align-items:center; gap:6px;">
-                                        <input type="text" class="inv-input item-desc" value="${it.name} ${it.variantName ? `(${it.variantName})` : ''}">
-                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕</button>
+                                    <div style="display:flex; align-items:flex-start; gap:6px;">
+                                        <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${cleanName}</textarea>
+                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                     </div>
                                 </td>
                                 <td><input type="number" class="inv-input item-qty" value="${it.quantity || 1}" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
@@ -295,15 +323,10 @@
                             </tr>
                         `;
                     });
-                } 
-                // Case 2: String formatted items (Old orders like #CZ7457)
-                else {
-                    let rawItems = ord.items ? String(ord.items) : "";
+                } else {
+                    let rawItems = ord.items ? String(ord.items) : "Customized Gift Item";
                     let lines = rawItems.split('\n').filter(l => l.trim().length > 0);
-
-                    if (lines.length === 0) {
-                        lines = [rawItems || "Custom Printed Soft Phone Cover"];
-                    }
+                    if (lines.length === 0) lines = [rawItems];
 
                     lines.forEach(line => {
                         let cleanName = line.replace(/^- /, '').replace(/\[Delivery:.*?\]/g, '').replace(/\(₹[0-9]+\)/g, '').trim();
@@ -312,9 +335,9 @@
                         tbody.innerHTML += `
                             <tr>
                                 <td>
-                                    <div style="display:flex; align-items:center; gap:6px;">
-                                        <input type="text" class="inv-input item-desc" value="${cleanName}">
-                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕</button>
+                                    <div style="display:flex; align-items:flex-start; gap:6px;">
+                                        <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${cleanName}</textarea>
+                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                     </div>
                                 </td>
                                 <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
@@ -325,9 +348,10 @@
                     });
                 }
 
+                document.querySelectorAll('.item-desc').forEach(el => autoExpandTextarea(el));
                 calculateInvoiceTotal();
             } catch(e) {
-                console.error("Error auto-filling invoice:", e);
+                console.error("Invoice auto-fill error:", e);
             }
         }
 
@@ -336,9 +360,9 @@
             tbody.innerHTML += `
                 <tr>
                     <td>
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            <input type="text" class="inv-input item-desc" placeholder="Product name">
-                            <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:12px; cursor:pointer;">✕</button>
+                        <div style="display:flex; align-items:flex-start; gap:6px;">
+                            <textarea class="inv-textarea item-desc" rows="1" placeholder="Product name" oninput="autoExpandTextarea(this)"></textarea>
+                            <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                         </div>
                     </td>
                     <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
@@ -379,7 +403,7 @@
 
             let cleanPhone = phone.replace(/[^0-9]/g, '');
             if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
-            let msg = `Hello ${name || 'Customer'},\nYour official Invoice *#${invNo}* from Custom Zone is generated.\nTotal Amount: *${grandTotal}*\n\nThank you for shopping with Custom Zone! 🎁✨`;
+            let msg = `Hello ${name || 'Customer'},\nYour official Invoice *#${invNo}* from Custom Zone is ready.\nTotal Amount: *${grandTotal}*\n\nThank you for shopping with Custom Zone! 🎁✨`;
             window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
         }
     </script>
