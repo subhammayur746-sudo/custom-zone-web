@@ -129,7 +129,6 @@
             </div>
             
             <div style="display:flex; align-items:center; gap:10px;">
-                <!-- Real-time Unverified Orders Notification Bell -->
                 <a href="admin-orders.html" class="notif-bell-btn" title="Unverified Pending Payments">
                     <i class="fas fa-bell"></i>
                     <span class="notif-badge" id="admin-pending-badge">0</span>
@@ -142,6 +141,16 @@
         </div>
 
         <div class="stats-grid">
+            <!-- Universal Active & Inactive Product Stats (Visible to Everyone) -->
+            <div class="stat-card" style="border-left:4px solid #059669;">
+                <div class="stat-icon-wrap" style="background:#d1fae5; color:#059669;"><i class="fas fa-boxes"></i></div>
+                <div class="stat-info"><h3 id="stat-active-products">0</h3><p>Active Products</p></div>
+            </div>
+            <div class="stat-card" style="border-left:4px solid #64748b;">
+                <div class="stat-icon-wrap" style="background:#f1f5f9; color:#64748b;"><i class="fas fa-eye-slash"></i></div>
+                <div class="stat-info"><h3 id="stat-inactive-products">0</h3><p>Inactive Products</p></div>
+            </div>
+
             <div class="stat-card" id="card-revenue" style="display:none; border-left:4px solid #16a34a;">
                 <div class="stat-icon-wrap" style="background:#dcfce7; color:#16a34a;"><i class="fas fa-rupee-sign"></i></div>
                 <div class="stat-info"><h3 id="stat-revenue">₹0</h3><p>Delivered Income</p></div>
@@ -299,6 +308,24 @@
             if (spinner) spinner.classList.add('fa-spin');
 
             try {
+                // 1. Fetch Products Stats (Active vs Inactive)
+                const prodSnap = await db.collection("products").get();
+                let activeProdCount = 0;
+                let inactiveProdCount = 0;
+
+                prodSnap.forEach(doc => {
+                    let p = doc.data();
+                    if (p.isActive !== false) {
+                        activeProdCount++;
+                    } else {
+                        inactiveProdCount++;
+                    }
+                });
+
+                document.getElementById('stat-active-products').innerText = activeProdCount;
+                document.getElementById('stat-inactive-products').innerText = inactiveProdCount;
+
+                // 2. Fetch Orders Stats
                 const ordersSnap = await db.collection("orders").get();
                 let totalConfirmed = 0, processingCount = 0, packedCount = 0, shippedCount = 0, deliveredCount = 0, cancelledCount = 0, deliveredRevenue = 0;
                 let recentOrders = [];
@@ -350,7 +377,7 @@
                 loadAuditLogs();
 
             } catch(e) {
-                console.error(e);
+                console.error("Dashboard stats load error:", e);
             } finally {
                 if (spinner) spinner.classList.remove('fa-spin');
             }

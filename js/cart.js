@@ -282,7 +282,6 @@ async function applyCoupon() {
     msg.innerText = "Verifying code & phone eligibility...";
 
     try {
-        // Deep Cloud Verification for Coupon Usage
         const pastOrdersSnap = await db.collection("orders")
             .where("phone", "==", phoneInput)
             .where("couponUsed", "==", rawCode)
@@ -440,12 +439,13 @@ async function submitOrderViaWhatsApp() {
     }
 }
 
-// PROPERLY FITTED QR BOX WITH PROFILE LINK IN NOTE
+// PROPERLY FITTED QR BOX WITH UPDATED UPI ID & PROFILE LINK
 function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const container = document.querySelector('.cart-layout');
     if (!container) return;
 
-    const upiId = "6290407730@ybl";
+    // UPDATED OFFICIAL UPI ID
+    const upiId = "subhammayur746@oksbi";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
     const dynamicFastQR = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
     const localStandeeQR = `assets/images/payment-qr.png`;
@@ -467,7 +467,7 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
                 <img src="${localStandeeQR}" onerror="this.src='${dynamicFastQR}'" alt="Payment QR" style="width: 100%; height: auto; object-fit: contain; display: block; border-radius: 6px;">
             </div>
 
-            <p style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:16px;">UPI ID: ${upiId}</p>
+            <p style="font-size:13px; font-weight:bold; color:var(--blue-primary); margin-bottom:16px;">UPI ID: ${upiId}</p>
 
             <div style="max-width:420px; margin:0 auto 16px auto;">
                 <a href="${waUrl}" target="_blank" style="background:var(--success-green); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px; padding:13px 20px; border-radius:8px; font-weight:700; font-size:14px; text-decoration:none;">
