@@ -439,16 +439,17 @@ async function submitOrderViaWhatsApp() {
     }
 }
 
-// PROPERLY FITTED QR BOX WITH UPDATED UPI ID & PROFILE LINK
+// FITTED QR WITH EXACT .JPEG EXTENSION & REAL-TIME CACHE BUSTER
 function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const container = document.querySelector('.cart-layout');
     if (!container) return;
 
-    // UPDATED OFFICIAL UPI ID
     const upiId = "subhammayur746@oksbi";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
     const dynamicFastQR = `https://chart.googleapis.com/chart?chs=280x280&cht=qr&chl=${encodeURIComponent(upiPayUrl)}&choe=UTF-8`;
-    const localStandeeQR = `assets/images/payment-qr.png`;
+    
+    // EXACT PATH FROM YOUR VS CODE SCREENSHOT (.jpeg with cache breaker)
+    const localStandeeQR = `assets/images/payment-qr.jpeg?t=${Date.now()}`;
 
     const configuredWhatsApp = "916290407730";
     const waPaymentText = `Hello Custom Zone,\nI have sent the payment.\n\n*Payment Reference:* ${paymentRef}\n*Customer:* ${customerName}\n*Amount:* ₹${amount}\n\nPlease verify screenshot.`;
@@ -462,8 +463,8 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
             <h2 style="color:var(--text-primary); margin:0 0 6px 0; font-weight:800; font-size:22px;">Scan & Pay ₹${amount}</h2>
             <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Scan with GooglePay, PhonePe, Paytm or any UPI App:</p>
             
-            <!-- Perfect Fitted QR Display Box -->
-            <div style="margin: 0 auto 16px auto; max-width: 260px; padding: 10px; border: 2px solid var(--blue-primary); border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center;">
+            <!-- Crisp Fitted Standee QR Box -->
+            <div style="margin: 0 auto 16px auto; max-width: 270px; padding: 10px; border: 2px solid var(--blue-primary); border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: center;">
                 <img src="${localStandeeQR}" onerror="this.src='${dynamicFastQR}'" alt="Payment QR" style="width: 100%; height: auto; object-fit: contain; display: block; border-radius: 6px;">
             </div>
 
@@ -475,7 +476,6 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
                 </a>
             </div>
 
-            <!-- Customer Profile Tracking Link Note -->
             <div style="background:#FFFBEB; border:1px solid #FCD34D; padding:14px; border-radius:8px; max-width:480px; margin:0 auto; font-size:12px; color:#92400E; text-align:left; line-height:1.5;">
                 <strong>⚠️ Verification Note:</strong> Your official <strong>Order ID</strong> will be confirmed automatically once our admin team verifies your payment screenshot. 
                 <br><br>
