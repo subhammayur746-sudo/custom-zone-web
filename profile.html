@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Profile & Orders - Custom Zone</title>
+    <title>Customer Dashboard - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -16,9 +16,33 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { background: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
         
-        .profile-container { max-width: 800px; margin: 30px auto; padding: 0 15px; width: 100%; flex: 1; }
-        .profile-card { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 25px; }
+        .profile-container { max-width: 860px; margin: 30px auto; padding: 0 15px; width: 100%; flex: 1; }
+        .profile-card { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 22px; }
         
+        /* Navigation Tabs */
+        .profile-nav-tabs { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; overflow-x: auto; padding-bottom: 2px; }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 18px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        .tab-btn:hover { color: #28469E; }
+        .tab-btn.active { color: #28469E; border-bottom-color: #28469E; }
+
+        .tab-content-panel { display: none; }
+        .tab-content-panel.active { display: block; }
+
+        /* Order Cards */
         .order-history-card { background: #fff; padding: 18px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         .order-head-row { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
         
@@ -29,6 +53,24 @@
         .status-shipped { background: #cffafe; color: #155e75; }
         .status-delivered { background: #d1fae5; color: #065f46; }
         .status-cancelled { background: #fee2e2; color: #991b1b; }
+
+        /* Wishlist Grid */
+        .wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .wishlist-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+        .wishlist-img { width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
+
+        /* Address Form Elements */
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .form-row-full { margin-bottom: 12px; }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; color: #0f172a; box-sizing: border-box; }
+        .form-control:focus { outline: none; border-color: #28469E; }
+        .btn-save-addr { background: #28469E; color: #fff; border: none; padding: 11px 22px; border-radius: 6px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+
+        @media (max-width: 600px) {
+            .form-row-2 { grid-template-columns: 1fr; gap: 8px; }
+            .wishlist-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -58,6 +100,7 @@
     </header>
 
     <div class="profile-container">
+        <!-- Top Profile Summary Box -->
         <div class="profile-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap:14px;">
@@ -67,7 +110,7 @@
                     <div>
                         <h2 style="margin:0; color:#1e293b; font-size:18px;" id="profile-name">Customer Name</h2>
                         <p style="margin:2px 0 0 0; font-size:12.5px; color:#64748b;">
-                            Phone: <strong id="profile-phone">-</strong> | ID: <strong id="profile-cust-id" style="color:#28469E;">-</strong>
+                            Phone: <strong id="profile-phone">-</strong> | Customer ID: <strong id="profile-cust-id" style="color:#28469E;">-</strong>
                         </p>
                     </div>
                 </div>
@@ -75,18 +118,82 @@
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </div>
-            <div style="margin-top:14px; background:#f8fafc; padding:10px 14px; border-radius:6px; font-size:12px; color:#475569; border:1px solid #e2e8f0;">
-                <i class="fas fa-map-marker-alt" style="color:#ef4444;"></i> <strong>Saved Address:</strong> <span id="profile-address">-</span>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="profile-nav-tabs">
+            <button class="tab-btn active" onclick="switchProfileTab('tab-orders', this)">
+                <i class="fas fa-box-open"></i> Orders & Status
+            </button>
+            <button class="tab-btn" onclick="switchProfileTab('tab-wishlist', this)">
+                <i class="fas fa-heart"></i> My Wishlist (<span id="wishlist-count-badge">0</span>)
+            </button>
+            <button class="tab-btn" onclick="switchProfileTab('tab-address', this)">
+                <i class="fas fa-map-marked-alt"></i> Delivery Address Details
+            </button>
+        </div>
+
+        <!-- TAB 1: ALL ORDERS & VERIFICATION STATUS -->
+        <div id="tab-orders" class="tab-content-panel active">
+            <div id="customer-orders-container">
+                <p style="text-align:center; padding:25px; color:#64748b; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Fetching your orders...</p>
             </div>
         </div>
 
-        <h3 style="color:#1e293b; margin-bottom:14px; font-size:16px;">
-            <i class="fas fa-box-open" style="color:#28469E;"></i> All My Orders & Payment Verification Status
-        </h3>
-
-        <div id="customer-orders-container">
-            <p style="text-align:center; padding:20px; color:#64748b; font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Fetching your orders...</p>
+        <!-- TAB 2: WISHLIST -->
+        <div id="tab-wishlist" class="tab-content-panel">
+            <div id="customer-wishlist-container">
+                <p style="text-align:center; padding:25px; color:#64748b; font-size:13px;">Loading wishlist...</p>
+            </div>
         </div>
+
+        <!-- TAB 3: FULL ADDRESS FORM (SAME DETAILS AS CART WITH PINCODE AUTO-LOOKUP) -->
+        <div id="tab-address" class="tab-content-panel">
+            <div class="profile-card">
+                <h3 style="margin:0 0 14px 0; font-size:16px; color:#0f172a;"><i class="fas fa-address-card" style="color:#28469E;"></i> Update Saved Delivery Address</h3>
+                <p style="font-size:12px; color:#64748b; margin-bottom:16px;">This address will be automatically filled whenever you order.</p>
+
+                <form id="address-update-form" onsubmit="saveCustomerFullAddress(event)">
+                    <div class="form-row-2">
+                        <div>
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" id="prof-cust-name" class="form-control" required>
+                        </div>
+                        <div>
+                            <label class="form-label">WhatsApp Contact Phone *</label>
+                            <input type="tel" id="prof-cust-phone" class="form-control" readonly style="background:#f1f5f9; cursor:not-allowed;">
+                        </div>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div>
+                            <label class="form-label">6-Digit Delivery Pincode *</label>
+                            <input type="text" id="prof-cust-pin" class="form-control" maxlength="6" placeholder="e.g. 711204" onkeyup="lookupProfilePincode(this.value)" required>
+                            <small id="prof-pin-status" style="font-size:11px; font-weight:600;"></small>
+                        </div>
+                        <div>
+                            <label class="form-label">District *</label>
+                            <input type="text" id="prof-cust-district" class="form-control" placeholder="District" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row-full">
+                        <label class="form-label">Post Office (P.O.) *</label>
+                        <input type="text" id="prof-cust-postoffice" class="form-control" placeholder="Post Office Name" required>
+                    </div>
+
+                    <div class="form-row-full">
+                        <label class="form-label">Flat / House No / Road / Area / Landmark *</label>
+                        <textarea id="prof-cust-flat" class="form-control" rows="2" placeholder="e.g. Near Jubak Bindra Club, A.Guha Road" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-save-addr" id="btn-save-prof-addr">
+                        <i class="fas fa-check-circle"></i> Save & Update Address
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
 
     <footer class="footer">
@@ -97,7 +204,7 @@
         let currentCustomer = JSON.parse(localStorage.getItem('cz_customer_user'));
 
         if (!currentCustomer) {
-            alert("Please login first to view your profile and orders.");
+            alert("Please login first to view your dashboard.");
             window.location.href = "index.html";
         }
 
@@ -111,18 +218,106 @@
             window.location.href = "index.html";
         }
 
+        function switchProfileTab(tabId, btnEl) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content-panel').forEach(p => p.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // 1. PINCODE LOOKUP (SAME AS CART)
+        async function lookupProfilePincode(pin) {
+            const statusEl = document.getElementById('prof-pin-status');
+            const distInput = document.getElementById('prof-cust-district');
+            const poInput = document.getElementById('prof-cust-postoffice');
+
+            if (pin.length === 6) {
+                statusEl.style.color = "#28469E";
+                statusEl.innerText = "Finding District & P.O...";
+                try {
+                    const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+                    const data = await res.json();
+                    if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice) {
+                        const poList = data[0].PostOffice;
+                        distInput.value = poList[0].District;
+                        if (!poInput.value) poInput.value = poList[0].Name;
+                        statusEl.style.color = "#16a34a";
+                        statusEl.innerText = `✓ Deliverable (${poList[0].District}, ${poList[0].State})`;
+                    } else {
+                        statusEl.style.color = "#e67e22";
+                        statusEl.innerText = "Enter District & P.O. manually.";
+                    }
+                } catch(e) { statusEl.innerText = ""; }
+            } else {
+                statusEl.innerText = "";
+            }
+        }
+
+        // 2. POPULATE ADDRESS TAB
+        function loadCustomerAddressForm() {
+            document.getElementById('profile-name').innerText = currentCustomer.name || "Customer";
+            document.getElementById('profile-phone').innerText = currentCustomer.phone;
+            document.getElementById('profile-cust-id').innerText = currentCustomer.customerId || "CZ-CUST";
+
+            document.getElementById('prof-cust-name').value = currentCustomer.name || "";
+            document.getElementById('prof-cust-phone').value = currentCustomer.phone || "";
+
+            // If split details exist
+            document.getElementById('prof-cust-pin').value = currentCustomer.pin || "";
+            document.getElementById('prof-cust-district').value = currentCustomer.district || "";
+            document.getElementById('prof-cust-postoffice').value = currentCustomer.postOffice || "";
+            document.getElementById('prof-cust-flat').value = currentCustomer.flatAddress || currentCustomer.savedAddress || "";
+        }
+
+        async function saveCustomerFullAddress(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-prof-addr');
+            btn.disabled = true;
+            btn.innerText = "Saving to Cloud...";
+
+            const name = document.getElementById('prof-cust-name').value.trim();
+            const pin = document.getElementById('prof-cust-pin').value.trim();
+            const dist = document.getElementById('prof-cust-district').value.trim();
+            const po = document.getElementById('prof-cust-postoffice').value.trim();
+            const flat = document.getElementById('prof-cust-flat').value.trim();
+
+            const fullFormattedAddress = `${flat}, P.O: ${po}, ${dist} - ${pin}`;
+
+            currentCustomer.name = name;
+            currentCustomer.pin = pin;
+            currentCustomer.district = dist;
+            currentCustomer.postOffice = po;
+            currentCustomer.flatAddress = flat;
+            currentCustomer.savedAddress = fullFormattedAddress;
+
+            try {
+                await db.collection("customers").doc(currentCustomer.phone).update({
+                    name: name,
+                    pin: pin,
+                    district: dist,
+                    postOffice: po,
+                    flatAddress: flat,
+                    savedAddress: fullFormattedAddress
+                });
+
+                localStorage.setItem('cz_customer_user', JSON.stringify(currentCustomer));
+                document.getElementById('profile-name').innerText = name;
+                alert("✅ Delivery Address updated successfully!");
+            } catch(err) {
+                alert("Error updating address.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-check-circle"></i> Save & Update Address`;
+            }
+        }
+
+        // 3. FETCH ORDERS & VERIFICATION CARDS
         async function fetchCustomerAllOrders() {
             const container = document.getElementById('customer-orders-container');
             let cleanPhone = currentCustomer.phone.replace(/[^0-9]/g, '');
             if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
 
-            document.getElementById('profile-name').innerText = currentCustomer.name || "Customer";
-            document.getElementById('profile-phone').innerText = currentCustomer.phone;
-            document.getElementById('profile-cust-id').innerText = currentCustomer.customerId || "CZ-CUST";
-            document.getElementById('profile-address').innerText = currentCustomer.savedAddress || "Not provided";
-
             try {
-                // 1. Fetch Confirmed Orders
                 const confirmedSnap = await db.collection("orders").where("phone", "==", cleanPhone).get();
                 let confirmedList = [];
                 let confirmedRefs = new Set();
@@ -135,7 +330,6 @@
                     if (d.paymentReference) confirmedRefs.add(d.paymentReference);
                 });
 
-                // 2. Fetch Pending Payments (EXCLUDING ones already converted or marked Paid)
                 const pendingSnap = await db.collection("pending_payments")
                     .where("phone", "==", cleanPhone)
                     .where("paymentStatus", "==", "Pending")
@@ -144,7 +338,6 @@
                 let pendingList = [];
                 pendingSnap.forEach(doc => {
                     let d = doc.data();
-                    // Avoid showing pending if already confirmed
                     if (!confirmedRefs.has(d.paymentReference)) {
                         d.type = "pending";
                         d.displayId = d.paymentReference || doc.id;
@@ -220,7 +413,7 @@
 
                             ${isPending ? `
                                 <div style="background:#fffbeb; border:1px solid #fde68a; padding:8px 10px; border-radius:4px; font-size:11px; color:#92400e; margin-top:8px;">
-                                    ℹ️ Our team is verifying your payment screenshot. Order ID will be generated right after verification.
+                                    ℹ️ Our team is verifying your payment screenshot. Official Order ID will be updated right after verification.
                                 </div>
                             ` : ''}
                         </div>
@@ -228,14 +421,65 @@
                 });
 
             } catch(e) {
-                console.error("Error loading orders:", e);
                 container.innerHTML = "<p style='color:red; text-align:center;'>Error loading order history.</p>";
             }
         }
 
+        // 4. FETCH WISHLIST
+        function renderCustomerWishlist() {
+            const container = document.getElementById('customer-wishlist-container');
+            const countBadge = document.getElementById('wishlist-count-badge');
+            let wishlist = currentCustomer.wishlist || [];
+            countBadge.innerText = wishlist.length;
+
+            if (wishlist.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:35px 20px; background:#fff; border-radius:10px; border:1px solid #e2e8f0;">
+                        <i class="far fa-heart" style="font-size:40px; color:#94a3b8; margin-bottom:10px;"></i>
+                        <h4 style="margin:0; color:#334155;">Your Wishlist is Empty!</h4>
+                        <p style="font-size:12px; color:#64748b; margin-top:4px;">Tap the heart on any product to save it here for later.</p>
+                        <a href="index.html" style="background:#28469E; color:#fff; padding:8px 18px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:700; display:inline-block; margin-top:10px;">Explore Gifts</a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div class="wishlist-grid">`;
+            wishlist.forEach((item, index) => {
+                html += `
+                    <div class="wishlist-item">
+                        <img src="${item.image || 'assets/images/logo.png'}" class="wishlist-img" alt="${item.name}">
+                        <h4 style="font-size:13px; color:#0f172a; margin:4px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</h4>
+                        <p style="color:#16a34a; font-weight:800; font-size:13.5px; margin:4px 0;">₹${item.price}</p>
+                        <div style="display:flex; gap:6px; margin-top:8px;">
+                            <a href="index.html?product=${item.id}" style="flex:1; background:#28469E; color:#fff; padding:6px 0; border-radius:4px; font-size:11.5px; font-weight:700; text-decoration:none; display:inline-block;">View</a>
+                            <button onclick="removeFromWishlistProfile(${index})" style="background:#fee2e2; color:#ef4444; border:none; padding:6px 10px; border-radius:4px; font-size:11px; cursor:pointer;" title="Remove"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        async function removeFromWishlistProfile(index) {
+            let wishlist = currentCustomer.wishlist || [];
+            wishlist.splice(index, 1);
+            currentCustomer.wishlist = wishlist;
+            localStorage.setItem('cz_customer_user', JSON.stringify(currentCustomer));
+
+            try {
+                await db.collection("customers").doc(currentCustomer.phone).update({ wishlist: wishlist });
+            } catch(e) {}
+
+            renderCustomerWishlist();
+        }
+
         window.onload = () => {
             updateCartCount();
+            loadCustomerAddressForm();
             fetchCustomerAllOrders();
+            renderCustomerWishlist();
         };
     </script>
 </body>
