@@ -145,7 +145,7 @@
                 </div>
             </div>
 
-            <!-- VENDOR ASSIGNMENT & SOURCING COST (100% PRIVATE) -->
+            <!-- VENDOR ASSIGNMENT & SOURCING COST -->
             <div class="form-grid-row" style="background:#eef2ff; border:1px solid #c7d2fe; padding:14px; border-radius:6px; margin-top:15px;">
                 <div class="form-group" style="margin:0;">
                     <label style="color:#3730a3;"><i class="fas fa-truck-loading"></i> Assign Product Vendor / Supplier:</label>
@@ -176,7 +176,7 @@
                 <textarea id="prod-admin-note" rows="2" placeholder="Private inventory notes..." style="background:#fff;"></textarea>
             </div>
 
-            <!-- OPTIONAL SIZE CONFIGURATION WITH EXTRA PRICE -->
+            <!-- OPTIONAL SIZE CONFIGURATION -->
             <div style="background:#fefce8; border:2px dashed #ca8a04; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#854d0e; margin:0; cursor:pointer;">
@@ -185,13 +185,13 @@
                     <span style="font-size:11px; background:#ca8a04; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Custom Extra Price</span>
                 </div>
                 <div id="sizes-container" style="display:none;">
-                    <p style="font-size:11.5px; color:#a16207; margin-bottom:10px;">Specify sizes and any additional price to add to the base rate (e.g. XL costs +₹50 extra).</p>
+                    <p style="font-size:11.5px; color:#a16207; margin-bottom:10px;">Specify sizes and any additional price to add to base rate (e.g. XL costs +₹50 extra).</p>
                     <div id="size-items-list"></div>
                     <button type="button" onclick="addSizeRow()" id="btn-add-size-row" style="background:#ca8a04; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Size Option</button>
                 </div>
             </div>
 
-            <!-- COLOR/DESIGN VARIANTS WITH MULTI-IMAGE UPLOAD -->
+            <!-- COLOR/DESIGN VARIANTS -->
             <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
@@ -205,15 +205,16 @@
                 </div>
             </div>
 
-            <!-- BULK PACKAGE PRICING SECTION -->
+            <!-- BULK PACKAGE PRICING LINKED WITH SPECIFIC VARIANTS -->
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
                         <input type="checkbox" id="toggle-qty-pricing" onchange="toggleQtyPricingSection(this.checked)"> Enable Quantity-Based / Bulk Package Pricing
                     </label>
-                    <span style="font-size:11px; background:#16a34a; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Package Price Tiers</span>
+                    <span style="font-size:11px; background:#16a34a; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Variant-Linked Packages</span>
                 </div>
                 <div id="qty-pricing-container" style="display:none;">
+                    <p style="font-size:11.5px; color:#166534; margin-bottom:10px;">Select which variant this bulk discount package belongs to (or All Variants).</p>
                     <div id="qty-tier-items-list"></div>
                     <button type="button" onclick="addQtyTierRow()" id="btn-add-qty-tier" style="background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer;">+ Add Quantity Tier</button>
                 </div>
@@ -380,7 +381,7 @@
             renderImagePreviews();
         }
 
-        // --- SIZE OPTIONS LOGIC ---
+        // SIZES
         function toggleSizeSection(isEnabled) {
             const box = document.getElementById('sizes-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -413,13 +414,14 @@
             list.appendChild(div);
         }
 
-        // --- COLOR/DESIGN VARIANTS LOGIC WITH MULTI-IMAGE SUPPORT ---
+        // VARIANTS
         function toggleVariantSection(isEnabled) {
             const box = document.getElementById('variants-container');
             box.style.display = isEnabled ? 'block' : 'none';
             if (isEnabled && document.querySelectorAll('.variant-item-box').length === 0) {
                 addVariantRow();
             }
+            refreshBulkVariantOptions();
         }
 
         function addVariantRow(name = "", price = "", actualPrice = "", images = []) {
@@ -437,12 +439,12 @@
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <strong style="font-size:12px; color:#2c3e50;">Option #${currentCount + 1}</strong>
-                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">✕ Delete</button>
+                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton(); refreshBulkVariantOptions();" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div class="variant-grid-fields">
                     <div>
                         <label style="font-size:10.5px; font-weight:bold;">Color / Design / Option Name:</label>
-                        <input type="text" placeholder="e.g. Crimson Red / Matte Black" value="${name}" class="var-name" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                        <input type="text" placeholder="e.g. Crimson Red / Matte Black" value="${name}" class="var-name" oninput="refreshBulkVariantOptions()" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
                     <div>
                         <label style="font-size:10.5px; font-weight:bold;">MRP (₹):</label>
@@ -454,7 +456,6 @@
                     </div>
                 </div>
                 
-                <!-- Variant Multi-Image Upload -->
                 <div style="margin-top:8px; border-top:1px dashed #ddd; padding-top:8px;">
                     <label style="font-size:11px; font-weight:bold; color:#475569;"><i class="fas fa-images"></i> Upload Variant Photos (Multiple supported):</label>
                     <input type="file" accept="image/*" multiple onchange="handleVariantMultiImageUpload(this)" style="font-size:11px; display:block; margin-top:4px;">
@@ -465,6 +466,7 @@
             list.appendChild(div);
             renderVariantThumbnails(div.querySelector('.var-images-preview-row'), Array.isArray(images) ? images : (images ? [images] : []));
             updateVariantAddButton();
+            refreshBulkVariantOptions();
         }
 
         function handleVariantMultiImageUpload(input) {
@@ -536,27 +538,62 @@
             if (btn) btn.style.display = count >= 10 ? 'none' : 'inline-block';
         }
 
-        // --- BULK TIER LOGIC ---
+        // BULK LINKED WITH SPECIFIC VARIANTS
+        function getAvailableVariantNames() {
+            let names = [];
+            document.querySelectorAll('.variant-item-box .var-name').forEach(input => {
+                let v = input.value.trim();
+                if (v && !names.includes(v)) names.push(v);
+            });
+            return names;
+        }
+
+        function refreshBulkVariantOptions() {
+            let varNames = getAvailableVariantNames();
+            document.querySelectorAll('.qty-tier-item-box .qty-variant-select').forEach(select => {
+                let currVal = select.value;
+                let html = '<option value="all">-- All Variants / Colors --</option>';
+                varNames.forEach(n => {
+                    html += `<option value="${n}">${n}</option>`;
+                });
+                select.innerHTML = html;
+                select.value = currVal || "all";
+            });
+        }
+
         function toggleQtyPricingSection(isEnabled) {
             const box = document.getElementById('qty-pricing-container');
             box.style.display = isEnabled ? 'block' : 'none';
             if (isEnabled && document.querySelectorAll('.qty-tier-item-box').length === 0) {
-                addQtyTierRow(1, document.getElementById('prod-discount-price').value || 199);
-                addQtyTierRow(3, 499);
+                addQtyTierRow(1, document.getElementById('prod-discount-price').value || 199, "all");
+                addQtyTierRow(3, 499, "all");
             }
         }
 
-        function addQtyTierRow(minQty = "", packagePrice = "") {
+        function addQtyTierRow(minQty = "", packagePrice = "", targetVariant = "all") {
             const list = document.getElementById('qty-tier-items-list');
+            const varNames = getAvailableVariantNames();
+            
+            let optionsHtml = '<option value="all">-- All Variants / Colors --</option>';
+            varNames.forEach(n => {
+                optionsHtml += `<option value="${n}" ${targetVariant === n ? 'selected' : ''}>${n}</option>`;
+            });
+
             const div = document.createElement('div');
             div.className = 'qty-tier-item-box';
             div.innerHTML = `
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:1; min-width:120px;">
-                        <label style="font-size:11px; font-weight:bold;">Min Quantity (PCS):</label>
+                    <div style="flex:1.2; min-width:140px;">
+                        <label style="font-size:11px; font-weight:bold;">Applicable Variant:</label>
+                        <select class="qty-variant-select" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div style="flex:1; min-width:100px;">
+                        <label style="font-size:11px; font-weight:bold;">Quantity (PCS):</label>
                         <input type="number" min="1" placeholder="e.g., 3" value="${minQty}" class="qty-min-val" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
-                    <div style="flex:1.5; min-width:140px;">
+                    <div style="flex:1; min-width:110px;">
                         <label style="font-size:11px; font-weight:bold;">Package Price (₹):</label>
                         <input type="number" min="1" placeholder="e.g., 499" value="${packagePrice}" class="qty-price-val" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
@@ -566,6 +603,7 @@
                 </div>
             `;
             list.appendChild(div);
+            div.querySelector('.qty-variant-select').value = targetVariant || "all";
         }
 
         async function fetchAdminProducts() {
@@ -685,7 +723,7 @@
             uploadedProductImages = prod.images ? [...prod.images] : [];
             renderImagePreviews();
 
-            // Load Sizes
+            // Sizes
             const toggleSizes = document.getElementById('toggle-sizes');
             const sizeList = document.getElementById('size-items-list');
             sizeList.innerHTML = "";
@@ -700,7 +738,7 @@
                 document.getElementById('sizes-container').style.display = 'none';
             }
 
-            // Load Variants
+            // Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -717,7 +755,7 @@
                 toggleVariantSection(false);
             }
 
-            // Load Qty Tiers
+            // Bulk Tiers with Variant selection
             const toggleQty = document.getElementById('toggle-qty-pricing');
             const qtyList = document.getElementById('qty-tier-items-list');
             qtyList.innerHTML = "";
@@ -726,7 +764,7 @@
                 toggleQty.checked = true;
                 document.getElementById('qty-pricing-container').style.display = 'block';
                 prod.qtyTiers.forEach(t => {
-                    addQtyTierRow(t.minQty, t.price);
+                    addQtyTierRow(t.minQty, t.price, t.targetVariant || "all");
                 });
             } else {
                 toggleQty.checked = false;
@@ -802,7 +840,7 @@
                 });
             }
 
-            // Extract Color Variants
+            // Extract Variants
             let variants = [];
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
@@ -826,15 +864,16 @@
                 });
             }
 
-            // Extract Bulk Tiers
+            // Extract Bulk Tiers with Target Variant
             let qtyTiers = [];
             if (isQtyPricingEnabled) {
                 const qtyRows = document.querySelectorAll('.qty-tier-item-box');
                 qtyRows.forEach(r => {
+                    let targetVar = r.querySelector('.qty-variant-select').value;
                     let minQ = parseInt(r.querySelector('.qty-min-val').value) || 1;
                     let pkgPrice = parseInt(r.querySelector('.qty-price-val').value) || discountPrice;
                     if (minQ > 0 && pkgPrice > 0) {
-                        qtyTiers.push({ minQty: minQ, price: pkgPrice });
+                        qtyTiers.push({ targetVariant: targetVar, minQty: minQ, price: pkgPrice });
                     }
                 });
             }

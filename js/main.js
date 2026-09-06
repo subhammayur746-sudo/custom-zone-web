@@ -153,6 +153,7 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
+// HOME PRODUCTS (WITH DIRECT IMAGE CLICK TO ZOOM)
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -220,11 +221,12 @@ function renderHomeProducts(products) {
                     </button>
                 </div>
                 
-                <div class="product-card-img-wrap">
+                <!-- Direct Image Click Triggers Full Zoom Screen -->
+                <div class="product-card-img-wrap" onclick="event.stopPropagation(); directImageZoom('${mainImg}')" title="Click to Zoom Image">
                     <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
                 </div>
 
-                <h3>${prod.name}</h3>
+                <h3 style="cursor:pointer;" onclick="openProductDetailsModal('${prod.id}')">${prod.name}</h3>
                 
                 <div class="card-rating-row">
                     <span>★ ${ratingVal}</span>
@@ -239,6 +241,15 @@ function renderHomeProducts(products) {
             </div>
         `;
     });
+}
+
+function directImageZoom(imgUrl) {
+    const modalZoomImg = document.getElementById('modal-zoomed-img');
+    const zoomModal = document.getElementById('image-zoom-modal');
+    if (modalZoomImg && zoomModal) {
+        modalZoomImg.src = imgUrl;
+        zoomModal.classList.add('show-modal');
+    }
 }
 
 function filterHomeProducts() {
@@ -313,7 +324,7 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
-// DYNAMIC PRICE CALCULATION: Color/Variant Price + Size Extra Price * Bulk Package
+// LINKED BULK PRICING FORMULA (CHECKS TARGET VARIANT APPLICABILITY)
 function recalculateLinkedPrice(product) {
     let baseVariantPrice = currentSelectedVariant 
         ? parseInt(currentSelectedVariant.price) 
@@ -323,7 +334,9 @@ function recalculateLinkedPrice(product) {
     let unitPrice = baseVariantPrice + sizeExtra;
 
     if (currentSelectedQty > 1 && product.hasQtyPricing && product.qtyTiers && product.qtyTiers.length > 0) {
-        let tier = product.qtyTiers.find(t => t.minQty === currentSelectedQty);
+        let currentVarName = currentSelectedVariant ? currentSelectedVariant.name : "all";
+        let tier = product.qtyTiers.find(t => t.minQty === currentSelectedQty && (t.targetVariant === "all" || t.targetVariant === currentVarName));
+        
         if (tier) {
             let defaultBase = parseInt(product.discountPrice) || 1;
             let ratio = unitPrice / defaultBase;
@@ -341,7 +354,7 @@ function recalculateLinkedPrice(product) {
     updateModalPriceBox(product, currentApplicablePrice, finalMRP);
 }
 
-// Product Details Modal
+// PRODUCT DETAILS MODAL (WITH PERFECT AUTO-FIT IMAGES)
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
@@ -362,7 +375,15 @@ function openProductDetailsModal(productId) {
     const starsEl = document.getElementById('pdm-overall-stars');
     const revCountEl = document.getElementById('pdm-review-count');
 
-    if (mainImgEl) mainImgEl.src = defaultImages[0];
+    // Perfect Image Fit Constraints for Modal
+    if (mainImgEl) {
+        mainImgEl.src = defaultImages[0];
+        mainImgEl.style.cssText = "width:100%; max-height:360px; aspect-ratio:1/1; object-fit:contain; background:#ffffff; border-radius:8px; display:block; margin:0 auto;";
+        mainImgEl.onclick = () => directImageZoom(mainImgEl.src);
+        mainImgEl.title = "Click to Zoom";
+        mainImgEl.style.cursor = "zoom-in";
+    }
+
     if (badgeEl) badgeEl.innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
     if (titleEl) titleEl.innerText = product.name;
 
@@ -371,7 +392,7 @@ function openProductDetailsModal(productId) {
     const customContainer = document.getElementById('pdm-custom-field-container');
     if (customContainer) customContainer.innerHTML = "";
 
-    // 1. Render Optional Sizes (if enabled)
+    // 1. Optional Sizes
     if (product.hasSizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         currentSelectedSize = product.sizes[0];
         let sizeHtml = `
@@ -391,7 +412,7 @@ function openProductDetailsModal(productId) {
         customContainer.innerHTML += sizeHtml;
     }
 
-    // 2. Render Color/Design Variants (if enabled)
+    // 2. Color/Design Variants
     if (product.hasVariants && Array.isArray(product.variants) && product.variants.length > 0) {
         currentSelectedVariant = product.variants[0];
         let variantHtml = `
@@ -414,7 +435,6 @@ function openProductDetailsModal(productId) {
         `;
         customContainer.innerHTML += variantHtml;
 
-        // If first variant has photos, update gallery
         let firstVarImgs = currentSelectedVariant.images || (currentSelectedVariant.image ? [currentSelectedVariant.image] : []);
         if (firstVarImgs.length > 0) {
             if (mainImgEl) mainImgEl.src = firstVarImgs[0];
@@ -422,31 +442,11 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    // 3. Render Bulk Packages (if enabled)
-    if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
-        let sortedTiers = [...product.qtyTiers].sort((a, b) => a.minQty - b.minQty);
-        let qtyHtml = `
-            <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Quantity Package:</span>
-                    <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Price Linked</span>
-                </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <button type="button" class="pdm-qty-pill-btn active" onclick="onSelectBulkQty(1, this)">
-                        1 PC (Standard)
-                    </button>
-                    ${sortedTiers.map(t => `
-                        <button type="button" class="pdm-qty-pill-btn" onclick="onSelectBulkQty(${t.minQty}, this)">
-                            ${t.minQty} PCS Package
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-        customContainer.innerHTML += qtyHtml;
-    }
+    // 3. Dynamic Bulk Package Area (Updates based on variant selected)
+    customContainer.innerHTML += `<div id="pdm-bulk-qty-wrapper"></div>`;
+    renderApplicableBulkPackages(product);
 
-    // 4. Custom Inputs (Name / Picture)
+    // 4. Custom Inputs
     if (product.customType === "name") {
         customContainer.innerHTML += `
             <div style="margin-top:10px;">
@@ -495,7 +495,7 @@ function openProductDetailsModal(productId) {
                     variant: currentSelectedVariant, 
                     qty: currentSelectedQty, 
                     price: currentApplicablePrice,
-                    size: currentSelectedSize
+                    size: currentSelectedSize 
                 };
                 closeProductDetailsModal();
                 openAuthModal(true);
@@ -511,6 +511,46 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
+// RENDER BULK TIERS ONLY IF APPLICABLE TO CURRENT VARIANT
+function renderApplicableBulkPackages(product) {
+    const wrapper = document.getElementById('pdm-bulk-qty-wrapper');
+    if (!wrapper) return;
+
+    if (!product.hasQtyPricing || !Array.isArray(product.qtyTiers) || product.qtyTiers.length === 0) {
+        wrapper.innerHTML = "";
+        return;
+    }
+
+    let currentVarName = currentSelectedVariant ? currentSelectedVariant.name : "all";
+    let matchedTiers = product.qtyTiers.filter(t => t.targetVariant === "all" || t.targetVariant === currentVarName);
+
+    if (matchedTiers.length === 0) {
+        wrapper.innerHTML = "";
+        currentSelectedQty = 1;
+        return;
+    }
+
+    let sorted = [...matchedTiers].sort((a, b) => a.minQty - b.minQty);
+    wrapper.innerHTML = `
+        <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span>
+                <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === 1 ? 'active' : ''}" onclick="onSelectBulkQty(1, this)">
+                    1 PC (Standard)
+                </button>
+                ${sorted.map(t => `
+                    <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === t.minQty ? 'active' : ''}" onclick="onSelectBulkQty(${t.minQty}, this)">
+                        ${t.minQty} PCS Package
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
 function renderModalGallery(imgs) {
     const thumbsContainer = document.getElementById('pdm-thumbs');
     const fallbackImg = "assets/images/logo.png";
@@ -518,7 +558,11 @@ function renderModalGallery(imgs) {
     thumbsContainer.innerHTML = "";
     if (imgs && imgs.length > 1) {
         imgs.forEach(img => {
-            thumbsContainer.innerHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" onclick="document.getElementById('pdm-main-img').src='${img}'">`;
+            thumbsContainer.innerHTML += `
+                <img src="${img}" onerror="this.src='${fallbackImg}'" 
+                     style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" 
+                     onclick="document.getElementById('pdm-main-img').src='${img}'">
+            `;
         });
     }
 }
@@ -542,14 +586,16 @@ function onSelectProductVariant(varName, price, actualPrice, images, btnEl) {
     btnEl.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btnEl.classList.add('active');
 
-    // Switch image gallery to this variant's photos
     if (currentSelectedVariant.images.length > 0) {
         document.getElementById('pdm-main-img').src = currentSelectedVariant.images[0];
         renderModalGallery(currentSelectedVariant.images);
     }
 
     let product = liveProducts.find(p => p.id === currentOpenProductId);
-    if (product) recalculateLinkedPrice(product);
+    if (product) {
+        renderApplicableBulkPackages(product);
+        recalculateLinkedPrice(product);
+    }
 }
 
 function onSelectBulkQty(qty, btnEl) {
@@ -566,16 +612,6 @@ function closeProductDetailsModal() {
     if (modal) modal.classList.remove('show-modal');
     const writeBox = document.getElementById('product-write-review-box');
     if (writeBox) writeBox.style.display = "none";
-}
-
-function zoomCurrentProductImage() {
-    const mainImg = document.getElementById('pdm-main-img');
-    const modalZoomImg = document.getElementById('modal-zoomed-img');
-    const zoomModal = document.getElementById('image-zoom-modal');
-    if (mainImg && modalZoomImg && zoomModal) {
-        modalZoomImg.src = mainImg.src;
-        zoomModal.classList.add('show-modal');
-    }
 }
 
 function closeImageZoomModal() {
@@ -610,7 +646,7 @@ async function loadProductSpecificReviews(productId) {
         container.innerHTML = "";
         reviews.forEach(r => {
             let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
-            let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="zoomReviewImage('${r.photoUrl}')" alt="Customer Real Pic">` : "";
+            let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="directImageZoom('${r.photoUrl}')" alt="Customer Real Pic">` : "";
 
             container.innerHTML += `
                 <div class="review-card-item">
@@ -627,15 +663,6 @@ async function loadProductSpecificReviews(productId) {
 
     } catch (e) {
         container.innerHTML = "<p style='color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
-    }
-}
-
-function zoomReviewImage(url) {
-    const modalZoomImg = document.getElementById('modal-zoomed-img');
-    const zoomModal = document.getElementById('image-zoom-modal');
-    if (modalZoomImg && zoomModal) {
-        modalZoomImg.src = url;
-        zoomModal.classList.add('show-modal');
     }
 }
 
