@@ -24,7 +24,6 @@
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-        .logout-btn { background: #c0392b !important; color: white !important; margin-top: 20px; }
         
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
@@ -47,7 +46,10 @@
         .thumb-preview-box img { width: 100%; height: 100%; object-fit: cover; }
         .thumb-preview-box .remove-thumb-btn { position: absolute; top: 2px; right: 2px; background: rgba(231, 76, 60, 0.9); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        .variant-item-box, .qty-tier-item-box { background: #fafbfc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 10px; }
+        /* FIXED RESPONSIVE VARIANT & BULK BOXES */
+        .variant-item-box, .qty-tier-item-box { background: #fafbfc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
+        .variant-grid-fields { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        
         .table-responsive-container { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 6px; }
         .admin-table { width: 100%; border-collapse: collapse; min-width: 750px; background: #fff; }
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px 14px; border-bottom: 2px solid #eee; }
@@ -58,7 +60,10 @@
             .sidebar.open { left: 0; }
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .main-content { margin-left: 0; width: 100%; padding: 12px; }
+            .admin-card { padding: 15px; }
+            /* Mobile 2x2 Clean Layout - Never overflows or breaks */
+            .variant-grid-fields { grid-template-columns: 1fr 1fr; gap: 8px; }
         }
     </style>
 </head>
@@ -83,25 +88,24 @@
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
-        <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
+        <a href="#" onclick="logout()" style="background:#c0392b; color:white; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory & Options / Variants</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Product Inventory, Vendors & Options</h2>
 
         <div class="admin-card">
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
             <input type="hidden" id="prod-doc-id">
-            <!-- Hidden inputs to track old price before edit -->
             <input type="hidden" id="prod-old-discount-price">
             <input type="hidden" id="prod-old-actual-price">
 
             <div class="form-grid-row">
                 <div class="form-group" style="margin:0;">
                     <label>Product Name *</label>
-                    <input type="text" id="prod-name" placeholder="e.g., Personalized Name Plate" required>
+                    <input type="text" id="prod-name" placeholder="e.g., Personalized Family Name Plate" required>
                 </div>
                 <div class="form-group" style="margin:0;">
                     <label>Main Category *</label>
@@ -123,15 +127,16 @@
                 </div>
             </div>
 
+            <!-- Customer Pricing Row -->
             <div class="form-grid-row" style="background:#f8f9fa; padding:15px; border-radius:6px; border:1px solid #e2e8f0;">
                 <div class="form-group" style="margin:0;">
-                    <label>Actual Price / MRP (₹) *</label>
-                    <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 289" min="1" required>
-                    <small style="color:#7f8c8d; font-size:11px;">Original Price (Will show strikethrough)</small>
+                    <label>Customer MRP / Actual Price (₹) *</label>
+                    <input type="number" id="prod-actual-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 299" min="1" required>
+                    <small style="color:#7f8c8d; font-size:11px;">Shown strikethrough to customer</small>
                 </div>
                 <div class="form-group" style="margin:0;">
-                    <label>Discount / Selling Price (₹) *</label>
-                    <input type="number" id="prod-discount-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 249" min="1" required>
+                    <label>Customer Selling Price (₹) *</label>
+                    <input type="number" id="prod-discount-price" oninput="calculateLiveDiscountPercentage()" placeholder="e.g., 199" min="1" required>
                     <small style="color:#27ae60; font-size:11px; font-weight:bold;" id="live-discount-preview">No discount applied</small>
                 </div>
                 <div class="form-group" style="margin:0;">
@@ -141,6 +146,21 @@
                         <option value="name">Text / Name Customization</option>
                         <option value="pic">Photo Customization</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- NEW: VENDOR ASSIGNMENT & SOURCING COST (100% PRIVATE) -->
+            <div class="form-grid-row" style="background:#eef2ff; border:1px solid #c7d2fe; padding:14px; border-radius:6px; margin-top:15px;">
+                <div class="form-group" style="margin:0;">
+                    <label style="color:#3730a3;"><i class="fas fa-truck-loading"></i> Assign Product Vendor / Supplier:</label>
+                    <select id="prod-vendor-select">
+                        <option value="">-- Direct In-House / No Vendor --</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label style="color:#3730a3;"><i class="fas fa-coins"></i> Vendor Buy Rate / Cost Price (₹):</label>
+                    <input type="number" id="prod-vendor-cost" min="0" placeholder="e.g. 120 (Only Admin/Vendor Slip can see)" style="background:#fff;">
+                    <small style="color:#4338ca; font-size:11px; font-weight:600;">*Private: Customers cannot see this cost.</small>
                 </div>
             </div>
 
@@ -156,11 +176,12 @@
 
             <div class="form-group" style="background:#fffdfa; border:1px solid #f9e3ba; padding:12px; border-radius:6px;">
                 <label style="color:#d35400; margin-bottom:4px;"><i class="fas fa-sticky-note"></i> Admin Note (Private):</label>
-                <textarea id="prod-admin-note" rows="2" placeholder="e.g., Raw material cost ₹180..." style="background:#fff;"></textarea>
+                <textarea id="prod-admin-note" rows="2" placeholder="Private inventory notes..." style="background:#fff;"></textarea>
             </div>
 
+            <!-- RESPONSIVE VARIANTS SECTION -->
             <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
                         <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options
                     </label>
@@ -172,8 +193,9 @@
                 </div>
             </div>
 
+            <!-- RESPONSIVE QUANTITY PRICING SECTION -->
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
                         <input type="checkbox" id="toggle-qty-pricing" onchange="toggleQtyPricingSection(this.checked)"> Enable Quantity-Based / Bulk Package Pricing
                     </label>
@@ -194,7 +216,7 @@
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
-                <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:220px; background:#fff;">
+                <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category / vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:220px; background:#fff;">
             </div>
 
             <div class="table-responsive-container">
@@ -202,7 +224,7 @@
                     <thead>
                         <tr>
                             <th style="width:70px;">Image</th>
-                            <th>Product Details & Admin Note</th>
+                            <th>Product Details & Vendor</th>
                             <th>Category</th>
                             <th>Pricing / Tiers</th>
                             <th>Status</th>
@@ -219,6 +241,7 @@
 
     <script>
         let allProductsCache = [];
+        let allVendorsCache = [];
         let uploadedProductImages = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
@@ -248,20 +271,22 @@
             return (loggedInUser && loggedInUser.role !== 'staff');
         }
 
-        function applyNavRules() {
-            if (loggedInUser.role === 'staff') {
-                let perms = loggedInUser.permissions || [];
-                if (!perms.includes('orders')) document.getElementById('nav-orders').style.display = 'none';
-                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
-                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
-                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
-                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
-                document.getElementById('nav-ads').style.display = 'none';
-                document.getElementById('nav-users').style.display = 'none';
-            }
+        // Fetch vendors to populate dropdown
+        async function loadVendorsDropdown() {
+            const select = document.getElementById('prod-vendor-select');
+            try {
+                const snap = await db.collection("staff").where("role", "==", "vendor").get();
+                allVendorsCache = [];
+                select.innerHTML = '<option value="">-- Direct In-House / No Vendor --</option>';
+                snap.forEach(doc => {
+                    let v = doc.data();
+                    v.id = doc.id;
+                    allVendorsCache.push(v);
+                    select.innerHTML += `<option value="${v.name}">${v.name} (${v.phone || 'No WA'})</option>`;
+                });
+            } catch(e) {}
         }
 
-        // Dedicated Price & System Audit Logger
         async function logSystemAction(action, targetId, oldPrice = null, newPrice = null) {
             try {
                 let logData = {
@@ -299,12 +324,9 @@
                 const pct = Math.round(((actual - discount) / actual) * 100);
                 previewEl.style.color = "#dc2626";
                 previewEl.innerText = `🔥 ${pct}% Discount applied (Save ₹${Math.round(actual - discount)})`;
-            } else if (actual > 0 && discount > actual) {
-                previewEl.style.color = "#dc2626";
-                previewEl.innerText = `⚠️ Selling price cannot be higher than Actual Price!`;
             } else {
                 previewEl.style.color = "#27ae60";
-                previewEl.innerText = `Regular price (No discount)`;
+                previewEl.innerText = `Regular price`;
             }
         }
 
@@ -372,6 +394,7 @@
             }
         }
 
+        // FULLY RESPONSIVE VARIANT ROW BUILDER (NO SCREEN OVERFLOW)
         function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "") {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
@@ -383,27 +406,26 @@
             const div = document.createElement('div');
             div.className = 'variant-item-box';
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <strong style="font-size:12px; color:#2c3e50;">Variant #${currentCount + 1}</strong>
-                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:2px 6px; border-radius:3px; font-size:10px; cursor:pointer;">✕ Delete</button>
+                    <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">✕ Delete</button>
                 </div>
-                <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap:6px; margin-bottom:6px;">
-                    <input type="text" placeholder="Option Name" value="${name}" class="var-name" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
-                    <select class="var-type" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                <div class="variant-grid-fields">
+                    <input type="text" placeholder="Option Name (e.g. Red)" value="${name}" class="var-name" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <select class="var-type" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
                         <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
                         <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
                         <option value="Design" ${type === 'Design' ? 'selected' : ''}>Design</option>
                         <option value="Material" ${type === 'Material' ? 'selected' : ''}>Material</option>
                         <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
-                        <option value="Other" ${type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
-                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                    <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                     <input type="file" accept="image/*" onchange="handleVariantImageUpload(this)" style="font-size:11px; flex:1;">
                     <input type="hidden" class="var-img-data" value="${img}">
-                    <img src="${img || ''}" class="var-img-preview" style="width:32px; height:32px; object-fit:cover; border-radius:3px; border:1px solid #ccc; display:${img ? 'block' : 'none'};">
+                    <img src="${img || ''}" class="var-img-preview" style="width:34px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #ccc; display:${img ? 'block' : 'none'};">
                 </div>
             `;
             list.appendChild(div);
@@ -454,27 +476,28 @@
             const box = document.getElementById('qty-pricing-container');
             box.style.display = isEnabled ? 'block' : 'none';
             if (isEnabled && document.querySelectorAll('.qty-tier-item-box').length === 0) {
-                addQtyTierRow(1, document.getElementById('prod-discount-price').value || 109);
-                addQtyTierRow(3, 249);
+                addQtyTierRow(1, document.getElementById('prod-discount-price').value || 199);
+                addQtyTierRow(3, 499);
             }
         }
 
+        // FULLY RESPONSIVE BULK PRICING ROW
         function addQtyTierRow(minQty = "", packagePrice = "") {
             const list = document.getElementById('qty-tier-items-list');
             const div = document.createElement('div');
             div.className = 'qty-tier-item-box';
             div.innerHTML = `
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <div style="flex:1;">
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:120px;">
                         <label style="font-size:11px; font-weight:bold;">Min Quantity (PCS):</label>
-                        <input type="number" min="1" placeholder="e.g., 3" value="${minQty}" class="qty-min-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                        <input type="number" min="1" placeholder="e.g., 3" value="${minQty}" class="qty-min-val" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
-                    <div style="flex:1.5;">
+                    <div style="flex:1.5; min-width:140px;">
                         <label style="font-size:11px; font-weight:bold;">Package Price (₹):</label>
-                        <input type="number" min="1" placeholder="e.g., 249" value="${packagePrice}" class="qty-price-val" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                        <input type="number" min="1" placeholder="e.g., 499" value="${packagePrice}" class="qty-price-val" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
                     <div style="padding-top:16px;">
-                        <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:7px 10px; border-radius:4px; font-size:11px; cursor:pointer;">✕</button>
+                        <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:7px 12px; border-radius:4px; font-size:11px; cursor:pointer;">✕</button>
                     </div>
                 </div>
             `;
@@ -513,6 +536,7 @@
 
             products.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
+                let vendorBadge = p.vendorName ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;"><i class="fas fa-truck-loading"></i> Vendor: ${p.vendorName} (Cost: ₹${p.vendorCost || 0})</span>` : '';
                 
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) 
                     ? `<span style="background:#2c3e50; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.variants.length} Variants</span>`
@@ -521,24 +545,9 @@
                 let qtyBadge = (p.hasQtyPricing && p.qtyTiers && p.qtyTiers.length > 0) 
                     ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.qtyTiers.length} Qty Tiers</span>` 
                     : '';
-                
-                let noteSnippet = p.adminNote ? `<div style="font-size:11px; color:#d35400; background:#fffdfa; padding:4px 8px; border-radius:4px; margin-top:5px; border:1px dashed #f9e3ba; max-width:320px; word-break:break-word;"><i class="fas fa-sticky-note"></i> ${p.adminNote}</div>` : '';
 
                 let actualPrice = parseInt(p.actualPrice) || 0;
                 let discountPrice = parseInt(p.discountPrice || p.price) || 0;
-                let hasDiscount = actualPrice > 0 && discountPrice > 0 && discountPrice < actualPrice;
-                let pct = hasDiscount ? Math.round(((actualPrice - discountPrice) / actualPrice) * 100) : 0;
-
-                let pricingHtml = "";
-                if (hasDiscount) {
-                    pricingHtml = `
-                        <span style="color:#7f8c8d; text-decoration:line-through; font-size:12px;">₹${actualPrice}</span>
-                        <strong style="color:#27ae60; font-size:14px; margin-left:4px;">₹${discountPrice}</strong>
-                        <span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:bold; padding:1px 6px; border-radius:10px; display:inline-block; margin-left:3px;">🔥 ${pct}% OFF</span>
-                    `;
-                } else {
-                    pricingHtml = `<strong style="color:#27ae60; font-size:14px;">₹${discountPrice || p.price}</strong>`;
-                }
 
                 tbody.innerHTML += `
                     <tr>
@@ -548,11 +557,11 @@
                             </div>
                         </td>
                         <td>
-                            <strong style="color:#2c3e50; font-size:14px;">${p.name}</strong>
-                            ${noteSnippet}
+                            <strong style="color:#2c3e50; font-size:14px;">${p.name}</strong><br>
+                            ${vendorBadge}
                         </td>
                         <td><span style="background:#f8f9fa; color:#2c3e50; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px; border:1px solid #eee;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
-                        <td>${pricingHtml}<br>${variantBadge} ${qtyBadge}</td>
+                        <td><strong style="color:#27ae60; font-size:14px;">₹${discountPrice}</strong><br>${variantBadge} ${qtyBadge}</td>
                         <td>
                             <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
                                 ${p.isActive !== false ? 'Active' : 'Inactive'}
@@ -560,12 +569,9 @@
                         </td>
                         <td style="white-space:nowrap;">
                             <button onclick="editProduct('${p.id}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
-                            <button onclick="toggleProductActive('${p.id}', ${p.isActive !== false})" style="background:#95a5a6; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Hide/Unhide Product"><i class="fas fa-eye-slash"></i></button>
                             ${canDelete ? `
                                 <button onclick="deleteProduct('${p.id}')" style="background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; margin-left:3px;" title="Delete Product"><i class="fas fa-trash"></i></button>
-                            ` : `
-                                <button onclick="alert('❌ Access Denied: Staff members cannot delete products!')" style="background:#bdc3c7; color:#7f8c8d; border:none; padding:6px 10px; border-radius:4px; cursor:not-allowed; margin-left:3px;" title="Delete Restricted"><i class="fas fa-trash"></i></button>
-                            `}
+                            ` : ''}
                         </td>
                     </tr>
                 `;
@@ -574,7 +580,7 @@
 
         function filterAdminProducts() {
             let term = document.getElementById('search-prod-input').value.toLowerCase().trim();
-            let filtered = allProductsCache.filter(p => p.name.toLowerCase().includes(term) || (p.subCategory && p.subCategory.toLowerCase().includes(term)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(term)));
+            let filtered = allProductsCache.filter(p => p.name.toLowerCase().includes(term) || (p.vendorName && p.vendorName.toLowerCase().includes(term)) || (p.subCategory && p.subCategory.toLowerCase().includes(term)));
             renderAdminProducts(filtered);
         }
 
@@ -585,10 +591,8 @@
             document.getElementById('form-heading').innerHTML = `<i class="fas fa-edit"></i> Edit Product`;
             document.getElementById('prod-doc-id').value = prod.id;
             document.getElementById('prod-name').value = prod.name || "";
-            
-            // Save original prices for audit logging
-            document.getElementById('prod-old-discount-price').value = prod.discountPrice || prod.price || "";
-            document.getElementById('prod-old-actual-price').value = prod.actualPrice || "";
+            document.getElementById('prod-vendor-select').value = prod.vendorName || "";
+            document.getElementById('prod-vendor-cost').value = prod.vendorCost || "";
 
             const mainCatSelect = document.getElementById('prod-main-cat');
             const customCatInput = document.getElementById('prod-custom-main-cat');
@@ -597,7 +601,6 @@
             if (isPreset) {
                 mainCatSelect.value = prod.mainCategory;
                 customCatInput.style.display = 'none';
-                customCatInput.value = '';
             } else {
                 mainCatSelect.value = '__custom__';
                 customCatInput.style.display = 'block';
@@ -652,16 +655,14 @@
         function resetProductForm() {
             document.getElementById('form-heading').innerHTML = `<i class="fas fa-plus-circle"></i> Add New Product`;
             document.getElementById('prod-doc-id').value = "";
-            document.getElementById('prod-old-discount-price').value = "";
-            document.getElementById('prod-old-actual-price').value = "";
             document.getElementById('prod-name').value = "";
+            document.getElementById('prod-vendor-select').value = "";
+            document.getElementById('prod-vendor-cost').value = "";
             document.getElementById('prod-main-cat').value = "Handmade";
             document.getElementById('prod-custom-main-cat').style.display = "none";
-            document.getElementById('prod-custom-main-cat').value = "";
             document.getElementById('prod-sub-cat').value = "";
             document.getElementById('prod-actual-price').value = "";
             document.getElementById('prod-discount-price').value = "";
-            document.getElementById('live-discount-preview').innerText = "No discount applied";
             document.getElementById('prod-admin-note').value = "";
             uploadedProductImages = [];
             renderImagePreviews();
@@ -672,13 +673,14 @@
             document.getElementById('toggle-qty-pricing').checked = false;
             document.getElementById('qty-tier-items-list').innerHTML = "";
             document.getElementById('qty-pricing-container').style.display = 'none';
-
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
+            const vendorName = document.getElementById('prod-vendor-select').value;
+            const vendorCost = parseInt(document.getElementById('prod-vendor-cost').value) || 0;
             
             let mainCat = document.getElementById('prod-main-cat').value;
             if (mainCat === '__custom__') {
@@ -694,8 +696,7 @@
             const isQtyPricingEnabled = document.getElementById('toggle-qty-pricing').checked;
 
             if (!name) { alert("Please provide product name."); return; }
-            if (actualPrice <= 0 || discountPrice <= 0) { alert("Both Actual Price and Discount Price must be greater than 0."); return; }
-            if (discountPrice > actualPrice) { alert("Discount Price cannot be greater than Actual Price."); return; }
+            if (actualPrice <= 0 || discountPrice <= 0) { alert("Please enter valid prices."); return; }
 
             let variants = [];
             if (isVariantsEnabled) {
@@ -739,6 +740,8 @@
                 actualPrice: actualPrice,
                 discountPrice: discountPrice,
                 price: discountPrice,
+                vendorName: vendorName,
+                vendorCost: vendorCost,
                 customType: customType,
                 images: uploadedProductImages,
                 adminNote: adminNote,
@@ -756,22 +759,12 @@
 
             try {
                 if (id) {
-                    const oldDiscountPrice = parseInt(document.getElementById('prod-old-discount-price').value) || 0;
-                    
                     await db.collection("products").doc(id).update(prodPayload);
-
-                    // Price alteration detection
-                    if (oldDiscountPrice > 0 && oldDiscountPrice !== discountPrice) {
-                        let priceAction = `Price changed from ₹${oldDiscountPrice} to ₹${discountPrice}`;
-                        await logSystemAction(priceAction, name, oldDiscountPrice, discountPrice);
-                    } else {
-                        await logSystemAction("Edited Product Details", name);
-                    }
-
+                    await logSystemAction("Updated Product Details & Vendor", name);
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    await logSystemAction("Added New Product", `${name} (₹${discountPrice})`);
+                    await logSystemAction("Added New Product", name);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();
@@ -784,36 +777,19 @@
             }
         }
 
-        async function toggleProductActive(id, currentActive) {
-            try {
-                await db.collection("products").doc(id).update({ isActive: !currentActive });
-                await logSystemAction(currentActive ? "Deactivated Product" : "Activated Product", id);
-                fetchAdminProducts();
-            } catch(e) {
-                alert("Failed to update status.");
-            }
-        }
-
         async function deleteProduct(id) {
-            if (!isMainAdmin()) {
-                alert("❌ Access Denied: Staff members cannot delete products!");
-                return;
-            }
-
-            if (confirm("Are you sure you want to permanently delete this product?")) {
+            if (!isMainAdmin()) return;
+            if (confirm("Permanently delete this product?")) {
                 try {
                     await db.collection("products").doc(id).delete();
-                    await logSystemAction("Permanently Deleted Product", id);
-                    alert("✓ Product deleted successfully!");
+                    alert("✓ Product deleted.");
                     fetchAdminProducts();
-                } catch(e) {
-                    alert("Error deleting product.");
-                }
+                } catch(e) { alert("Failed to delete."); }
             }
         }
 
         window.onload = () => {
-            applyNavRules();
+            loadVendorsDropdown();
             fetchAdminProducts();
         };
     </script>

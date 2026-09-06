@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Management - Custom Zone Admin</title>
+    <title>Staff & Vendor Management - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -73,30 +73,37 @@
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" class="active" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-users.html" class="active" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Staff Management & Permissions</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Staff & Supplier / Vendor Management</h2>
 
         <div class="admin-card">
             <h3 id="staff-form-title" style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
-                <i class="fas fa-user-plus"></i> Add New Staff Member
+                <i class="fas fa-user-plus"></i> Add New Staff Member or Vendor
             </h3>
             <input type="hidden" id="staff-doc-id">
             
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                 <div>
-                    <label style="font-size:12px; font-weight:bold;">Staff Full Name *</label>
-                    <input type="text" id="staff-name" placeholder="Staff Name" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                    <label style="font-size:12px; font-weight:bold;">Account Type *</label>
+                    <select id="user-role-type" onchange="toggleRoleFields(this.value)" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; font-weight:600;">
+                        <option value="staff">Staff Member (Admin Panel Access)</option>
+                        <option value="vendor">Product Supplier / Vendor (Sourcing Partner)</option>
+                    </select>
                 </div>
                 <div>
-                    <label style="font-size:12px; font-weight:bold;">Username / Phone *</label>
-                    <input type="text" id="staff-username" placeholder="e.g. staff1" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                    <label style="font-size:12px; font-weight:bold;">Full Name / Vendor Business Name *</label>
+                    <input type="text" id="staff-name" placeholder="e.g. Ramesh Art Studio" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
                 </div>
                 <div>
-                    <label style="font-size:12px; font-weight:bold;">Password *</label>
+                    <label style="font-size:12px; font-weight:bold;">WhatsApp / Phone Number *</label>
+                    <input type="tel" id="staff-username" placeholder="10-digit WhatsApp number" style="width:100%; padding:9px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                </div>
+                <div id="password-block">
+                    <label style="font-size:12px; font-weight:bold;">Login Password *</label>
                     <div class="input-eye-wrap">
                         <input type="password" id="staff-password" placeholder="Set password">
                         <button type="button" class="eye-btn" onclick="togglePasswordVisibility('staff-password', this)">
@@ -106,9 +113,10 @@
                 </div>
             </div>
 
-            <div style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:15px;">
+            <!-- Permissions block (Only for Staff) -->
+            <div id="staff-permissions-box" style="background:#f8fafc; padding:12px; border-radius:6px; border:1px solid #e2e8f0; margin-bottom:15px;">
                 <label style="font-size:12px; font-weight:bold; color:#2c3e50; display:block; margin-bottom:8px;">
-                    <i class="fas fa-key"></i> Assigned Permissions:
+                    <i class="fas fa-key"></i> Assigned Staff Permissions:
                 </label>
                 <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:12.5px;">
                     <label><input type="checkbox" id="perm-products" value="products"> Products</label>
@@ -121,8 +129,8 @@
             </div>
 
             <div style="display:flex; gap:10px;">
-                <button onclick="saveStaffCloud()" id="btn-save-staff" style="background:#27ae60; color:#fff; border:none; padding:10px 22px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                    Save Staff
+                <button onclick="saveUserOrVendorCloud()" id="btn-save-staff" style="background:#27ae60; color:#fff; border:none; padding:10px 22px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                    Save Record
                 </button>
                 <button onclick="resetStaffForm()" id="btn-cancel-staff" style="display:none; background:#95a5a6; color:#fff; border:none; padding:10px 18px; border-radius:4px; font-weight:bold; cursor:pointer;">
                     Cancel
@@ -132,21 +140,21 @@
 
         <div class="admin-card" style="overflow-x:auto;">
             <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
-                <i class="fas fa-users-cog"></i> Existing Staff Directory
+                <i class="fas fa-users-cog"></i> Active Staff & Vendors Directory
             </h3>
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Staff Name</th>
-                        <th>Username</th>
-                        <th>Role</th>
-                        <th>Permissions</th>
+                        <th>Name / Business</th>
+                        <th>WhatsApp / Username</th>
+                        <th>Type</th>
+                        <th>Details / Permissions</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="staff-table-body">
-                    <tr><td colspan="6" style="text-align:center;">Loading staff accounts...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Loading accounts...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -158,8 +166,20 @@
         if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
         } else if (loggedInAdmin.role === 'staff') {
-            alert("❌ Access Denied: Only Main Admin can manage staff!");
+            alert("❌ Access Denied: Only Main Admin can manage staff and vendors!");
             window.location.href = "admin-dashboard.html";
+        }
+
+        function toggleRoleFields(role) {
+            const pwdBlock = document.getElementById('password-block');
+            const permBlock = document.getElementById('staff-permissions-box');
+            if (role === 'vendor') {
+                pwdBlock.style.display = 'none';
+                permBlock.style.display = 'none';
+            } else {
+                pwdBlock.style.display = 'block';
+                permBlock.style.display = 'block';
+            }
         }
 
         function togglePasswordVisibility(inputId, btnEl) {
@@ -183,47 +203,54 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
-        let staffCache = [];
+        let accountsCache = [];
 
-        async function fetchStaffList() {
+        async function fetchAccountsList() {
             const tbody = document.getElementById('staff-table-body');
             try {
                 const snap = await db.collection("staff").get();
-                staffCache = [];
+                accountsCache = [];
                 tbody.innerHTML = "";
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:#7f8c8d; padding:15px;'>No staff accounts yet.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:#7f8c8d; padding:15px;'>No staff or vendor accounts found.</td></tr>";
                     return;
                 }
                 snap.forEach(doc => {
                     let s = doc.data();
                     s.docId = doc.id;
-                    staffCache.push(s);
+                    accountsCache.push(s);
                 });
-                renderStaffTable();
-            } catch(e) { tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading staff.</td></tr>"; }
+                renderAccountsTable();
+            } catch(e) { tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading accounts.</td></tr>"; }
         }
 
-        function renderStaffTable() {
+        function renderAccountsTable() {
             const tbody = document.getElementById('staff-table-body');
             tbody.innerHTML = "";
-            staffCache.forEach(s => {
-                let permHTML = (s.role === 'main_admin' || s.username === 'admin')
-                    ? `<span class="perm-badge" style="background:#fdedec; color:#e74c3c;">All Modules</span>`
-                    : (Array.isArray(s.permissions) && s.permissions.length > 0 ? s.permissions.map(p => `<span class="perm-badge">${p}</span>`).join("") : '-');
+            accountsCache.forEach(s => {
+                let isVendor = s.role === 'vendor';
+                let typeBadge = isVendor 
+                    ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Vendor / Supplier</span>`
+                    : `<span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Staff Member</span>`;
+
+                let permHTML = isVendor 
+                    ? `<span style="color:#64748b; font-size:12px;">Sourcing Partner (No Login Access)</span>`
+                    : ((s.role === 'main_admin' || s.username === 'admin')
+                        ? `<span class="perm-badge" style="background:#fdedec; color:#e74c3c;">All Modules</span>`
+                        : (Array.isArray(s.permissions) && s.permissions.length > 0 ? s.permissions.map(p => `<span class="perm-badge">${p}</span>`).join("") : '-'));
 
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${s.name || s.username}</strong></td>
-                        <td>${s.username}</td>
-                        <td><span style="font-weight:bold;">${s.role || 'staff'}</span></td>
+                        <td>${s.phone || s.username}</td>
+                        <td>${typeBadge}</td>
                         <td>${permHTML}</td>
                         <td><span style="background:${s.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${s.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">${s.isActive !== false ? 'Active' : 'Inactive'}</span></td>
                         <td>
                             ${s.username !== 'admin' ? `
-                                <button onclick="editStaff('${s.docId}')" style="background:#3498db; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button onclick="toggleStaffActive('${s.docId}', ${s.isActive !== false})" style="background:#95a5a6; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Toggle Active"><i class="fas fa-power-off"></i></button>
-                                <button onclick="deleteStaffPermanent('${s.docId}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Delete"><i class="fas fa-trash"></i></button>
+                                <button onclick="editAccount('${s.docId}')" style="background:#3498db; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button onclick="toggleAccountActive('${s.docId}', ${s.isActive !== false})" style="background:#95a5a6; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Toggle Active"><i class="fas fa-power-off"></i></button>
+                                <button onclick="deleteAccountPermanent('${s.docId}')" style="background:#e74c3c; color:#fff; border:none; padding:5px 9px; border-radius:4px; cursor:pointer;" title="Delete"><i class="fas fa-trash"></i></button>
                             ` : `<small style="color:#7f8c8d;">Master Admin</small>`}
                         </td>
                     </tr>
@@ -231,13 +258,16 @@
             });
         }
 
-        function editStaff(docId) {
-            let s = staffCache.find(x => x.docId === docId);
+        function editAccount(docId) {
+            let s = accountsCache.find(x => x.docId === docId);
             if (!s) return;
             document.getElementById('staff-doc-id').value = s.docId;
+            document.getElementById('user-role-type').value = s.role || "staff";
+            toggleRoleFields(s.role || "staff");
             document.getElementById('staff-name').value = s.name || "";
-            document.getElementById('staff-username').value = s.username || "";
+            document.getElementById('staff-username').value = s.phone || s.username || "";
             document.getElementById('staff-password').value = s.password || "";
+            
             let perms = s.permissions || [];
             document.getElementById('perm-products').checked = perms.includes('products');
             document.getElementById('perm-orders').checked = perms.includes('orders');
@@ -251,6 +281,8 @@
 
         function resetStaffForm() {
             document.getElementById('staff-doc-id').value = "";
+            document.getElementById('user-role-type').value = "staff";
+            toggleRoleFields("staff");
             document.getElementById('staff-name').value = "";
             document.getElementById('staff-username').value = "";
             document.getElementById('staff-password').value = "";
@@ -258,24 +290,29 @@
             document.getElementById('btn-cancel-staff').style.display = "none";
         }
 
-        async function saveStaffCloud() {
+        async function saveUserOrVendorCloud() {
             const docId = document.getElementById('staff-doc-id').value;
+            const role = document.getElementById('user-role-type').value;
             const name = document.getElementById('staff-name').value.trim();
-            const username = document.getElementById('staff-username').value.trim().toLowerCase();
+            const phoneOrUser = document.getElementById('staff-username').value.trim().toLowerCase();
             const password = document.getElementById('staff-password').value.trim();
 
-            if (!username || !password) { alert("Username and Password are required."); return; }
+            if (!name || !phoneOrUser) { alert("Please provide Name and Phone/Username."); return; }
+            if (role === 'staff' && !password) { alert("Password is required for staff account."); return; }
 
             let permissions = [];
-            ['products','orders','customers','invoice','reviews','coupons'].forEach(p => {
-                if (document.getElementById(`perm-${p}`).checked) permissions.push(p);
-            });
+            if (role === 'staff') {
+                ['products','orders','customers','invoice','reviews','coupons'].forEach(p => {
+                    if (document.getElementById(`perm-${p}`).checked) permissions.push(p);
+                });
+            }
 
             const payload = {
-                name: name || username,
-                username: username,
-                password: password,
-                role: 'staff',
+                name: name,
+                username: phoneOrUser,
+                phone: phoneOrUser,
+                role: role,
+                password: role === 'staff' ? password : "",
                 permissions: permissions,
                 canDelete: false,
                 isActive: true,
@@ -285,25 +322,25 @@
             try {
                 if (docId) await db.collection("staff").doc(docId).update(payload);
                 else await db.collection("staff").add(payload);
-                alert("✅ Staff credentials and permissions saved!");
+                alert(`✅ ${role === 'vendor' ? 'Vendor' : 'Staff'} profile saved successfully!`);
                 resetStaffForm();
-                fetchStaffList();
-            } catch(e) { alert("Error saving staff."); }
+                fetchAccountsList();
+            } catch(e) { alert("Error saving account."); }
         }
 
-        async function toggleStaffActive(docId, current) {
+        async function toggleAccountActive(docId, current) {
             await db.collection("staff").doc(docId).update({ isActive: !current });
-            fetchStaffList();
+            fetchAccountsList();
         }
 
-        async function deleteStaffPermanent(docId) {
-            if (confirm("Permanently delete this staff member?")) {
+        async function deleteAccountPermanent(docId) {
+            if (confirm("Permanently delete this record?")) {
                 await db.collection("staff").doc(docId).delete();
-                fetchStaffList();
+                fetchAccountsList();
             }
         }
 
-        window.onload = fetchStaffList;
+        window.onload = fetchAccountsList;
     </script>
 </body>
 </html>

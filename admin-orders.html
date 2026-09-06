@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Orders & Payments - Custom Zone Admin</title>
+    <title>Manage Orders & Vendors - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -19,7 +19,7 @@
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
         .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
-        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
         .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
@@ -33,30 +33,20 @@
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
         .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
-        .admin-table { width: 100%; border-collapse: collapse; min-width: 850px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 900px; }
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
         
-        .btn-act { border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 3px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-        .btn-invoice { background: #3498db; color: #fff; text-decoration: none; }
+        .btn-act { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 3px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
         .btn-receipt { background: #8e44ad; color: #fff; }
+        .btn-vendor-slip { background: #3730a3; color: #fff; }
         .btn-wa { background: #25d366; color: #fff; }
         .btn-del { background: #e74c3c; color: #fff; }
-        .btn-dis { background: #bdc3c7; color: #7f8c8d; cursor: not-allowed; }
 
         @media print {
             body * { visibility: hidden; }
-            #printable-receipt, #printable-receipt * { visibility: visible; }
-            #printable-receipt {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 10px;
-                box-shadow: none !important;
-                border: none !important;
-            }
+            #printable-slip-area, #printable-slip-area * { visibility: visible; }
+            #printable-slip-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 10px; box-shadow: none !important; }
             .no-print-slip { display: none !important; }
         }
 
@@ -65,8 +55,8 @@
             .sidebar.open { left: 0; }
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
-            .admin-card { padding: 15px; }
+            .main-content { margin-left: 0; width: 100%; padding: 12px; }
+            .admin-card { padding: 12px; }
         }
     </style>
 </head>
@@ -91,13 +81,14 @@
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
         <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Payment Verification & All Customer Orders</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Orders, Verification & Vendor Sourcing</h2>
 
+        <!-- Step 1: Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                 <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot & Mark Paid)</h3>
@@ -119,10 +110,11 @@
             </table>
         </div>
 
+        <!-- Step 2: Confirmed Orders with Vendor Column -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders</h3>
-                <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Phone..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
+                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders & Vendor Details</h3>
+                <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
             </div>
             
             <table class="admin-table">
@@ -130,10 +122,10 @@
                     <tr>
                         <th>Order ID / Date</th>
                         <th>Customer & Phone</th>
-                        <th>Address</th>
+                        <th>Vendor Partner</th>
                         <th>Items & Total</th>
                         <th>Status</th>
-                        <th style="min-width:240px;">Order Actions</th>
+                        <th style="min-width:260px;">Customer & Vendor Actions</th>
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
@@ -143,15 +135,16 @@
         </div>
     </div>
 
+    <!-- Universal Slip Modal (Both Customer & Vendor) -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); z-index:99999; justify-content:center; align-items:center; padding:15px;">
-        <div style="background:#fff; width:100%; max-width:440px; padding:28px 24px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-receipt">
+        <div style="background:#fff; width:100%; max-width:440px; padding:25px 20px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-slip-area">
             <span onclick="closeReceiptModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
-            <div id="receipt-content"></div>
-            <div class="no-print-slip" style="text-align:center; margin-top:22px; display:flex; gap:10px; justify-content:center;">
-                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 22px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+            <div id="slip-content-body"></div>
+            <div class="no-print-slip" style="text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:9px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px;">
                     <i class="fas fa-print"></i> Print Slip
                 </button>
-                <button onclick="closeReceiptModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
+                <button onclick="closeReceiptModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:9px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
                     Close
                 </button>
             </div>
@@ -160,17 +153,11 @@
 
     <script>
         let allOrdersCache = [];
+        let vendorsMap = {};
+        let productsCatalogMap = {};
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
-        if (!loggedInAdmin) {
-            window.location.href = "admin-login.html";
-        } else if (loggedInAdmin.role === 'staff') {
-            let perms = loggedInAdmin.permissions || [];
-            if (!perms.includes('orders')) {
-                alert("❌ Access Denied: You do not have permission to access Manage Orders!");
-                window.location.href = "admin-dashboard.html";
-            }
-        }
+        if (!loggedInAdmin) window.location.href = "admin-login.html";
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -188,32 +175,29 @@
             return (loggedInAdmin && loggedInAdmin.role !== 'staff');
         }
 
-        function applyNavRules() {
-            if (loggedInAdmin.role === 'staff') {
-                let perms = loggedInAdmin.permissions || [];
-                if (!perms.includes('products')) document.getElementById('nav-products').style.display = 'none';
-                if (!perms.includes('customers')) document.getElementById('nav-customers').style.display = 'none';
-                if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
-                if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
-                if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
-                document.getElementById('nav-ads').style.display = 'none';
-                document.getElementById('nav-users').style.display = 'none';
-            }
-        }
-
-        async function logSystemAction(action, targetId) {
+        async function fetchDependencies() {
             try {
-                await db.collection("audit_logs").add({
-                    actor: loggedInAdmin.name || loggedInAdmin.username || "User",
-                    role: loggedInAdmin.role || "staff",
-                    action: action,
-                    targetId: targetId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                // Fetch vendors
+                const vSnap = await db.collection("staff").where("role", "==", "vendor").get();
+                vSnap.forEach(d => {
+                    let data = d.data();
+                    vendorsMap[data.name] = data.phone || "";
+                });
+
+                // Fetch products catalog for vendor rates
+                const pSnap = await db.collection("products").get();
+                pSnap.forEach(d => {
+                    let p = d.data();
+                    productsCatalogMap[p.name] = {
+                        vendorName: p.vendorName || "In-House",
+                        vendorCost: parseInt(p.vendorCost) || 0
+                    };
                 });
             } catch(e) {}
         }
 
         async function fetchAdminOrders() {
+            await fetchDependencies();
             loadPendingPayments();
             loadConfirmedOrders();
         }
@@ -245,71 +229,47 @@
                                 <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">
                                     <i class="fas fa-check-circle"></i> Verify
                                 </button>
-                                <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;" title="Delete Test Record">
+                                <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
                     `;
                 });
-            } catch(e) {
-                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading pending payments.</td></tr>";
-            }
+            } catch(e) { tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading pending payments.</td></tr>"; }
         }
 
         async function deletePendingPayment(paymentRef) {
             if (!isMainAdminUser()) { alert("❌ Only Admin can delete!"); return; }
-            if (confirm(`Permanently delete pending payment ${paymentRef}? This will remove it from customer profile too.`)) {
+            if (confirm(`Permanently delete test order ${paymentRef}?`)) {
                 try {
                     await db.collection("pending_payments").doc(paymentRef).delete();
-                    alert("✓ Pending test order deleted!");
                     loadPendingPayments();
-                } catch(e) {
-                    alert("Failed to delete.");
-                }
-            }
-        }
-
-        async function checkAndGenerateGiftCardCoupon(items, customerPhone, customerName) {
-            if (!Array.isArray(items)) return;
-            for (let item of items) {
-                let itemName = (item.name || "").toLowerCase();
-                if (itemName.includes("gift card") || itemName.includes("voucher")) {
-                    let cardValue = parseInt(item.price) || parseInt(item.chargedAmount) || 100;
-                    let randomCode = "GIFT-" + Math.random().toString(36).substring(2, 7).toUpperCase();
-                    
-                    await db.collection("coupons").doc(randomCode).set({
-                        code: randomCode,
-                        discount: cardValue,
-                        discountAmount: cardValue,
-                        minOrder: cardValue,
-                        isActive: true,
-                        isOneTime: true,
-                        isUsed: false,
-                        type: "gift_card",
-                        issuedTo: customerName,
-                        recipientPhone: customerPhone,
-                        recipientName: item.userText || customerName,
-                        usedByPhones: [],
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    await logSystemAction(`Auto-generated Gift Card Voucher ${randomCode} (₹${cardValue}) for`, customerName);
-                }
+                } catch(e) {}
             }
         }
 
         async function verifyAndMarkPaid(paymentRef) {
-            if (!confirm(`Confirm receipt of payment for ${paymentRef}? This will generate the official Order ID.`)) return;
-
+            if (!confirm(`Confirm receipt of payment for ${paymentRef}?`)) return;
             try {
                 const pDoc = await db.collection("pending_payments").doc(paymentRef).get();
                 if (!pDoc.exists) return;
-
                 const p = pDoc.data();
                 const finalOrderId = "CZ" + Math.floor(10000 + Math.random() * 90000);
 
-                const confirmedOrderPayload = {
+                // Auto-map vendor details to confirmed order
+                let assignedVendor = "In-House";
+                let totalVendorCost = 0;
+                if (Array.isArray(p.items) && p.items.length > 0) {
+                    let firstItem = p.items[0];
+                    let prodInfo = productsCatalogMap[firstItem.name];
+                    if (prodInfo && prodInfo.vendorName) {
+                        assignedVendor = prodInfo.vendorName;
+                        totalVendorCost = prodInfo.vendorCost * (firstItem.quantity || 1);
+                    }
+                }
+
+                const confirmedPayload = {
                     orderId: finalOrderId,
                     paymentReference: p.paymentReference,
                     customerId: p.customerId || "N/A",
@@ -319,10 +279,11 @@
                     subTotal: p.subTotal || p.totalAmount,
                     deliveryFee: p.deliveryFee || 0,
                     discountGiven: p.discountGiven || 0,
-                    couponUsed: p.couponUsed || "None",
                     totalAmount: p.totalAmount,
                     actualDeliveryAddress: p.actualDeliveryAddress || "",
                     greetingNote: p.greetingNote || "",
+                    vendorName: assignedVendor,
+                    vendorCost: totalVendorCost,
                     paymentStatus: "Paid",
                     orderStatus: "Processing",
                     verifiedBy: loggedInAdmin.username || "Admin",
@@ -330,23 +291,12 @@
                     date: new Date().toLocaleDateString('en-GB')
                 };
 
-                await db.collection("orders").doc(finalOrderId).set(confirmedOrderPayload);
+                await db.collection("orders").doc(finalOrderId).set(confirmedPayload);
+                await db.collection("pending_payments").doc(paymentRef).update({ paymentStatus: "Paid", finalOrderId: finalOrderId });
 
-                await db.collection("pending_payments").doc(paymentRef).update({
-                    paymentStatus: "Paid",
-                    finalOrderId: finalOrderId
-                });
-
-                await checkAndGenerateGiftCardCoupon(p.items, p.phone, p.customerName);
-                await logSystemAction("Verified Payment & Created Order", finalOrderId);
-
-                alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created.`);
+                alert(`🎉 Confirmed Order #${finalOrderId} generated!`);
                 fetchAdminOrders();
-
-            } catch(e) {
-                console.error(e);
-                alert("Failed to verify payment.");
-            }
+            } catch(e) { alert("Failed to verify."); }
         }
 
         async function loadConfirmedOrders() {
@@ -357,7 +307,7 @@
                 tbody.innerHTML = "";
 
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No orders found in database.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No orders found.</td></tr>";
                     return;
                 }
 
@@ -368,64 +318,61 @@
                     allOrdersCache.push(ord);
                 });
 
-                allOrdersCache.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
+                allOrdersCache.sort((a, b) => (b.verifiedAt?.seconds || 0) - (a.verifiedAt?.seconds || 0));
                 renderOrdersTable(allOrdersCache);
-
-            } catch(e) {
-                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading orders.</td></tr>";
-            }
+            } catch(e) { tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading orders.</td></tr>"; }
         }
 
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('confirmed-orders-tbody');
             tbody.innerHTML = "";
-
             let canDelete = isMainAdminUser();
 
             orders.forEach(ord => {
-                let itemsDetail = "";
-                if (Array.isArray(ord.items)) {
-                    itemsDetail = ord.items.map(it => `• ${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1} - ₹${it.chargedAmount || it.price}`).join("<br>");
-                } else {
-                    itemsDetail = ord.items ? ord.items.replace(/\n/g, '<br>') : '-';
-                }
+                let itemsDetail = Array.isArray(ord.items) 
+                    ? ord.items.map(it => `• ${it.name} ${it.variantName ? `(${it.variantName})` : ''} x${it.quantity || 1}`).join("<br>")
+                    : (ord.items || '-');
 
-                let addressDisplay = ord.actualDeliveryAddress || ord.address || '-';
-                let currentStatus = ord.orderStatus || ord.status || 'Processing';
-                let orderDisplayId = ord.orderId || ord.docId;
+                let vendorDisplay = ord.vendorName && ord.vendorName !== "In-House"
+                    ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;"><i class="fas fa-truck-loading"></i> ${ord.vendorName}</span><br><small style="color:#4338ca; font-size:10.5px;">Cost: ₹${ord.vendorCost || 0}</small>`
+                    : `<span style="color:#64748b; font-size:11px;">In-House</span>`;
 
                 tbody.innerHTML += `
                     <tr>
                         <td>
-                            <strong style="color:#2980b9; font-size:14px;">#${orderDisplayId}</strong><br>
+                            <strong style="color:#2980b9; font-size:13.5px;">#${ord.orderId || ord.docId}</strong><br>
                             <small style="color:#7f8c8d;">${ord.date || 'Recent'}</small>
-                            ${ord.paymentReference ? `<br><span style="font-size:10px; background:#e8f4f8; padding:1px 5px; border-radius:3px;">Ref: ${ord.paymentReference}</span>` : ''}
                         </td>
                         <td>
-                            <strong>${ord.customerName || ord.name || 'Customer'}</strong><br>
+                            <strong>${ord.customerName || 'Customer'}</strong><br>
                             <small>${ord.phone || '-'}</small>
                         </td>
-                        <td style="max-width:200px; font-size:11.5px; line-height:1.4;">${addressDisplay}</td>
+                        <td>${vendorDisplay}</td>
                         <td>
-                            <div style="font-size:12px; max-width:220px; max-height:80px; overflow-y:auto; background:#fbfcfc; padding:4px; border:1px solid #eee; border-radius:4px; margin-bottom:4px;">
-                                ${itemsDetail}
-                            </div>
-                            <strong style="color:#27ae60; font-size:13px;">₹${ord.totalAmount || ord.total || 0}</strong>
+                            <div style="font-size:11.5px; max-width:200px; max-height:70px; overflow-y:auto;">${itemsDetail}</div>
+                            <strong style="color:#27ae60; font-size:13px;">₹${ord.totalAmount || 0}</strong>
                         </td>
                         <td>
-                            <select onchange="updateOrderStatusSync('${ord.docId}', this.value)" style="padding:6px; font-size:12px; font-weight:bold; border-radius:4px; border:1px solid #ccc; background:#fff;">
-                                <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>Processing</option>
-                                <option value="Packed" ${currentStatus === 'Packed' ? 'selected' : ''}>Packed</option>
-                                <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                                <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                                <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            <select onchange="updateOrderStatusSync('${ord.docId}', this.value)" style="padding:4px; font-size:11.5px; font-weight:bold; border-radius:4px; border:1px solid #ccc;">
+                                <option value="Processing" ${ord.orderStatus === 'Processing' ? 'selected' : ''}>Processing</option>
+                                <option value="Packed" ${ord.orderStatus === 'Packed' ? 'selected' : ''}>Packed</option>
+                                <option value="Shipped" ${ord.orderStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="Delivered" ${ord.orderStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                <option value="Cancelled" ${ord.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
-                            <button class="btn-act btn-receipt" onclick="viewOrderReceipt('${ord.docId}')" title="Print Slip"><i class="fas fa-receipt"></i> Slip</button>
-                            <a href="admin-invoice.html?orderId=${orderDisplayId}" class="btn-act btn-invoice" title="Invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
-                            <button class="btn-act btn-wa" onclick="sendWhatsAppStatusUpdate('${ord.docId}')" title="WhatsApp Update"><i class="fab fa-whatsapp"></i></button>
-                            ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : `<button class="btn-act btn-dis" onclick="alert('❌ Staff cannot delete!')"><i class="fas fa-trash"></i></button>`}
+                            <!-- Customer Slip & WA -->
+                            <button class="btn-act btn-receipt" onclick="viewCustomerSlip('${ord.docId}')" title="Customer Slip"><i class="fas fa-receipt"></i> Slip</button>
+                            <button class="btn-act btn-wa" onclick="sendCustomerWhatsApp('${ord.docId}')" title="Customer WA"><i class="fab fa-whatsapp"></i> Cust</button>
+                            
+                            <!-- Vendor Sourcing Slip & WA -->
+                            ${ord.vendorName && ord.vendorName !== "In-House" ? `
+                                <button class="btn-act btn-vendor-slip" onclick="viewVendorSlip('${ord.docId}')" title="Vendor Purchase Order Slip"><i class="fas fa-file-invoice"></i> Vendor PO</button>
+                                <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendVendorWhatsApp('${ord.docId}')" title="Vendor WA"><i class="fab fa-whatsapp"></i> Vendor</button>
+                            ` : ''}
+
+                            ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -435,141 +382,138 @@
         function filterOrdersTable() {
             let term = document.getElementById('order-search').value.toLowerCase().trim();
             let filtered = allOrdersCache.filter(o => {
-                let idMatch = (o.orderId && o.orderId.toLowerCase().includes(term)) || (o.docId && o.docId.toLowerCase().includes(term));
-                let nameMatch = (o.customerName && o.customerName.toLowerCase().includes(term)) || (o.name && o.name.toLowerCase().includes(term));
-                let phoneMatch = o.phone && o.phone.includes(term);
-                return idMatch || nameMatch || phoneMatch;
+                return (o.orderId && o.orderId.toLowerCase().includes(term)) ||
+                       (o.customerName && o.customerName.toLowerCase().includes(term)) ||
+                       (o.vendorName && o.vendorName.toLowerCase().includes(term)) ||
+                       (o.phone && o.phone.includes(term));
             });
             renderOrdersTable(filtered);
         }
 
         async function updateOrderStatusSync(docId, newStatus) {
-            try {
-                await db.collection("orders").doc(docId).update({ orderStatus: newStatus, status: newStatus });
-                await logSystemAction(`Updated Order Status to ${newStatus}`, docId);
-                alert(`✓ Order status updated to "${newStatus}"`);
-            } catch(e) { alert("Failed to update status."); }
+            await db.collection("orders").doc(docId).update({ orderStatus: newStatus });
+            alert(`✓ Status updated to "${newStatus}"`);
         }
 
         async function deleteOrderPermanent(docId) {
-            if (!isMainAdminUser()) { alert("❌ Access Denied!"); return; }
+            if (!isMainAdminUser()) return;
             if (confirm(`Permanently delete order #${docId}?`)) {
-                try {
-                    let ordDoc = await db.collection("orders").doc(docId).get();
-                    if (ordDoc.exists) {
-                        let pRef = ordDoc.data().paymentReference;
-                        if (pRef) {
-                            await db.collection("pending_payments").doc(pRef).delete();
-                        }
-                    }
-                    await db.collection("orders").doc(docId).delete();
-                    await logSystemAction("Permanently Deleted Order", docId);
-                    alert("✓ Order deleted successfully from all records!");
-                    fetchAdminOrders();
-                } catch(e) { alert("Error deleting order."); }
+                await db.collection("orders").doc(docId).delete();
+                fetchAdminOrders();
             }
         }
 
-        function sendWhatsAppStatusUpdate(docId) {
-            let ord = allOrdersCache.find(o => o.docId === docId);
-            if (!ord || !ord.phone) { alert("Customer phone not found."); return; }
-            let phoneClean = ord.phone.replace(/[^0-9]/g, '');
-            if (phoneClean.length === 10) phoneClean = "91" + phoneClean;
-            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order #${ord.orderId || ord.docId} status is now: *${ord.orderStatus || ord.status || 'Processing'}*.\n\nThank you for choosing Custom Zone! 🎁✨`;
-            window.open(`https://api.whatsapp.com/send?phone=${phoneClean}&text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function viewOrderReceipt(docId) {
+        // 1. PERFECT CUSTOMER RETAIL SLIP
+        function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
-            let itemsRows = "";
-            if (Array.isArray(ord.items)) {
-                itemsRows = ord.items.map(it => `
-                    <tr>
-                        <td style="padding:7px 0; border-bottom:1px dashed #e2e8f0; font-size:12.5px; color:#1e293b;">
-                            <strong>${it.name}</strong> ${it.variantName ? `<span style="font-size:11px; color:#64748b;">(${it.variantName})</span>` : ''}
-                            ${it.userText ? `<br><small style="color:#0284c7; font-size:11px;">Custom: "${it.userText}"</small>` : ''}
-                            <div style="font-size:11px; color:#64748b;">Qty: ${it.quantity || 1}</div>
-                        </td>
-                        <td style="text-align:right; vertical-align:top; padding:7px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px; color:#0f172a;">
-                            ₹${it.chargedAmount || it.price}
-                        </td>
-                    </tr>
-                `).join("");
-            } else {
-                let cleanDesc = ord.items ? ord.items.replace(/\[Delivery:.*?\]/g, '').trim() : "Custom Handcrafted Gift";
-                itemsRows = `
-                    <tr>
-                        <td style="padding:7px 0; border-bottom:1px dashed #e2e8f0; font-size:12px; color:#1e293b;">${cleanDesc}</td>
-                        <td style="text-align:right; padding:7px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px;">₹${ord.totalAmount || ord.total || 0}</td>
-                    </tr>
-                `;
-            }
+            let itemsRows = Array.isArray(ord.items) ? ord.items.map(it => `
+                <tr>
+                    <td style="padding:6px 0; border-bottom:1px dashed #e2e8f0; font-size:12px;">
+                        <strong>${it.name}</strong> ${it.variantName ? `(${it.variantName})` : ''}
+                        ${it.userText ? `<br><small style="color:#0284c7;">Custom: "${it.userText}"</small>` : ''}
+                        <div style="font-size:11px; color:#64748b;">Qty: ${it.quantity || 1}</div>
+                    </td>
+                    <td style="text-align:right; vertical-align:top; padding:6px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:12.5px;">₹${it.chargedAmount || it.price}</td>
+                </tr>
+            `).join("") : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
 
-            document.getElementById('receipt-content').innerHTML = `
-                <div style="text-align:center; border-bottom:2px dashed #0f172a; padding-bottom:14px; margin-bottom:14px;">
-                    <img src="assets/images/logo.png" onerror="this.style.display='none'" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px;">
-                    <h2 style="margin:0; font-size:20px; font-weight:800; color:#0f172a; letter-spacing:-0.5px;">CUSTOM ZONE</h2>
-                    <p style="margin:1px 0; font-size:11px; color:#475569; font-weight:500;">You Imagine. We Customize.</p>
-                    <p style="margin:1px 0; font-size:10.5px; color:#64748b;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
-                    <div style="display:inline-block; background:#0f172a; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:4px; margin-top:8px;">
-                        ORDER SLIP: #${ord.orderId || ord.docId}
-                    </div>
+            document.getElementById('slip-content-body').innerHTML = `
+                <div style="text-align:center; border-bottom:2px dashed #0f172a; padding-bottom:10px; margin-bottom:12px;">
+                    <h2 style="margin:0; font-size:18px; font-weight:800; color:#0f172a;">CUSTOM ZONE</h2>
+                    <p style="margin:1px 0; font-size:11px; color:#475569;">You Imagine. We Customize.</p>
+                    <div style="background:#0f172a; color:#fff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; margin-top:6px; display:inline-block;">CUSTOMER RETAIL SLIP: #${ord.orderId || ord.docId}</div>
                 </div>
-
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; font-size:12px; line-height:1.5; margin-bottom:14px; color:#334155;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                        <span><strong>Date:</strong> ${ord.date || 'Recent'}</span>
-                        <span style="color:#16a34a; font-weight:700;">● ${ord.paymentStatus || 'Paid'}</span>
-                    </div>
-                    <div><strong>Customer:</strong> ${ord.customerName || ord.name || '-'}</div>
-                    <div><strong>Phone:</strong> ${ord.phone || '-'}</div>
-                    <div style="word-break:break-word;"><strong>Address:</strong> ${ord.actualDeliveryAddress || ord.address || '-'}</div>
-                    ${ord.greetingNote ? `<div style="color:#d97706; margin-top:3px;"><strong>Note:</strong> "${ord.greetingNote}"</div>` : ''}
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; font-size:11.5px; margin-bottom:10px; line-height:1.4;">
+                    <div><strong>Date:</strong> ${ord.date || 'Recent'} | <strong>Status:</strong> ${ord.paymentStatus || 'Paid'}</div>
+                    <div><strong>Customer:</strong> ${ord.customerName || '-'} (${ord.phone || '-'})</div>
+                    <div><strong>Address:</strong> ${ord.actualDeliveryAddress || '-'}</div>
                 </div>
-
-                <table style="width:100%; border-collapse:collapse; margin-bottom:14px;">
-                    <thead>
-                        <tr style="border-bottom:1.5px solid #0f172a; text-align:left; font-size:11px; text-transform:uppercase; color:#64748b;">
-                            <th style="padding-bottom:5px;">Item Description</th>
-                            <th style="padding-bottom:5px; text-align:right;">Price</th>
-                        </tr>
-                    </thead>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+                    <thead><tr style="border-bottom:1.5px solid #0f172a; font-size:11px; text-transform:uppercase; color:#64748b;"><th style="text-align:left; padding-bottom:4px;">Item Description</th><th style="text-align:right; padding-bottom:4px;">Amount</th></tr></thead>
                     <tbody>${itemsRows}</tbody>
                 </table>
-
-                <div style="border-top:1.5px solid #0f172a; padding-top:8px; font-size:12.5px; color:#475569;">
-                    <div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span>Subtotal:</span>
-                        <strong style="color:#1e293b;">₹${ord.subTotal || ord.totalAmount || 0}</strong>
-                    </div>
-                    ${ord.discountGiven > 0 ? `
-                        <div style="display:flex; justify-content:space-between; padding:2px 0; color:#dc2626;">
-                            <span>Discount / Coupon:</span>
-                            <strong>-₹${ord.discountGiven}</strong>
-                        </div>
-                    ` : ''}
-                    <div style="display:flex; justify-content:space-between; padding:2px 0;">
-                        <span>Delivery Fee:</span>
-                        <strong style="color:#1e293b;">${(ord.deliveryFee && ord.deliveryFee > 0) ? `₹${ord.deliveryFee}` : 'FREE'}</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; border-top:1.5px dashed #0f172a; padding-top:6px; margin-top:4px; font-size:16px; color:#0f172a;">
-                        <strong>Total Amount:</strong>
-                        <strong style="font-size:17px; font-weight:800; color:#16a34a;">₹${ord.totalAmount || ord.total || 0}</strong>
+                <div style="border-top:1.5px solid #0f172a; padding-top:6px; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800;">
+                        <span>Grand Total:</span>
+                        <span style="color:#16a34a;">₹${ord.totalAmount || 0}</span>
                     </div>
                 </div>
+            `;
+            document.getElementById('receipt-modal').style.display = 'flex';
+        }
 
-                <div style="text-align:center; margin-top:18px; border-top:1px dashed #cbd5e1; padding-top:10px; font-size:11px; color:#64748b;">
-                    <p style="margin:0; font-weight:600; color:#0f172a;">Thank you for shopping with Custom Zone!</p>
-                    <small>Visit: customzone.in</small>
+        // 2. SEPARATE VENDOR SOURCING SLIP (SHOWS ONLY VENDOR BUY RATE & CUSTOM SPECIFICATIONS)
+        function viewVendorSlip(docId) {
+            let ord = allOrdersCache.find(o => o.docId === docId);
+            if (!ord) return;
+
+            let itemsRows = Array.isArray(ord.items) ? ord.items.map(it => `
+                <tr>
+                    <td style="padding:6px 0; border-bottom:1px dashed #e2e8f0; font-size:12px;">
+                        <strong>${it.name}</strong> ${it.variantName ? `<span style="color:#4338ca;">(${it.variantName})</span>` : ''}
+                        ${it.userText ? `<br><strong style="color:#b45309;">Custom Print Text: "${it.userText}"</strong>` : ''}
+                        <div style="font-size:11px; color:#64748b;">Quantity to Make: <strong>${it.quantity || 1} PCS</strong></div>
+                    </td>
+                    <td style="text-align:right; vertical-align:top; padding:6px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:12.5px;">₹${ord.vendorCost || 0}</td>
+                </tr>
+            `).join("") : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
+
+            document.getElementById('slip-content-body').innerHTML = `
+                <div style="text-align:center; border-bottom:2px dashed #3730a3; padding-bottom:10px; margin-bottom:12px;">
+                    <h2 style="margin:0; font-size:18px; font-weight:800; color:#3730a3;">VENDOR WORK ORDER (PO)</h2>
+                    <p style="margin:1px 0; font-size:11px; color:#475569;">Issued by Custom Zone Production Desk</p>
+                    <div style="background:#3730a3; color:#fff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; margin-top:6px; display:inline-block;">JOB REF: #${ord.orderId || ord.docId}</div>
+                </div>
+                <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:8px 10px; font-size:11.5px; margin-bottom:10px; line-height:1.4;">
+                    <div><strong>Vendor Name:</strong> ${ord.vendorName}</div>
+                    <div><strong>Order Date:</strong> ${ord.date || 'Recent'}</div>
+                    <div><strong>Delivery Recipient:</strong> ${ord.customerName} (${ord.actualDeliveryAddress || '-'})</div>
+                </div>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+                    <thead><tr style="border-bottom:1.5px solid #3730a3; font-size:11px; text-transform:uppercase; color:#4338ca;"><th style="text-align:left; padding-bottom:4px;">Product & Specifications</th><th style="text-align:right; padding-bottom:4px;">Vendor Cost</th></tr></thead>
+                    <tbody>${itemsRows}</tbody>
+                </table>
+                <div style="border-top:1.5px solid #3730a3; padding-top:6px; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800;">
+                        <span>Payable to Vendor:</span>
+                        <span style="color:#3730a3;">₹${ord.vendorCost || 0}</span>
+                    </div>
                 </div>
             `;
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
         function closeReceiptModal() { document.getElementById('receipt-modal').style.display = 'none'; }
-        window.onload = () => { applyNavRules(); fetchAdminOrders(); };
+
+        function sendCustomerWhatsApp(docId) {
+            let ord = allOrdersCache.find(o => o.docId === docId);
+            if (!ord || !ord.phone) return;
+            let p = ord.phone.replace(/[^0-9]/g, '');
+            if (p.length === 10) p = "91" + p;
+            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order *#${ord.orderId || ord.docId}* status: *${ord.orderStatus || 'Processing'}*.\nTotal: ₹${ord.totalAmount}.\nThank you! 🎁`;
+            window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // 3. SEND DIRECT PURCHASE SPECIFICATIONS TO VENDOR ON WHATSAPP
+        function sendVendorWhatsApp(docId) {
+            let ord = allOrdersCache.find(o => o.docId === docId);
+            if (!ord) return;
+            let vendorPhone = vendorsMap[ord.vendorName] || "";
+            if (!vendorPhone) { alert(`WhatsApp number not found for vendor "${ord.vendorName}". Please add in Staff & Vendors page.`); return; }
+            let p = vendorPhone.replace(/[^0-9]/g, '');
+            if (p.length === 10) p = "91" + p;
+
+            let itemsTxt = Array.isArray(ord.items) 
+                ? ord.items.map(it => `• Item: ${it.name}\n  Option: ${it.variantName || 'Standard'}\n  Customization: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS`).join('\n\n')
+                : ord.items;
+
+            let msg = `*NEW WORK ORDER FROM CUSTOM ZONE*\nRef: #${ord.orderId || ord.docId}\nVendor: ${ord.vendorName}\n\n*Items to Produce:*\n${itemsTxt}\n\n*Agreed Vendor Rate:* ₹${ord.vendorCost || 0}\n*Delivery Address:* ${ord.actualDeliveryAddress || '-'}\n\nPlease confirm order receipt.`;
+            window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        window.onload = fetchAdminOrders;
     </script>
 </body>
 </html>
