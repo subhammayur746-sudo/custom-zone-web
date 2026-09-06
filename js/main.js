@@ -7,6 +7,7 @@ let pendingAction = null;
 let currentAuthMode = "login";
 let currentOpenProductId = null;
 let currentSelectedVariant = null;
+let currentSelectedSize = null;
 let currentSelectedQty = 1;
 let currentApplicablePrice = 0;
 let selectedReviewStar = 5;
@@ -152,7 +153,6 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// Render Products Grid with Image Fit & Discount
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -290,7 +290,6 @@ function shareDirectProduct(productId, event) {
     }
 }
 
-// Modal Price Update Helper
 function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     const priceContainer = document.getElementById('pdm-price-box');
     if (!priceContainer) return;
@@ -314,15 +313,98 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
-function calculateQuantityPrice(product, qty, basePrice) {
-    if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
-        let sortedTiers = [...product.qtyTiers].sort((a, b) => b.minQty - a.minQty);
-        let matchedTier = sortedTiers.find(t => qty >= t.minQty);
-        if (matchedTier) {
-            return parseInt(matchedTier.price);
-        }
+function renderTwoStepVariants(product) {
+    const variantBox = document.getElementById('pdm-variant-two-step-container');
+    if (!variantBox) return;
+
+    if (!product.variants || product.variants.length === 0) {
+        variantBox.innerHTML = "";
+        return;
     }
-    return basePrice;
+
+    let availableSizes = [...new Set(product.variants.map(v => v.size || 'Standard'))];
+    if (!currentSelectedSize || !availableSizes.includes(currentSelectedSize)) {
+        currentSelectedSize = availableSizes[0];
+    }
+
+    let colorsForThisSize = product.variants.filter(v => (v.size || 'Standard') === currentSelectedSize);
+    if (!currentSelectedVariant || !colorsForThisSize.some(c => c.name === currentSelectedVariant.name)) {
+        currentSelectedVariant = colorsForThisSize[0];
+    }
+
+    let sizePills = availableSizes.map(s => `
+        <button type="button" class="pdm-variant-btn ${s === currentSelectedSize ? 'active' : ''}" onclick="onSizeSelected('${s}')">
+            ${s}
+        </button>
+    `).join('');
+
+    let allUniqueColors = [...new Set(product.variants.map(v => v.name))];
+    let colorPills = allUniqueColors.map(cName => {
+        let matchInCurrentSize = colorsForThisSize.find(v => v.name === cName);
+        if (matchInCurrentSize) {
+            let isAct = currentSelectedVariant && currentSelectedVariant.name === cName;
+            return `
+                <button type="button" class="pdm-variant-btn ${isAct ? 'active' : ''}" onclick="onColorSelected('${cName.replace(/'/g, "\\'")}', ${matchInCurrentSize.price}, '${matchInCurrentSize.actualPrice || ''}', '${matchInCurrentSize.image || ''}')">
+                    ${cName} • ₹${matchInCurrentSize.price}
+                </button>
+            `;
+        } else {
+            return `
+                <button type="button" class="pdm-variant-btn" disabled style="opacity:0.4; cursor:not-allowed; background:#f1f5f9; text-decoration:line-through;" title="Not available in size ${currentSelectedSize}">
+                    ${cName} (N/A)
+                </button>
+            `;
+        }
+    }).join('');
+
+    variantBox.innerHTML = `
+        <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-ruler"></i> Step 1: Select Size:</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">${sizePills}</div>
+
+            <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-palette"></i> Step 2: Available Colors for Size (${currentSelectedSize}):</div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">${colorPills}</div>
+        </div>
+    `;
+
+    recalculateLinkedPrice(product);
+}
+
+function onSizeSelected(size) {
+    currentSelectedSize = size;
+    let product = liveProducts.find(p => p.id === currentOpenProductId);
+    if (product) renderTwoStepVariants(product);
+}
+
+function onColorSelected(name, price, actual, img) {
+    currentSelectedVariant = { name, price, actualPrice: actual, image: img, size: currentSelectedSize };
+    let product = liveProducts.find(p => p.id === currentOpenProductId);
+    if (product) {
+        if (img && img.trim() !== "") {
+            const mainImg = document.getElementById('pdm-main-img');
+            if (mainImg) mainImg.src = img;
+        }
+        renderTwoStepVariants(product);
+    }
+}
+
+function recalculateLinkedPrice(product) {
+    let baseVariantPrice = currentSelectedVariant ? parseInt(currentSelectedVariant.price) : (parseInt(product.discountPrice) || parseInt(product.price));
+    
+    if (currentSelectedQty > 1 && product.hasQtyPricing && product.qtyTiers) {
+        let tier = product.qtyTiers.find(t => t.minQty === currentSelectedQty);
+        if (tier) {
+            let defaultBase = parseInt(product.discountPrice) || 1;
+            let ratio = baseVariantPrice / defaultBase;
+            currentApplicablePrice = Math.round(tier.price * ratio);
+        } else {
+            currentApplicablePrice = baseVariantPrice * currentSelectedQty;
+        }
+    } else {
+        currentApplicablePrice = baseVariantPrice;
+    }
+
+    updateModalPriceBox(product, currentApplicablePrice, currentSelectedVariant ? currentSelectedVariant.actualPrice : null);
 }
 
 // Product Details Modal
@@ -332,6 +414,7 @@ function openProductDetailsModal(productId) {
 
     currentOpenProductId = productId;
     currentSelectedVariant = null;
+    currentSelectedSize = null;
     currentSelectedQty = 1;
     const modal = document.getElementById('product-details-modal');
     if (!modal) return;
@@ -350,65 +433,65 @@ function openProductDetailsModal(productId) {
     if (titleEl) titleEl.innerText = product.name;
 
     const customContainer = document.getElementById('pdm-custom-field-container');
-    if (customContainer) customContainer.innerHTML = "";
-
-    let hasActiveVariants = product.hasVariants && Array.isArray(product.variants) && product.variants.filter(v => v.isActive !== false).length > 0;
-    
-    let basePrice = parseInt(product.discountPrice || product.price) || 0;
-    let baseActualPrice = parseInt(product.actualPrice) || 0;
-
-    if (hasActiveVariants) {
-        let activeVariants = product.variants.filter(v => v.isActive !== false).slice(0, 5);
-        currentSelectedVariant = activeVariants[0];
-        basePrice = parseInt(currentSelectedVariant.price) || basePrice;
-        baseActualPrice = parseInt(currentSelectedVariant.actualPrice) || baseActualPrice;
-
-        let variantHtml = `
-            <div class="pdm-variant-wrapper">
-                <div class="pdm-variant-title">
-                    <span><i class="fas fa-layer-group"></i> Select Your Option:</span>
-                    <strong id="pdm-selected-var-text" style="color:var(--blue-primary);">${currentSelectedVariant.name} (₹${currentSelectedVariant.price})</strong>
-                </div>
-                <div class="pdm-variant-pills">
-                    ${activeVariants.map((v, i) => `
-                        <button type="button" class="pdm-variant-btn ${i === 0 ? 'active' : ''}" onclick="selectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice || ''}', '${v.image || ''}', this)">
-                            ${v.name} • ₹${v.price}
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
+    if (customContainer) {
+        customContainer.innerHTML = `
+            <div id="pdm-variant-two-step-container"></div>
+            <div id="pdm-bulk-qty-container"></div>
+            <div id="pdm-custom-inputs-area"></div>
         `;
-        if (customContainer) customContainer.innerHTML += variantHtml;
     }
 
-    if (product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
+    if (product.hasVariants && Array.isArray(product.variants) && product.variants.length > 0) {
+        renderTwoStepVariants(product);
+    } else {
+        currentApplicablePrice = parseInt(product.discountPrice || product.price) || 0;
+        updateModalPriceBox(product, currentApplicablePrice);
+    }
+
+    // Bulk Package Section Linked
+    const bulkContainer = document.getElementById('pdm-bulk-qty-container');
+    if (bulkContainer && product.hasQtyPricing && Array.isArray(product.qtyTiers) && product.qtyTiers.length > 0) {
         let sortedTiers = [...product.qtyTiers].sort((a, b) => a.minQty - b.minQty);
         
-        let qtyHtml = `
-            <div class="pdm-qty-tier-wrapper">
-                <div class="pdm-qty-tier-title">
-                    <span><i class="fas fa-boxes"></i> Package Quantity & Bulk Price:</span>
-                    <span style="font-size:11px; color:#16a34a; font-weight:700;">Direct Package Price</span>
+        bulkContainer.innerHTML = `
+            <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
+                <div class="pdm-qty-tier-title" style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span>
+                    <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Auto-Applied</span>
                 </div>
-                <div class="pdm-qty-pills">
-                    ${sortedTiers.map((t, idx) => `
-                        <button type="button" class="pdm-qty-pill-btn ${idx === 0 ? 'active' : ''}" onclick="selectProductQtyTier(${t.minQty}, ${t.price}, this)">
-                            ${t.minQty} PC${t.minQty > 1 ? 'S' : ''} → ₹${t.price}
+                <div class="pdm-qty-pills" style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" class="pdm-qty-pill-btn active" onclick="selectProductQtyTier(1, this)">
+                        1 PC (Standard)
+                    </button>
+                    ${sortedTiers.map(t => `
+                        <button type="button" class="pdm-qty-pill-btn" onclick="selectProductQtyTier(${t.minQty}, this)">
+                            ${t.minQty} PCS Package
                         </button>
                     `).join('')}
                 </div>
             </div>
         `;
-        if (customContainer) customContainer.innerHTML += qtyHtml;
-
-        currentSelectedQty = sortedTiers[0].minQty;
-        currentApplicablePrice = parseInt(sortedTiers[0].price);
-    } else {
-        currentSelectedQty = 1;
-        currentApplicablePrice = basePrice;
     }
 
-    updateModalPriceBox(product, currentApplicablePrice, baseActualPrice);
+    const inputsArea = document.getElementById('pdm-custom-inputs-area');
+    if (inputsArea) {
+        if (product.customType === "name") {
+            inputsArea.innerHTML = `
+                <div style="margin-top:10px;">
+                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label>
+                    <input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);">
+                </div>
+            `;
+        } else if (product.customType === "pic") {
+            inputsArea.innerHTML = `
+                <div style="margin-top:10px;">
+                    <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
+                        📷 Photo Customization: Send your photo on WhatsApp after placing the order!
+                    </p>
+                </div>
+            `;
+        }
+    }
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
@@ -425,25 +508,6 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    if (customContainer) {
-        if (product.customType === "name") {
-            customContainer.innerHTML += `
-                <div style="margin-top:10px;">
-                    <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label>
-                    <input type="text" id="pdm-custom-input" placeholder="Enter name or date to engrave" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);">
-                </div>
-            `;
-        } else if (product.customType === "pic") {
-            customContainer.innerHTML += `
-                <div style="margin-top:10px;">
-                    <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
-                        📷 Photo Customization: You can share your photos directly on WhatsApp after checkout!
-                    </p>
-                </div>
-            `;
-        }
-    }
-
     const btnAdd = document.getElementById('pdm-btn-add');
     const btnBuy = document.getElementById('pdm-btn-buy');
 
@@ -455,7 +519,6 @@ function openProductDetailsModal(productId) {
         };
     }
 
-    // BUY NOW: Strict Auth Guard - Prompts login modal if not logged in
     if (btnBuy) {
         btnBuy.onclick = () => {
             let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
@@ -484,44 +547,15 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
-function selectProductQtyTier(qty, tierPackagePrice, btnEl) {
+function selectProductQtyTier(qty, btnEl) {
     currentSelectedQty = parseInt(qty);
-    currentApplicablePrice = parseInt(tierPackagePrice);
-
     const allQtyBtns = document.querySelectorAll('.pdm-qty-pill-btn');
     allQtyBtns.forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
 
     let product = liveProducts.find(p => p.id === currentOpenProductId);
     if (product) {
-        updateModalPriceBox(product, currentApplicablePrice);
-    }
-}
-
-function selectProductVariant(varName, varPrice, varActualPrice, varImg, btnEl) {
-    currentSelectedVariant = { 
-        name: varName, 
-        price: varPrice, 
-        actualPrice: varActualPrice ? parseInt(varActualPrice) : null,
-        image: varImg 
-    };
-    
-    const allBtns = document.querySelectorAll('.pdm-variant-btn');
-    allBtns.forEach(b => b.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
-
-    const varText = document.getElementById('pdm-selected-var-text');
-    if (varText) varText.innerText = `${varName} (₹${varPrice})`;
-
-    let product = liveProducts.find(p => p.id === currentOpenProductId);
-    if (product) {
-        currentApplicablePrice = calculateQuantityPrice(product, currentSelectedQty, varPrice);
-        updateModalPriceBox(product, currentApplicablePrice, varActualPrice ? parseInt(varActualPrice) : null);
-    }
-
-    if (varImg && varImg.trim() !== "") {
-        const mainImgEl = document.getElementById('pdm-main-img');
-        if (mainImgEl) mainImgEl.src = varImg;
+        recalculateLinkedPrice(product);
     }
 }
 
@@ -569,11 +603,7 @@ async function loadProductSpecificReviews(productId) {
             reviews.push(r);
         });
 
-        reviews.sort((a, b) => {
-            let timeA = a.timestamp ? (a.timestamp.seconds || 0) : 0;
-            let timeB = b.timestamp ? (b.timestamp.seconds || 0) : 0;
-            return timeB - timeA;
-        });
+        reviews.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
         container.innerHTML = "";
         reviews.forEach(r => {
@@ -754,17 +784,15 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
         selectedVariant = product.variants[0];
     }
 
-    let baseSelling = selectedVariant 
-        ? selectedVariant.price 
-        : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
+    let finalPackagePrice = packagePrice !== null ? packagePrice : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
 
-    let finalPackagePrice = packagePrice !== null ? packagePrice : calculateQuantityPrice(product, selectedQty, baseSelling);
-
-    let finalImg = (selectedVariant && selectedVariant.image) 
+    let finalImg = (selectedVariant && selectedVariant.image && selectedVariant.image.trim() !== "") 
         ? selectedVariant.image 
         : (product.images ? product.images[0] : 'assets/images/logo.png');
         
-    let variantName = selectedVariant ? selectedVariant.name : "";
+    let variantName = selectedVariant 
+        ? `${selectedVariant.size ? selectedVariant.size + ' - ' : ''}${selectedVariant.name}`
+        : "";
 
     let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
     cart.push({
@@ -823,7 +851,6 @@ async function toggleWishlistCloud(productId) {
     renderHomeProducts(liveProducts);
 }
 
-// Customer Authentication: Phone + Name Verification System
 function switchAuthForm(mode) {
     currentAuthMode = mode;
     const addressField = document.getElementById('signup-address-field');
@@ -859,7 +886,6 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-// Complete Phone + Name Login & Registration
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -901,7 +927,6 @@ async function handleCustomerAuthSubmit() {
 
             const customerData = docSnap.data();
             
-            // Server verification: Phone + Name match
             if (customerData.name.trim().toLowerCase() !== name.toLowerCase()) {
                 err.style.display = "block";
                 err.innerText = "Invalid phone number or name combination.";
@@ -910,7 +935,6 @@ async function handleCustomerAuthSubmit() {
                 return;
             }
 
-            // Customer ID ensures permanence
             if (!customerData.customerId) {
                 customerData.customerId = "CZ-CUST-" + Math.floor(10000 + Math.random() * 90000);
                 await customerRef.update({ customerId: customerData.customerId });
@@ -924,7 +948,6 @@ async function handleCustomerAuthSubmit() {
             alert(`🎉 Welcome back, ${customerData.name}! (Customer ID: ${customerData.customerId})`);
 
         } else {
-            // Sign Up
             if (docSnap.exists) {
                 err.style.display = "block";
                 err.innerText = "This phone number is already registered. Please log in.";

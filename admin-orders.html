@@ -43,10 +43,23 @@
         .btn-wa { background: #25d366; color: #fff; }
         .btn-del { background: #e74c3c; color: #fff; }
 
+        /* PERFECT PRINT STYLES (CENTERED + LOGO PRESERVED) */
         @media print {
+            body { background: #fff !important; margin: 0; padding: 0; }
             body * { visibility: hidden; }
             #printable-slip-area, #printable-slip-area * { visibility: visible; }
-            #printable-slip-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 10px; box-shadow: none !important; }
+            #printable-slip-area {
+                position: absolute;
+                left: 50% !important;
+                top: 20px !important;
+                transform: translateX(-50%) !important;
+                width: 90mm !important;
+                max-width: 90mm !important;
+                margin: 0 auto !important;
+                padding: 10px !important;
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+            }
             .no-print-slip { display: none !important; }
         }
 
@@ -56,7 +69,6 @@
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
-            .admin-card { padding: 12px; }
         }
     </style>
 </head>
@@ -88,10 +100,10 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Orders, Verification & Vendor Sourcing</h2>
 
-        <!-- Step 1: Pending Payments -->
+        <!-- Pending Payments -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot & Mark Paid)</h3>
+                <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot)</h3>
                 <span id="pending-count-badge" style="background:#fef3c7; color:#b45309; font-weight:bold; padding:3px 10px; border-radius:12px; font-size:12px;">0 Pending</span>
             </div>
             <table class="admin-table">
@@ -110,10 +122,10 @@
             </table>
         </div>
 
-        <!-- Step 2: Confirmed Orders with Vendor Column -->
+        <!-- Confirmed Orders -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders & Vendor Details</h3>
+                <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders</h3>
                 <input type="text" id="order-search" onkeyup="filterOrdersTable()" placeholder="🔍 Search Order ID, Customer, Vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:240px; width:100%; max-width:320px;">
             </div>
             
@@ -125,7 +137,7 @@
                         <th>Vendor Partner</th>
                         <th>Items & Total</th>
                         <th>Status</th>
-                        <th style="min-width:260px;">Customer & Vendor Actions</th>
+                        <th style="min-width:260px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
@@ -135,7 +147,7 @@
         </div>
     </div>
 
-    <!-- Universal Slip Modal (Both Customer & Vendor) -->
+    <!-- Centered Thermal / A4 Print Modal -->
     <div id="receipt-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); z-index:99999; justify-content:center; align-items:center; padding:15px;">
         <div style="background:#fff; width:100%; max-width:440px; padding:25px 20px; border-radius:12px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,0.25);" id="printable-slip-area">
             <span onclick="closeReceiptModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
@@ -177,14 +189,12 @@
 
         async function fetchDependencies() {
             try {
-                // Fetch vendors
                 const vSnap = await db.collection("staff").where("role", "==", "vendor").get();
                 vSnap.forEach(d => {
                     let data = d.data();
                     vendorsMap[data.name] = data.phone || "";
                 });
 
-                // Fetch products catalog for vendor rates
                 const pSnap = await db.collection("products").get();
                 pSnap.forEach(d => {
                     let p = d.data();
@@ -210,7 +220,7 @@
                 tbody.innerHTML = "";
 
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#7f8c8d; padding:15px;'>No unverified payments right now.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:#7f8c8d; padding:15px;'>No unverified payments.</td></tr>";
                     badge.innerText = "0 Pending";
                     return;
                 }
@@ -229,7 +239,7 @@
                                 <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">
                                     <i class="fas fa-check-circle"></i> Verify
                                 </button>
-                                <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;" title="Delete">
+                                <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -240,24 +250,21 @@
         }
 
         async function deletePendingPayment(paymentRef) {
-            if (!isMainAdminUser()) { alert("❌ Only Admin can delete!"); return; }
-            if (confirm(`Permanently delete test order ${paymentRef}?`)) {
-                try {
-                    await db.collection("pending_payments").doc(paymentRef).delete();
-                    loadPendingPayments();
-                } catch(e) {}
+            if (!isMainAdminUser()) return;
+            if (confirm(`Delete pending payment ${paymentRef}?`)) {
+                await db.collection("pending_payments").doc(paymentRef).delete();
+                loadPendingPayments();
             }
         }
 
         async function verifyAndMarkPaid(paymentRef) {
-            if (!confirm(`Confirm receipt of payment for ${paymentRef}?`)) return;
+            if (!confirm(`Verify payment for ${paymentRef}?`)) return;
             try {
                 const pDoc = await db.collection("pending_payments").doc(paymentRef).get();
                 if (!pDoc.exists) return;
                 const p = pDoc.data();
                 const finalOrderId = "CZ" + Math.floor(10000 + Math.random() * 90000);
 
-                // Auto-map vendor details to confirmed order
                 let assignedVendor = "In-House";
                 let totalVendorCost = 0;
                 if (Array.isArray(p.items) && p.items.length > 0) {
@@ -334,7 +341,7 @@
                     : (ord.items || '-');
 
                 let vendorDisplay = ord.vendorName && ord.vendorName !== "In-House"
-                    ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;"><i class="fas fa-truck-loading"></i> ${ord.vendorName}</span><br><small style="color:#4338ca; font-size:10.5px;">Cost: ₹${ord.vendorCost || 0}</small>`
+                    ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">${ord.vendorName}</span><br><small style="color:#4338ca; font-size:10.5px;">Cost: ₹${ord.vendorCost || 0}</small>`
                     : `<span style="color:#64748b; font-size:11px;">In-House</span>`;
 
                 tbody.innerHTML += `
@@ -362,16 +369,12 @@
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
-                            <!-- Customer Slip & WA -->
                             <button class="btn-act btn-receipt" onclick="viewCustomerSlip('${ord.docId}')" title="Customer Slip"><i class="fas fa-receipt"></i> Slip</button>
                             <button class="btn-act btn-wa" onclick="sendCustomerWhatsApp('${ord.docId}')" title="Customer WA"><i class="fab fa-whatsapp"></i> Cust</button>
-                            
-                            <!-- Vendor Sourcing Slip & WA -->
                             ${ord.vendorName && ord.vendorName !== "In-House" ? `
-                                <button class="btn-act btn-vendor-slip" onclick="viewVendorSlip('${ord.docId}')" title="Vendor Purchase Order Slip"><i class="fas fa-file-invoice"></i> Vendor PO</button>
+                                <button class="btn-act btn-vendor-slip" onclick="viewVendorSlip('${ord.docId}')" title="Vendor Slip"><i class="fas fa-file-invoice"></i> Vendor PO</button>
                                 <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendVendorWhatsApp('${ord.docId}')" title="Vendor WA"><i class="fab fa-whatsapp"></i> Vendor</button>
                             ` : ''}
-
                             ${canDelete ? `<button class="btn-act btn-del" onclick="deleteOrderPermanent('${ord.docId}')" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
                         </td>
                     </tr>
@@ -403,7 +406,7 @@
             }
         }
 
-        // 1. PERFECT CUSTOMER RETAIL SLIP
+        // CUSTOMER SLIP (WITH LOGO & CENTERED LAYOUT)
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -420,9 +423,11 @@
             `).join("") : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
 
             document.getElementById('slip-content-body').innerHTML = `
-                <div style="text-align:center; border-bottom:2px dashed #0f172a; padding-bottom:10px; margin-bottom:12px;">
+                <div style="text-align:center; border-bottom:2px dashed #0f172a; padding-bottom:12px; margin-bottom:12px;">
+                    <img src="assets/images/logo.png" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px; display:inline-block;" alt="Logo">
                     <h2 style="margin:0; font-size:18px; font-weight:800; color:#0f172a;">CUSTOM ZONE</h2>
                     <p style="margin:1px 0; font-size:11px; color:#475569;">You Imagine. We Customize.</p>
+                    <p style="margin:0; font-size:10px; color:#64748b;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
                     <div style="background:#0f172a; color:#fff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; margin-top:6px; display:inline-block;">CUSTOMER RETAIL SLIP: #${ord.orderId || ord.docId}</div>
                 </div>
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; font-size:11.5px; margin-bottom:10px; line-height:1.4;">
@@ -444,7 +449,7 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // 2. SEPARATE VENDOR SOURCING SLIP (SHOWS ONLY VENDOR BUY RATE & CUSTOM SPECIFICATIONS)
+        // VENDOR SLIP
         function viewVendorSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -453,26 +458,27 @@
                 <tr>
                     <td style="padding:6px 0; border-bottom:1px dashed #e2e8f0; font-size:12px;">
                         <strong>${it.name}</strong> ${it.variantName ? `<span style="color:#4338ca;">(${it.variantName})</span>` : ''}
-                        ${it.userText ? `<br><strong style="color:#b45309;">Custom Print Text: "${it.userText}"</strong>` : ''}
-                        <div style="font-size:11px; color:#64748b;">Quantity to Make: <strong>${it.quantity || 1} PCS</strong></div>
+                        ${it.userText ? `<br><strong style="color:#b45309;">Custom: "${it.userText}"</strong>` : ''}
+                        <div style="font-size:11px; color:#64748b;">Qty: <strong>${it.quantity || 1} PCS</strong></div>
                     </td>
                     <td style="text-align:right; vertical-align:top; padding:6px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:12.5px;">₹${ord.vendorCost || 0}</td>
                 </tr>
             `).join("") : `<tr><td colspan="2">${ord.items || '-'}</td></tr>`;
 
             document.getElementById('slip-content-body').innerHTML = `
-                <div style="text-align:center; border-bottom:2px dashed #3730a3; padding-bottom:10px; margin-bottom:12px;">
+                <div style="text-align:center; border-bottom:2px dashed #3730a3; padding-bottom:12px; margin-bottom:12px;">
+                    <img src="assets/images/logo.png" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px; display:inline-block;" alt="Logo">
                     <h2 style="margin:0; font-size:18px; font-weight:800; color:#3730a3;">VENDOR WORK ORDER (PO)</h2>
                     <p style="margin:1px 0; font-size:11px; color:#475569;">Issued by Custom Zone Production Desk</p>
                     <div style="background:#3730a3; color:#fff; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; margin-top:6px; display:inline-block;">JOB REF: #${ord.orderId || ord.docId}</div>
                 </div>
                 <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:8px 10px; font-size:11.5px; margin-bottom:10px; line-height:1.4;">
-                    <div><strong>Vendor Name:</strong> ${ord.vendorName}</div>
-                    <div><strong>Order Date:</strong> ${ord.date || 'Recent'}</div>
-                    <div><strong>Delivery Recipient:</strong> ${ord.customerName} (${ord.actualDeliveryAddress || '-'})</div>
+                    <div><strong>Vendor:</strong> ${ord.vendorName}</div>
+                    <div><strong>Date:</strong> ${ord.date || 'Recent'}</div>
+                    <div><strong>Customer:</strong> ${ord.customerName} (${ord.actualDeliveryAddress || '-'})</div>
                 </div>
                 <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-                    <thead><tr style="border-bottom:1.5px solid #3730a3; font-size:11px; text-transform:uppercase; color:#4338ca;"><th style="text-align:left; padding-bottom:4px;">Product & Specifications</th><th style="text-align:right; padding-bottom:4px;">Vendor Cost</th></tr></thead>
+                    <thead><tr style="border-bottom:1.5px solid #3730a3; font-size:11px; text-transform:uppercase; color:#4338ca;"><th style="text-align:left; padding-bottom:4px;">Product & Specs</th><th style="text-align:right; padding-bottom:4px;">Vendor Cost</th></tr></thead>
                     <tbody>${itemsRows}</tbody>
                 </table>
                 <div style="border-top:1.5px solid #3730a3; padding-top:6px; font-size:12px;">
@@ -496,12 +502,11 @@
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // 3. SEND DIRECT PURCHASE SPECIFICATIONS TO VENDOR ON WHATSAPP
         function sendVendorWhatsApp(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
             let vendorPhone = vendorsMap[ord.vendorName] || "";
-            if (!vendorPhone) { alert(`WhatsApp number not found for vendor "${ord.vendorName}". Please add in Staff & Vendors page.`); return; }
+            if (!vendorPhone) { alert(`WhatsApp number not found for vendor "${ord.vendorName}".`); return; }
             let p = vendorPhone.replace(/[^0-9]/g, '');
             if (p.length === 10) p = "91" + p;
 

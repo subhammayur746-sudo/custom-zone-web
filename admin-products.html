@@ -46,9 +46,8 @@
         .thumb-preview-box img { width: 100%; height: 100%; object-fit: cover; }
         .thumb-preview-box .remove-thumb-btn { position: absolute; top: 2px; right: 2px; background: rgba(231, 76, 60, 0.9); color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-        /* FIXED RESPONSIVE VARIANT & BULK BOXES */
         .variant-item-box, .qty-tier-item-box { background: #fafbfc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 6px; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
-        .variant-grid-fields { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .variant-grid-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px; }
         
         .table-responsive-container { width: 100%; overflow-x: auto; border: 1px solid #eee; border-radius: 6px; }
         .admin-table { width: 100%; border-collapse: collapse; min-width: 750px; background: #fff; }
@@ -62,7 +61,6 @@
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
             .admin-card { padding: 15px; }
-            /* Mobile 2x2 Clean Layout - Never overflows or breaks */
             .variant-grid-fields { grid-template-columns: 1fr 1fr; gap: 8px; }
         }
     </style>
@@ -105,7 +103,7 @@
             <div class="form-grid-row">
                 <div class="form-group" style="margin:0;">
                     <label>Product Name *</label>
-                    <input type="text" id="prod-name" placeholder="e.g., Personalized Family Name Plate" required>
+                    <input type="text" id="prod-name" placeholder="e.g., Personalized Initial Shirt" required>
                 </div>
                 <div class="form-group" style="margin:0;">
                     <label>Main Category *</label>
@@ -122,7 +120,7 @@
                     <label>Sub Category</label>
                     <input type="text" id="prod-sub-cat" list="subcat-default-list" placeholder="Choose or type...">
                     <datalist id="subcat-default-list">
-                        <option value="Keychains"><option value="Frames"><option value="Mug"><option value="Hair Pin"><option value="Shirts"><option value="Resin Art"><option value="Shadow Box"><option value="Clocks"><option value="Wallets"><option value="Bottles"><option value="Gift Hampers">
+                        <option value="Shirts"><option value="Keychains"><option value="Frames"><option value="Mug"><option value="Hair Pin"><option value="Resin Art"><option value="Shadow Box"><option value="Clocks"><option value="Wallets"><option value="Bottles"><option value="Gift Hampers">
                     </datalist>
                 </div>
             </div>
@@ -149,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- NEW: VENDOR ASSIGNMENT & SOURCING COST (100% PRIVATE) -->
+            <!-- VENDOR ASSIGNMENT & SOURCING COST (100% PRIVATE) -->
             <div class="form-grid-row" style="background:#eef2ff; border:1px solid #c7d2fe; padding:14px; border-radius:6px; margin-top:15px;">
                 <div class="form-group" style="margin:0;">
                     <label style="color:#3730a3;"><i class="fas fa-truck-loading"></i> Assign Product Vendor / Supplier:</label>
@@ -179,13 +177,13 @@
                 <textarea id="prod-admin-note" rows="2" placeholder="Private inventory notes..." style="background:#fff;"></textarea>
             </div>
 
-            <!-- RESPONSIVE VARIANTS SECTION -->
+            <!-- RESPONSIVE 2-STEP VARIANTS SECTION (SIZE + COLOR) -->
             <div style="background:#fafbfc; border:2px dashed #bdc3c7; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#2c3e50; margin:0; cursor:pointer;">
-                        <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options
+                        <input type="checkbox" id="toggle-variants" onchange="toggleVariantSection(this.checked)"> Enable Product Variants / Options (Size & Color)
                     </label>
-                    <span style="font-size:11px; background:#2c3e50; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 5 Variants</span>
+                    <span style="font-size:11px; background:#2c3e50; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Max 10 Combinations</span>
                 </div>
                 <div id="variants-container" style="display:none;">
                     <div id="variant-items-list"></div>
@@ -271,7 +269,6 @@
             return (loggedInUser && loggedInUser.role !== 'staff');
         }
 
-        // Fetch vendors to populate dropdown
         async function loadVendorsDropdown() {
             const select = document.getElementById('prod-vendor-select');
             try {
@@ -394,12 +391,11 @@
             }
         }
 
-        // FULLY RESPONSIVE VARIANT ROW BUILDER (NO SCREEN OVERFLOW)
-        function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "") {
+        function addVariantRow(name = "", type = "Color", price = "", actualPrice = "", img = "", size = "Standard") {
             const list = document.getElementById('variant-items-list');
             const currentCount = list.querySelectorAll('.variant-item-box').length;
-            if (currentCount >= 5) {
-                alert("Maximum 5 variants allowed per product.");
+            if (currentCount >= 10) {
+                alert("Maximum 10 variant combinations allowed per product.");
                 return;
             }
 
@@ -407,22 +403,36 @@
             div.className = 'variant-item-box';
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <strong style="font-size:12px; color:#2c3e50;">Variant #${currentCount + 1}</strong>
+                    <strong style="font-size:12px; color:#2c3e50;">Variant Combination #${currentCount + 1}</strong>
                     <button type="button" onclick="this.parentElement.parentElement.remove(); updateVariantAddButton();" style="background:#e74c3c; color:white; border:none; padding:3px 8px; border-radius:3px; font-size:11px; cursor:pointer;">✕ Delete</button>
                 </div>
                 <div class="variant-grid-fields">
-                    <input type="text" placeholder="Option Name (e.g. Red)" value="${name}" class="var-name" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
-                    <select class="var-type" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                        <option value="Color" ${type === 'Color' ? 'selected' : ''}>Color</option>
-                        <option value="Size" ${type === 'Size' ? 'selected' : ''}>Size</option>
-                        <option value="Design" ${type === 'Design' ? 'selected' : ''}>Design</option>
-                        <option value="Material" ${type === 'Material' ? 'selected' : ''}>Material</option>
-                        <option value="Style" ${type === 'Style' ? 'selected' : ''}>Style</option>
-                    </select>
-                    <input type="number" placeholder="MRP (₹)" value="${actualPrice}" class="var-actual-price" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
-                    <input type="number" placeholder="Sale Price (₹)" value="${price}" class="var-price" style="padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <div>
+                        <label style="font-size:10.5px; font-weight:bold;">Size / Dimension:</label>
+                        <select class="var-size" style="width:100%; padding:7px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                            <option value="Standard" ${size === 'Standard' ? 'selected' : ''}>Standard</option>
+                            <option value="Free Size" ${size === 'Free Size' ? 'selected' : ''}>Free Size</option>
+                            <option value="S" ${size === 'S' ? 'selected' : ''}>S (Small)</option>
+                            <option value="M" ${size === 'M' ? 'selected' : ''}>M (Medium)</option>
+                            <option value="L" ${size === 'L' ? 'selected' : ''}>L (Large)</option>
+                            <option value="XL" ${size === 'XL' ? 'selected' : ''}>XL</option>
+                            <option value="XXL" ${size === 'XXL' ? 'selected' : ''}>XXL</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:10.5px; font-weight:bold;">Color / Design Name:</label>
+                        <input type="text" placeholder="e.g. Red / Matte Black" value="${name}" class="var-name" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    </div>
+                    <div>
+                        <label style="font-size:10.5px; font-weight:bold;">MRP (₹):</label>
+                        <input type="number" placeholder="MRP" value="${actualPrice}" class="var-actual-price" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    </div>
+                    <div>
+                        <label style="font-size:10.5px; font-weight:bold;">Sale Price (₹):</label>
+                        <input type="number" placeholder="Sale Price" value="${price}" class="var-price" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
                     <input type="file" accept="image/*" onchange="handleVariantImageUpload(this)" style="font-size:11px; flex:1;">
                     <input type="hidden" class="var-img-data" value="${img}">
                     <img src="${img || ''}" class="var-img-preview" style="width:34px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #ccc; display:${img ? 'block' : 'none'};">
@@ -469,7 +479,7 @@
             const list = document.getElementById('variant-items-list');
             const count = list.querySelectorAll('.variant-item-box').length;
             const btn = document.getElementById('btn-add-variant-row');
-            if (btn) btn.style.display = count >= 5 ? 'none' : 'inline-block';
+            if (btn) btn.style.display = count >= 10 ? 'none' : 'inline-block';
         }
 
         function toggleQtyPricingSection(isEnabled) {
@@ -481,7 +491,6 @@
             }
         }
 
-        // FULLY RESPONSIVE BULK PRICING ROW
         function addQtyTierRow(minQty = "", packagePrice = "") {
             const list = document.getElementById('qty-tier-items-list');
             const div = document.createElement('div');
@@ -546,7 +555,6 @@
                     ? `<span style="background:#16a34a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; display:inline-block; margin-top:2px;">${p.qtyTiers.length} Qty Tiers</span>` 
                     : '';
 
-                let actualPrice = parseInt(p.actualPrice) || 0;
                 let discountPrice = parseInt(p.discountPrice || p.price) || 0;
 
                 tbody.innerHTML += `
@@ -626,7 +634,7 @@
                 toggle.checked = true;
                 toggleVariantSection(true);
                 prod.variants.forEach(v => {
-                    addVariantRow(v.name, v.type || "Color", v.price, v.actualPrice || "", v.image || "");
+                    addVariantRow(v.name, v.type || "Color", v.price, v.actualPrice || "", v.image || "", v.size || "Standard");
                 });
             } else {
                 toggle.checked = false;
@@ -702,8 +710,8 @@
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
                 rows.forEach(r => {
+                    let vSize = r.querySelector('.var-size').value;
                     let vName = r.querySelector('.var-name').value.trim();
-                    let vType = r.querySelector('.var-type').value;
                     let vActual = parseInt(r.querySelector('.var-actual-price').value) || actualPrice;
                     let vPrice = parseInt(r.querySelector('.var-price').value) || discountPrice;
                     let vImg = r.querySelector('.var-img-data').value.trim();
@@ -711,7 +719,8 @@
                     if (vName) {
                         variants.push({
                             name: vName,
-                            type: vType,
+                            size: vSize,
+                            type: 'Color',
                             actualPrice: vActual,
                             price: vPrice,
                             image: vImg,
@@ -746,7 +755,7 @@
                 images: uploadedProductImages,
                 adminNote: adminNote,
                 hasVariants: isVariantsEnabled && variants.length > 0,
-                variants: variants.slice(0, 5),
+                variants: variants.slice(0, 10),
                 hasQtyPricing: isQtyPricingEnabled && qtyTiers.length > 0,
                 qtyTiers: qtyTiers,
                 isActive: true,
