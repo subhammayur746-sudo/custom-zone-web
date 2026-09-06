@@ -111,7 +111,7 @@ function autoFillCustomerAddress() {
         addressInput.value = customer.flatAddress || customer.savedAddress || "";
     }
 
-    // Fallback: If customer has old unified string format like "Street, P.O: X, Dist - Pin"
+    // Fallback parser for old format
     if ((!customer.pin || !customer.district) && customer.savedAddress) {
         try {
             let raw = customer.savedAddress;
@@ -392,6 +392,7 @@ async function applyCoupon() {
     }
 }
 
+// CAPTURE COMPLETE GREETING NOTE & OCCASION DATE
 async function submitOrderViaWhatsApp() {
     let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
@@ -413,7 +414,23 @@ async function submitOrderViaWhatsApp() {
     const district = document.getElementById('cust-district').value.trim();
     const postOffice = document.getElementById('cust-postoffice').value.trim();
     const address = document.getElementById('cust-address').value.trim();
-    const greeting = document.getElementById('cust-greeting-note')?.value.trim() || '';
+
+    // Greeting Note & Occasion Capture
+    const greeting = document.getElementById('cust-greeting-note')?.value.trim() 
+                  || document.getElementById('greeting-note')?.value.trim() || '';
+
+    const occasionTypeSelect = document.getElementById('cust-occasion-type') 
+                            || document.getElementById('occasion-type')
+                            || document.querySelector('select[name="occasionType"]')
+                            || document.querySelector('.occasion-select');
+    const occasionType = (occasionTypeSelect && occasionTypeSelect.value && !occasionTypeSelect.value.startsWith('--')) 
+                       ? occasionTypeSelect.value 
+                       : '';
+
+    const occasionDateInput = document.getElementById('cust-occasion-date') 
+                           || document.getElementById('occasion-date')
+                           || document.querySelector('input[type="date"]');
+    const occasionDate = occasionDateInput ? occasionDateInput.value : '';
 
     if (!name || phone.length < 10 || !pin || !district || !postOffice || !address) { 
         alert("Please fill all required delivery fields (*)."); 
@@ -440,6 +457,8 @@ async function submitOrderViaWhatsApp() {
         totalAmount: currentTotal,
         actualDeliveryAddress: fullDeliveryAddress,
         greetingNote: greeting,
+        occasionType: occasionType,
+        occasionDate: occasionDate,
         paymentStatus: "Pending",
         orderStatus: "Payment Pending",
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -454,6 +473,16 @@ async function submitOrderViaWhatsApp() {
                 usedByPhones: firebase.firestore.FieldValue.arrayUnion(phone),
                 isUsed: true
             });
+        }
+
+        // Save occasion to customer document if provided
+        if (occasionDate || occasionType) {
+            try {
+                await db.collection("customers").doc(phone).update({
+                    savedOccasionType: occasionType,
+                    savedOccasionDate: occasionDate
+                });
+            } catch(e) {}
         }
 
         localStorage.removeItem('cz_cart');

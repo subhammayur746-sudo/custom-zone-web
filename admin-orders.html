@@ -263,10 +263,28 @@
 
                 snap.forEach(doc => {
                     let p = doc.data();
+                    
+                    // Highlight Gift Note and Occasion
+                    let noteHTML = p.greetingNote ? `
+                        <div style="font-size:11px; background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; margin-top:4px; border:1px solid #fde68a;">
+                            <i class="fas fa-envelope-open-text"></i> <strong>Handwritten Card:</strong> "${p.greetingNote}"
+                        </div>
+                    ` : '';
+
+                    let occasionHTML = (p.occasionType || p.occasionDate) ? `
+                        <div style="font-size:11px; background:#fce7f3; color:#9d174d; padding:3px 7px; border-radius:4px; margin-top:3px; border:1px solid #fbcfe8;">
+                            <i class="fas fa-birthday-cake"></i> <strong>Occasion:</strong> ${p.occasionType || 'Special Day'} (${p.occasionDate || '-'})
+                        </div>
+                    ` : '';
+
                     tbody.innerHTML += `
                         <tr>
                             <td><strong style="color:#d35400;">${p.paymentReference}</strong><br><small style="color:#7f8c8d;">${p.date || 'Recent'}</small></td>
-                            <td><strong>${p.customerName}</strong><br><small>${p.phone}</small></td>
+                            <td>
+                                <strong>${p.customerName}</strong><br><small>${p.phone}</small>
+                                ${noteHTML}
+                                ${occasionHTML}
+                            </td>
                             <td style="max-width:250px; font-size:12px;">${p.actualDeliveryAddress || '-'}</td>
                             <td><strong style="color:#27ae60; font-size:14px;">₹${p.totalAmount}</strong></td>
                             <td style="white-space:nowrap;">
@@ -291,7 +309,7 @@
             }
         }
 
-        // CONFIRM ORDER WITH ITEM-WISE VENDOR METADATA
+        // CONFIRM ORDER WITH GREETING NOTE & OCCASION SYNC
         async function verifyAndMarkPaid(paymentRef) {
             if (!confirm(`Verify payment for ${paymentRef}?`)) return;
             try {
@@ -333,6 +351,8 @@
                     totalAmount: p.totalAmount,
                     actualDeliveryAddress: p.actualDeliveryAddress || "",
                     greetingNote: p.greetingNote || "",
+                    occasionType: p.occasionType || "",
+                    occasionDate: p.occasionDate || "",
                     vendorsList: Array.from(itemVendorsSet),
                     paymentStatus: "Paid",
                     orderStatus: "Processing",
@@ -373,9 +393,8 @@
             } catch(e) { tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading orders.</td></tr>"; }
         }
 
-        // DYNAMIC VENDOR DISCOVERY (WORKS FOR BOTH OLD & NEW ORDERS)
         function getOrderVendorsMap(ord) {
-            let map = {}; // { "Ramesh Art": [item1, item2], "In-House": [item3] }
+            let map = {};
 
             if (Array.isArray(ord.items) && ord.items.length > 0) {
                 ord.items.forEach(it => {
@@ -428,7 +447,7 @@
                     }
                 });
 
-                // Items list with individual vendor tag
+                // Items list
                 let itemsDetail = "";
                 if (Array.isArray(ord.items)) {
                     itemsDetail = ord.items.map(it => {
@@ -441,7 +460,20 @@
                     itemsDetail = ord.items || '-';
                 }
 
-                // Action Buttons (Dynamic for each external vendor)
+                // Dedicated Display for Gift Greeting Note & Occasion
+                let noteHTML = ord.greetingNote ? `
+                    <div style="font-size:11px; background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; margin-top:4px; border:1px solid #fde68a; line-height:1.3;">
+                        <i class="fas fa-envelope-open-text"></i> <strong>Card Note:</strong> "${ord.greetingNote}"
+                    </div>
+                ` : '';
+
+                let occasionHTML = (ord.occasionType || ord.occasionDate) ? `
+                    <div style="font-size:11px; background:#fce7f3; color:#9d174d; padding:3px 7px; border-radius:4px; margin-top:3px; border:1px solid #fbcfe8;">
+                        <i class="fas fa-gift"></i> <strong>Occasion:</strong> ${ord.occasionType || 'Special Day'} (${ord.occasionDate || '-'})
+                    </div>
+                ` : '';
+
+                // Action Buttons
                 let vendorActionsHTML = "";
                 vendorNames.forEach(vn => {
                     if (vn !== "In-House") {
@@ -467,6 +499,8 @@
                         <td>
                             <strong>${ord.customerName || 'Customer'}</strong><br>
                             <small>${ord.phone || '-'}</small>
+                            ${noteHTML}
+                            ${occasionHTML}
                         </td>
                         <td>${vendorBadgesHTML}</td>
                         <td>
@@ -522,7 +556,7 @@
             }
         }
 
-        // 1. FULL CUSTOMER RETAIL SLIP
+        // CUSTOMER RETAIL SLIP (PROMINENT GREETING CARD SECTION)
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -551,21 +585,39 @@
                     <div><strong>Customer:</strong> ${ord.customerName || '-'} (${ord.phone || '-'})</div>
                     <div><strong>Address:</strong> ${ord.actualDeliveryAddress || '-'}</div>
                 </div>
+
                 <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
                     <thead><tr style="border-bottom:1.5px solid #0f172a; font-size:11px; text-transform:uppercase; color:#64748b;"><th style="text-align:left; padding-bottom:4px;">Item Description</th><th style="text-align:right; padding-bottom:4px;">Amount</th></tr></thead>
                     <tbody>${itemsRows}</tbody>
                 </table>
+
                 <div style="border-top:1.5px solid #0f172a; padding-top:6px; font-size:12px;">
                     <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800;">
                         <span>Grand Total:</span>
                         <span style="color:#16a34a;">₹${ord.totalAmount || 0}</span>
                     </div>
                 </div>
+
+                <!-- HANDWRITTEN GIFT CARD NOTE BOX FOR PACKING TEAM -->
+                ${ord.greetingNote ? `
+                    <div style="background:#fffbeb; border:1.5px dashed #f59e0b; border-radius:8px; padding:10px; margin-top:14px; text-align:left;">
+                        <span style="font-size:10.5px; font-weight:800; color:#b45309; text-transform:uppercase; display:block; margin-bottom:3px;">
+                            💌 Free Handwritten Card Message (Handwrite this on mini card):
+                        </span>
+                        <p style="margin:0; font-size:12.5px; color:#78350f; font-style:italic; line-height:1.4;">"${ord.greetingNote}"</p>
+                    </div>
+                ` : ''}
+
+                ${(ord.occasionType || ord.occasionDate) ? `
+                    <div style="font-size:11px; color:#9d174d; background:#fdf2f8; border:1px solid #fbcfe8; padding:6px 8px; border-radius:6px; margin-top:8px;">
+                        🎂 <strong>Occasion Date:</strong> ${ord.occasionType || 'Special'} (${ord.occasionDate || '-'})
+                    </div>
+                ` : ''}
             `;
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // 2. ISOLATED VENDOR INVOICE (ONLY PRODUCTS SOURCED FROM THIS SPECIFIC VENDOR)
+        // ISOLATED VENDOR INVOICE
         function viewIsolatedVendorInvoice(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -661,7 +713,6 @@
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        // 3. SEND ISOLATED WHATSAPP TO SPECIFIC VENDOR
         function sendIsolatedVendorWhatsApp(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
