@@ -97,6 +97,7 @@
             <h3 id="form-heading"><i class="fas fa-plus-circle"></i> Add New Product</h3>
             
             <input type="hidden" id="prod-doc-id">
+            <input type="hidden" id="prod-old-discount-price">
 
             <div class="form-grid-row">
                 <div class="form-group" style="margin:0;">
@@ -297,6 +298,27 @@
                     select.innerHTML += `<option value="${v.name}">${v.name} (${v.phone || 'No WA'})</option>`;
                 });
             } catch(e) {}
+        }
+
+        // 100% BULLETPROOF AUDIT LOG RECORDER (ALWAYS AWAITED & ROBUST)
+        async function logSystemAction(action, targetId, oldPrice = null, newPrice = null) {
+            try {
+                let currentUser = JSON.parse(localStorage.getItem('cz_logged_in_user')) || loggedInUser || {};
+                let logData = {
+                    actor: currentUser.name || currentUser.username || "Team Member",
+                    role: currentUser.role || "staff",
+                    action: action,
+                    targetId: targetId || "Item",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (oldPrice !== null && newPrice !== null && oldPrice !== newPrice) {
+                    logData.oldPrice = oldPrice;
+                    logData.newPrice = newPrice;
+                }
+                await db.collection("audit_logs").add(logData);
+            } catch(e) {
+                console.error("Failed to record audit log:", e);
+            }
         }
 
         function handleMainCategoryChange(val) {
@@ -538,7 +560,6 @@
             if (btn) btn.style.display = count >= 10 ? 'none' : 'inline-block';
         }
 
-        // REAL-TIME LINKED BULK TIERS DROPDOWN
         function getAvailableVariantNames() {
             let names = [];
             document.querySelectorAll('.variant-item-box .var-name').forEach(input => {
@@ -570,7 +591,6 @@
             }
         }
 
-        // GUARANTEED VARIANT SELECTION FOR BULK TIERS
         function addQtyTierRow(minQty = "", packagePrice = "", targetVariant = "all") {
             const list = document.getElementById('qty-tier-items-list');
             const varNames = getAvailableVariantNames();
@@ -690,7 +710,6 @@
             renderAdminProducts(filtered);
         }
 
-        // FULL EDIT WITH AUTOMATIC BULK VARIANT RE-BINDING
         function editProduct(id) {
             let prod = allProductsCache.find(p => p.id === id);
             if (!prod) return;
@@ -700,6 +719,7 @@
             document.getElementById('prod-name').value = prod.name || "";
             document.getElementById('prod-vendor-select').value = prod.vendorName || "";
             document.getElementById('prod-vendor-cost').value = prod.vendorCost || "";
+            document.getElementById('prod-old-discount-price').value = prod.discountPrice || prod.price || 0;
 
             const mainCatSelect = document.getElementById('prod-main-cat');
             const customCatInput = document.getElementById('prod-custom-main-cat');
@@ -740,7 +760,7 @@
                 document.getElementById('sizes-container').style.display = 'none';
             }
 
-            // Load Variants First
+            // Load Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -757,7 +777,7 @@
                 toggleVariantSection(false);
             }
 
-            // Load Qty Tiers (With Target Variant Dropdown Guaranteed)
+            // Load Qty Tiers with target variant preserved
             const toggleQty = document.getElementById('toggle-qty-pricing');
             const qtyList = document.getElementById('qty-tier-items-list');
             qtyList.innerHTML = "";
@@ -785,6 +805,7 @@
             document.getElementById('prod-name').value = "";
             document.getElementById('prod-vendor-select').value = "";
             document.getElementById('prod-vendor-cost').value = "";
+            document.getElementById('prod-old-discount-price').value = "";
             document.getElementById('prod-main-cat').value = "Handmade";
             document.getElementById('prod-custom-main-cat').style.display = "none";
             document.getElementById('prod-sub-cat').value = "";
@@ -808,11 +829,13 @@
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
+        // SAVE PRODUCT WITH COMPLETE AUDIT TRAIL LOGGING
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
             const vendorName = document.getElementById('prod-vendor-select').value;
             const vendorCost = parseInt(document.getElementById('prod-vendor-cost').value) || 0;
+            const oldPrice = parseInt(document.getElementById('prod-old-discount-price').value) || 0;
             
             let mainCat = document.getElementById('prod-main-cat').value;
             if (mainCat === '__custom__') {
@@ -868,7 +891,7 @@
                 });
             }
 
-            // Extract Bulk Tiers with Target Variant
+            // Extract Bulk Tiers
             let qtyTiers = [];
             if (isQtyPricingEnabled) {
                 const qtyRows = document.querySelectorAll('.qty-tier-item-box');
@@ -906,19 +929,24 @@
 
             const btn = document.getElementById('btn-save-prod');
             btn.disabled = true;
-            btn.innerText = "Saving...";
+            btn.innerText = "Saving to Inventory...";
 
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
+                    // Explicitly log update action with old vs new price
+                    await logSystemAction("Updated Product Details & Options", name, oldPrice, discountPrice);
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
+                    // Explicitly log addition
+                    await logSystemAction("Created New Product", name, 0, discountPrice);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();
                 fetchAdminProducts();
             } catch(e) {
+                console.error("Product save error:", e);
                 alert("Error saving product.");
             } finally {
                 btn.disabled = false;
@@ -928,9 +956,12 @@
 
         async function deleteProduct(id) {
             if (!isMainAdmin()) return;
-            if (confirm("Permanently delete this product?")) {
+            let prod = allProductsCache.find(p => p.id === id);
+            let pName = prod ? prod.name : id;
+            if (confirm(`Permanently delete "${pName}"?`)) {
                 try {
                     await db.collection("products").doc(id).delete();
+                    await logSystemAction("Deleted Product from Inventory", pName);
                     alert("✓ Product deleted.");
                     fetchAdminProducts();
                 } catch(e) { alert("Failed to delete."); }

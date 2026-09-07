@@ -43,7 +43,6 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 10px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        /* Notification Bell Badge */
         .notif-bell-btn {
             position: relative;
             background: #ffffff;
@@ -72,11 +71,11 @@
             box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
         }
 
-        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; opacity: 0.95; }
-        .audit-scroll-container { max-height: 190px; overflow-y: auto; padding-right: 4px; }
-        .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
+        .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; opacity: 0.98; }
+        .audit-scroll-container { max-height: 240px; overflow-y: auto; padding-right: 4px; }
+        .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
         .audit-item-row:last-child { border-bottom: none; }
-        .audit-actor-badge { background: #e2e8f0; color: #1e293b; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
+        .audit-actor-badge { background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
         .modal-box { background: #fff; width: 100%; max-width: 880px; border-radius: 10px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -117,7 +116,7 @@
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
         <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -141,7 +140,6 @@
         </div>
 
         <div class="stats-grid">
-            <!-- Universal Active & Inactive Product Stats (Visible to Everyone) -->
             <div class="stat-card" style="border-left:4px solid #059669;">
                 <div class="stat-icon-wrap" style="background:#d1fae5; color:#059669;"><i class="fas fa-boxes"></i></div>
                 <div class="stat-info"><h3 id="stat-active-products">0</h3><p>Active Products</p></div>
@@ -206,17 +204,18 @@
             </table>
         </div>
 
+        <!-- Real-Time Audit Log Feed -->
         <div class="audit-log-section">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-                <span style="font-size:11.5px; font-weight:700; color:#334155; text-transform:uppercase;">
-                    <i class="fas fa-clipboard-list" style="color:#64748b;"></i> Latest Actions (Recent 5 Updates)
+                <span style="font-size:12px; font-weight:800; color:#1e293b; text-transform:uppercase;">
+                    <i class="fas fa-user-shield" style="color:#2563eb;"></i> Live Team Activity & Audit Trail (Latest 8 Actions)
                 </span>
-                <button onclick="openFullAuditModal()" style="background:#2c3e50; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">
-                    <i class="fas fa-external-link-alt"></i> View Full History & Export
+                <button onclick="openFullAuditModal()" style="background:#2c3e50; color:#fff; border:none; padding:5px 12px; border-radius:4px; font-size:11.5px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-external-link-alt"></i> View Full Audit Log & Export CSV
                 </button>
             </div>
             <div class="audit-scroll-container" id="audit-log-items-box">
-                <p style="text-align:center; color:#94a3b8; font-size:12px; margin:0;">Loading action history...</p>
+                <p style="text-align:center; color:#94a3b8; font-size:12px; margin:4px 0;">Loading action history...</p>
             </div>
         </div>
     </div>
@@ -245,7 +244,7 @@
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
-                                <th>User / Actor</th>
+                                <th>Staff / User</th>
                                 <th>Action Performed</th>
                                 <th>Target / Details</th>
                                 <th>Price Alteration</th>
@@ -308,24 +307,21 @@
             if (spinner) spinner.classList.add('fa-spin');
 
             try {
-                // 1. Fetch Products Stats (Active vs Inactive)
+                // Products Stats
                 const prodSnap = await db.collection("products").get();
                 let activeProdCount = 0;
                 let inactiveProdCount = 0;
 
                 prodSnap.forEach(doc => {
                     let p = doc.data();
-                    if (p.isActive !== false) {
-                        activeProdCount++;
-                    } else {
-                        inactiveProdCount++;
-                    }
+                    if (p.isActive !== false) activeProdCount++;
+                    else inactiveProdCount++;
                 });
 
                 document.getElementById('stat-active-products').innerText = activeProdCount;
                 document.getElementById('stat-inactive-products').innerText = inactiveProdCount;
 
-                // 2. Fetch Orders Stats
+                // Orders Stats
                 const ordersSnap = await db.collection("orders").get();
                 let totalConfirmed = 0, processingCount = 0, packedCount = 0, shippedCount = 0, deliveredCount = 0, cancelledCount = 0, deliveredRevenue = 0;
                 let recentOrders = [];
@@ -347,7 +343,7 @@
                     recentOrders.push(ord);
                 });
 
-                // Pending payments detection & Notification badge count
+                // Pending payments detection
                 const pendingSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
                 const pendingSize = pendingSnap.size;
                 
@@ -372,9 +368,10 @@
                 }
 
                 recentOrders.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
-
                 renderRecentOrders(recentOrders.slice(0, 8));
-                loadAuditLogs();
+
+                // Always fetch fresh latest audit logs (Real-time sort)
+                await loadAuditLogs();
 
             } catch(e) {
                 console.error("Dashboard stats load error:", e);
@@ -407,42 +404,55 @@
             });
         }
 
+        // FIXED: FETCH RECENT 8 AUDIT LOGS SORTED DESCENDING (NEVER STUCK ON OLD DATES)
         async function loadAuditLogs() {
             const box = document.getElementById('audit-log-items-box');
             try {
-                const snap = await db.collection("audit_logs").limit(5).get();
+                // Fetch all and sort locally by timestamp descending to guarantee latest actions appear first
+                const snap = await db.collection("audit_logs").get();
                 if (snap.empty) {
-                    box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No recent team actions.</p>";
+                    box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No team actions recorded yet.</p>";
                     return;
                 }
                 let logs = [];
                 snap.forEach(doc => logs.push(doc.data()));
-                logs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
+                logs.sort((a, b) => {
+                    let tA = a.timestamp ? (a.timestamp.seconds || a.timestamp._seconds || 0) : 0;
+                    let tB = b.timestamp ? (b.timestamp.seconds || b.timestamp._seconds || 0) : 0;
+                    return tB - tA;
+                });
+
+                let topLogs = logs.slice(0, 8);
                 let html = "";
-                logs.forEach(l => {
-                    let timeStr = l.timestamp?.toDate ? l.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recent';
-                    let priceTag = l.oldPrice ? `<span style="background:#fee2e2; color:#dc2626; font-size:10px; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:bold;">₹${l.oldPrice} ➔ ₹${l.newPrice}</span>` : '';
+                topLogs.forEach(l => {
+                    let d = l.timestamp?.toDate ? l.timestamp.toDate() : new Date();
+                    let dateStr = d.toLocaleDateString('en-GB');
+                    let timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                    let priceTag = l.oldPrice ? `<span style="background:#fee2e2; color:#dc2626; font-size:10.5px; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:bold;">₹${l.oldPrice} ➔ ₹${l.newPrice}</span>` : '';
+                    
                     html += `
                         <div class="audit-item-row">
                             <div>
                                 <span class="audit-actor-badge">${l.actor || 'User'} (${l.role || 'staff'})</span>
-                                <span>${l.action || 'Updated'}</span> 
-                                <strong style="color:#2c3e50;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
+                                <span style="font-weight:600; color:#1e293b;">${l.action || 'Updated'}</span> 
+                                <strong style="color:#2563eb;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
                                 ${priceTag}
                             </div>
-                            <span style="font-size:11px; color:#94a3b8;"><i class="far fa-clock"></i> ${timeStr}</span>
+                            <span style="font-size:11px; color:#64748b; white-space:nowrap;"><i class="far fa-clock"></i> ${dateStr} ${timeStr}</span>
                         </div>
                     `;
                 });
                 box.innerHTML = html;
-            } catch(e) {}
+            } catch(e) {
+                console.error("Audit load error:", e);
+            }
         }
 
         async function openFullAuditModal() {
             document.getElementById('full-audit-modal').style.display = 'flex';
             const tbody = document.getElementById('full-audit-tbody');
-            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Loading all historical logs...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Loading all historical logs from cloud...</td></tr>";
 
             try {
                 const snap = await db.collection("audit_logs").get();
@@ -453,7 +463,12 @@
                     fullAuditHistoryCache.push(d);
                 });
 
-                fullAuditHistoryCache.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                fullAuditHistoryCache.sort((a, b) => {
+                    let tA = a.timestamp ? (a.timestamp.seconds || a.timestamp._seconds || 0) : 0;
+                    let tB = b.timestamp ? (b.timestamp.seconds || b.timestamp._seconds || 0) : 0;
+                    return tB - tA;
+                });
+
                 renderFullAuditTable(fullAuditHistoryCache);
             } catch(err) {
                 tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading audit logs.</td></tr>";
