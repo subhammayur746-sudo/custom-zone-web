@@ -201,7 +201,7 @@
         
         <div class="page-heading">
             <h1>Get in Touch with Us</h1>
-            <p>Have questions about custom gifts or bulk production? We are here to help!</p>
+            <p>Have questions about custom gifts, bulk orders, or becoming a vendor partner? We are here!</p>
         </div>
 
         <div class="contact-grid">
@@ -214,7 +214,7 @@
                     <!-- Live Workshop Operational Pill -->
                     <div class="status-indicator-box">
                         <span class="pulse-dot"></span>
-                        <span>Workshop Open: Monday – Saturday (10:00 AM – 9:00 PM)</span>
+                        <span>Workshop Open: Mon – Sat (10:00 AM – 9:00 PM)</span>
                     </div>
 
                     <ul class="info-list">
@@ -237,7 +237,7 @@
                         <li class="info-item">
                             <div class="info-icon" style="color:#16a34a; background:#dcfce7;"><i class="fab fa-whatsapp"></i></div>
                             <div>
-                                <span style="font-size:11.5px; color:#64748b; display:block;">WhatsApp Orders & Proofs</span>
+                                <span style="font-size:11.5px; color:#64748b; display:block;">WhatsApp Orders & Support</span>
                                 <a href="https://api.whatsapp.com/send?phone=916290407730" target="_blank">+91 6290407730</a>
                             </div>
                         </li>
@@ -272,12 +272,12 @@
                     <button type="button" class="topic-pill-btn active" onclick="selectInquiryTopic('Customized Gift Inquiry', this)">Custom Gift</button>
                     <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Bulk Corporate Order', this)">Bulk Orders</button>
                     <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Urgent 24hr Delivery', this)">Urgent Delivery</button>
-                    <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Vendor/Reseller Inquiry', this)">Become a Vendor</button>
+                    <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Vendor/Supplier Onboarding', this)">Become a Vendor</button>
                 </div>
 
                 <form id="contact-inquiry-form" onsubmit="handleInquirySubmit(event)">
                     <div class="form-field-group">
-                        <label>Your Full Name *</label>
+                        <label id="lbl-cust-name">Your Full Name *</label>
                         <input type="text" id="inq-name" placeholder="Enter your full name" required>
                     </div>
 
@@ -287,8 +287,8 @@
                     </div>
 
                     <div class="form-field-group">
-                        <label>Message / Customization Specifications *</label>
-                        <textarea id="inq-message" rows="4" placeholder="Tell us about the item, name to engrave, or date you need it by..." required></textarea>
+                        <label id="lbl-msg-desc">Message / Details *</label>
+                        <textarea id="inq-message" rows="4" placeholder="Tell us about your requirements or product catalog..." required></textarea>
                     </div>
 
                     <button type="submit" class="btn-send-inquiry" id="btn-submit-inquiry">
@@ -312,6 +312,24 @@
             currentInquiryTopic = topic;
             document.querySelectorAll('.topic-pill-btn').forEach(b => b.classList.remove('active'));
             btnEl.classList.add('active');
+
+            const nameLabel = document.getElementById('lbl-cust-name');
+            const msgLabel = document.getElementById('lbl-msg-desc');
+            const msgInput = document.getElementById('inq-message');
+
+            if (topic === 'Vendor/Supplier Onboarding') {
+                nameLabel.innerText = "Business Name / Supplier Full Name *";
+                msgLabel.innerText = "Products You Supply / Sourcing Details *";
+                msgInput.placeholder = "e.g., We manufacture acrylic Spotify frames, resin art items, wooden crafts. We want to supply our products to Custom Zone...";
+            } else if (topic === 'Bulk Corporate Order') {
+                nameLabel.innerText = "Company / Contact Person Name *";
+                msgLabel.innerText = "Order Quantity & Expected Delivery Date *";
+                msgInput.placeholder = "e.g., Looking for 50 pieces customized mugs/shirts for event on 25th...";
+            } else {
+                nameLabel.innerText = "Your Full Name *";
+                msgLabel.innerText = "Customization Requirements *";
+                msgInput.placeholder = "Tell us about the item, name to engrave, or date you need it by...";
+            }
         }
 
         function updateNavSlot() {
@@ -320,7 +338,6 @@
             if (customer && slot) {
                 slot.innerHTML = `<a href="profile.html" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
                 
-                // Pre-fill form if logged in
                 const nameInput = document.getElementById('inq-name');
                 const phoneInput = document.getElementById('inq-phone');
                 if (nameInput && customer.name) nameInput.value = customer.name;
@@ -346,7 +363,6 @@
             btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Submitting...`;
 
             try {
-                // Save inquiry to Firestore
                 await db.collection("inquiries").add({
                     customerName: name,
                     phone: phone,
@@ -356,12 +372,20 @@
                     date: new Date().toLocaleDateString('en-GB')
                 });
 
-                // Auto-open WhatsApp with pre-filled message
-                const waText = `Hello Custom Zone,\n\n*Inquiry Regarding:* ${currentInquiryTopic}\n*Name:* ${name}\n*Phone:* ${phone}\n*Message:* ${msg}\n\nPlease respond with pricing & customization details.`;
+                // Context-Aware Smart WhatsApp Message Dispatcher
+                let waText = "";
+                if (currentInquiryTopic === 'Vendor/Supplier Onboarding') {
+                    waText = `*NEW VENDOR/SUPPLIER PARTNERSHIP PROPOSAL*\n\n*Business / Supplier:* ${name}\n*Contact WhatsApp:* ${phone}\n\n*Product Supply Details:*\n${msg}\n\n👉 *Note:* We would like to share our wholesale product catalog and pricing sheet with Custom Zone. Please let us know how to proceed.`;
+                } else if (currentInquiryTopic === 'Bulk Corporate Order') {
+                    waText = `*BULK / CORPORATE ORDER INQUIRY*\n\n*Organization/Name:* ${name}\n*Phone:* ${phone}\n\n*Requirement:*\n${msg}\n\nPlease share discounted quotation for bulk volume.`;
+                } else {
+                    waText = `Hello Custom Zone,\n\n*Inquiry:* ${currentInquiryTopic}\n*Name:* ${name}\n*Phone:* ${phone}\n*Message:* ${msg}\n\nPlease respond with design preview & details.`;
+                }
+
                 const waUrl = `https://api.whatsapp.com/send?phone=916290407730&text=${encodeURIComponent(waText)}`;
                 
                 window.open(waUrl, '_blank');
-                alert("✅ Inquiry submitted successfully! Connecting to our support desk on WhatsApp.");
+                alert("✅ Message logged! Connecting you directly with Custom Zone admin on WhatsApp.");
                 document.getElementById('inq-message').value = "";
 
             } catch(err) {
