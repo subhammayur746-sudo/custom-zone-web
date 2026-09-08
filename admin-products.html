@@ -54,6 +54,34 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px 14px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 13px; color: #2c3e50; vertical-align: middle; }
 
+        /* ADVANCED PAGINATION STYLES */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .pagination-info { font-size: 12.5px; color: #64748b; font-weight: 600; }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .page-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+        .page-btn.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -227,9 +255,10 @@
             </div>
         </div>
 
+        <!-- LIVE PRODUCT CATALOG WITH ADVANCED 10-ITEM PAGINATION -->
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
-                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog</h3>
+                <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog (<span id="total-products-count">0</span>)</h3>
                 <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category / vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:220px; background:#fff;">
             </div>
 
@@ -250,14 +279,25 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Toolbar (10 per page) -->
+            <div class="pagination-container" id="product-pagination-bar">
+                <div class="pagination-info" id="pagination-info-text">Showing 0-0 of 0 products</div>
+                <div class="pagination-controls" id="pagination-buttons-slot"></div>
+            </div>
         </div>
     </div>
 
     <script>
         let allProductsCache = [];
+        let filteredProductsCache = [];
         let allVendorsCache = [];
         let uploadedProductImages = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+
+        // PAGINATION SETTINGS: Exactly 10 products per page
+        const PRODUCTS_PER_PAGE = 10;
+        let currentProductPage = 1;
 
         if (!loggedInUser) {
             window.location.href = "admin-login.html";
@@ -300,7 +340,6 @@
             } catch(e) {}
         }
 
-        // 100% BULLETPROOF AUDIT LOG RECORDER (ALWAYS AWAITED & ROBUST)
         async function logSystemAction(action, targetId, oldPrice = null, newPrice = null) {
             try {
                 let currentUser = JSON.parse(localStorage.getItem('cz_logged_in_user')) || loggedInUser || {};
@@ -316,9 +355,7 @@
                     logData.newPrice = newPrice;
                 }
                 await db.collection("audit_logs").add(logData);
-            } catch(e) {
-                console.error("Failed to record audit log:", e);
-            }
+            } catch(e) {}
         }
 
         function handleMainCategoryChange(val) {
@@ -627,6 +664,7 @@
             div.querySelector('.qty-variant-select').value = targetVariant || "all";
         }
 
+        // FETCH ALL PRODUCTS ONCE AND INITIALIZE PAGINATION
         async function fetchAdminProducts() {
             const tbody = document.getElementById('admin-product-table');
             try {
@@ -636,6 +674,8 @@
 
                 if (snapshot.empty) {
                     tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No products found in inventory.</td></tr>";
+                    document.getElementById('total-products-count').innerText = "0";
+                    renderPaginationControls(0);
                     return;
                 }
 
@@ -645,19 +685,35 @@
                     allProductsCache.push(prod);
                 });
 
-                renderAdminProducts(allProductsCache);
+                document.getElementById('total-products-count').innerText = allProductsCache.length;
+                filteredProductsCache = [...allProductsCache];
+                currentProductPage = 1;
+                renderPaginatedProducts();
+
             } catch(e) {
                 tbody.innerHTML = "<tr><td colspan='6' style='color:#e74c3c; text-align:center; padding:15px;'>Error loading inventory.</td></tr>";
             }
         }
 
-        function renderAdminProducts(products) {
+        // RENDER PRODUCTS SLICED (10 PER PAGE)
+        function renderPaginatedProducts() {
             const tbody = document.getElementById('admin-product-table');
             tbody.innerHTML = "";
 
+            let totalItems = filteredProductsCache.length;
+            if (totalItems === 0) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No products matching your search.</td></tr>";
+                renderPaginationControls(0);
+                return;
+            }
+
+            let startIndex = (currentProductPage - 1) * PRODUCTS_PER_PAGE;
+            let endIndex = Math.min(startIndex + PRODUCTS_PER_PAGE, totalItems);
+            let pageSlice = filteredProductsCache.slice(startIndex, endIndex);
+
             let canDelete = isMainAdmin();
 
-            products.forEach(p => {
+            pageSlice.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
                 let vendorBadge = p.vendorName ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;"><i class="fas fa-truck-loading"></i> Vendor: ${p.vendorName} (Cost: ₹${p.vendorCost || 0})</span>` : '';
                 
@@ -702,12 +758,69 @@
                     </tr>
                 `;
             });
+
+            renderPaginationControls(totalItems, startIndex + 1, endIndex);
+        }
+
+        // RENDER 10-ITEM PAGINATION BAR CONTROLS
+        function renderPaginationControls(totalItems, currentFrom = 0, currentTo = 0) {
+            const infoText = document.getElementById('pagination-info-text');
+            const btnsSlot = document.getElementById('pagination-buttons-slot');
+
+            if (totalItems === 0) {
+                infoText.innerText = "No products to display";
+                btnsSlot.innerHTML = "";
+                return;
+            }
+
+            let totalPages = Math.ceil(totalItems / PRODUCTS_PER_PAGE);
+            infoText.innerText = `Showing ${currentFrom}-${currentTo} of ${totalItems} products (Page ${currentProductPage} of ${totalPages})`;
+
+            let html = "";
+            // Prev Button
+            html += `<button class="page-btn" onclick="goToProductPage(${currentProductPage - 1})" ${currentProductPage === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+
+            // Page Numbers with Intelligent Window
+            let startPage = Math.max(1, currentProductPage - 2);
+            let endPage = Math.min(totalPages, currentProductPage + 2);
+
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToProductPage(1)">1</button>`;
+                if (startPage > 2) html += `<span style="padding:0 4px; color:#94a3b8;">...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentProductPage ? 'active' : ''}" onclick="goToProductPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span style="padding:0 4px; color:#94a3b8;">...</span>`;
+                html += `<button class="page-btn" onclick="goToProductPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            // Next Button
+            html += `<button class="page-btn" onclick="goToProductPage(${currentProductPage + 1})" ${currentProductPage === totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
+
+            btnsSlot.innerHTML = html;
+        }
+
+        function goToProductPage(page) {
+            let totalPages = Math.ceil(filteredProductsCache.length / PRODUCTS_PER_PAGE);
+            if (page < 1 || page > totalPages) return;
+            currentProductPage = page;
+            renderPaginatedProducts();
+            document.querySelector('.admin-card:last-child').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function filterAdminProducts() {
             let term = document.getElementById('search-prod-input').value.toLowerCase().trim();
-            let filtered = allProductsCache.filter(p => p.name.toLowerCase().includes(term) || (p.vendorName && p.vendorName.toLowerCase().includes(term)) || (p.subCategory && p.subCategory.toLowerCase().includes(term)));
-            renderAdminProducts(filtered);
+            filteredProductsCache = allProductsCache.filter(p => 
+                p.name.toLowerCase().includes(term) || 
+                (p.vendorName && p.vendorName.toLowerCase().includes(term)) || 
+                (p.subCategory && p.subCategory.toLowerCase().includes(term))
+            );
+            currentProductPage = 1; // Reset to page 1 on filter
+            renderPaginatedProducts();
         }
 
         function editProduct(id) {
@@ -829,7 +942,6 @@
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
-        // SAVE PRODUCT WITH COMPLETE AUDIT TRAIL LOGGING
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
@@ -891,7 +1003,7 @@
                 });
             }
 
-            // Extract Bulk Tiers
+            // Extract Bulk Tiers with Target Variant
             let qtyTiers = [];
             if (isQtyPricingEnabled) {
                 const qtyRows = document.querySelectorAll('.qty-tier-item-box');
@@ -934,19 +1046,16 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
-                    // Explicitly log update action with old vs new price
                     await logSystemAction("Updated Product Details & Options", name, oldPrice, discountPrice);
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    // Explicitly log addition
                     await logSystemAction("Created New Product", name, 0, discountPrice);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();
                 fetchAdminProducts();
             } catch(e) {
-                console.error("Product save error:", e);
                 alert("Error saving product.");
             } finally {
                 btn.disabled = false;

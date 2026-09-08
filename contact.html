@@ -12,13 +12,166 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #eef3f8; min-height: 100vh; display: flex; flex-direction: column; color: #1e293b; }
+
+        .contact-container { max-width: 960px; margin: 30px auto; padding: 0 16px; width: 100%; flex: 1; }
+        .page-heading { text-align: center; margin-bottom: 25px; }
+        .page-heading h1 { color: #1e3a8a; font-size: 26px; font-weight: 800; }
+        .page-heading p { color: #64748b; font-size: 13px; margin-top: 4px; }
+
+        .contact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+
+        /* Left Info Card */
+        .info-card {
+            background: #ffffff;
+            padding: 28px 24px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .info-card h3 { color: #0f172a; font-size: 18px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+        
+        .info-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+        .info-item { display: flex; align-items: flex-start; gap: 12px; font-size: 13.5px; color: #334155; }
+        .info-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .info-item a { color: #1e293b; text-decoration: none; font-weight: 700; }
+        .info-item a:hover { color: #2563eb; }
+
+        /* Live Workshop Status Pill */
+        .status-indicator-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #166534;
+        }
+        .pulse-dot { width: 9px; height: 9px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 3px rgba(34,197,94,0.3); }
+
+        .btn-whatsapp-direct {
+            background: #16a34a;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .btn-whatsapp-direct:hover { background: #15803d; }
+
+        .btn-map-directions {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+        .btn-map-directions:hover { background: #dbeafe; }
+
+        /* Right Inquiry Form Card */
+        .form-card {
+            background: #ffffff;
+            padding: 28px 24px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+        }
+        .form-card h3 { color: #0f172a; font-size: 18px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        /* Topic Pills */
+        .topic-selector-label { font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 8px; display: block; }
+        .topic-pills-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+        .topic-pill-btn {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .topic-pill-btn.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+
+        .form-field-group { margin-bottom: 14px; }
+        .form-field-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+        .form-field-group input, .form-field-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        .form-field-group input:focus, .form-field-group textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            background: #ffffff;
+        }
+
+        .btn-send-inquiry {
+            width: 100%;
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 6px;
+        }
+        .btn-send-inquiry:hover { background: #1d4ed8; }
+
+        @media (max-width: 768px) {
+            .contact-grid { grid-template-columns: 1fr; }
+            .info-card, .form-card { padding: 20px 16px; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Unified Navbar with Tagline -->
+    <!-- Professional Navbar -->
     <header class="navbar">
         <div class="nav-brand-section">
-            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
             <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
                 <div class="brand-text-container">
@@ -27,17 +180,15 @@
                 </div>
             </a>
         </div>
-
         <nav class="nav-menu-links">
             <a href="index.html">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html" class="active">Contact Us</a>
             <a href="track-order.html">Track Order</a>
         </nav>
-
         <div class="nav-actions">
             <span id="nav-user-slot-desktop">
-                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
+                <a href="profile.html" id="nav-user-link" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> Profile</a>
             </span>
             <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
@@ -46,96 +197,182 @@
         </div>
     </header>
 
-    <!-- Mobile Drawer -->
-    <div class="mobile-drawer-overlay" id="drawer-overlay" onclick="closeMobileDrawer()"></div>
-    <div class="mobile-drawer" id="mobile-drawer">
-        <div class="drawer-header">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <img src="assets/images/logo.png" alt="Logo" style="width:30px; height:30px; border-radius:50%;">
-                <div style="display:flex; flex-direction:column; line-height:1.1;">
-                    <strong style="color:var(--blue-primary); font-size:15px;">Custom Zone</strong>
-                    <small style="color:var(--text-muted); font-size:9.5px;">You Imagine. We Customize.</small>
-                </div>
-            </div>
-            <span onclick="closeMobileDrawer()" style="font-size:24px; cursor:pointer; font-weight:bold; color:var(--blue-primary);">&times;</span>
-        </div>
-        <div class="drawer-links">
-            <a href="index.html"><i class="fas fa-home"></i> Home</a>
-            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
-            <a href="contact.html" class="active"><i class="fas fa-phone-alt"></i> Contact Us</a>
-            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
-            <div id="nav-user-slot-mobile" style="border-top:1px solid var(--card-border); margin-top:8px; padding-top:8px;">
-                <a href="javascript:void(0)" onclick="closeMobileDrawer(); openAuthModal();"><i class="fas fa-user"></i> Login / Sign Up</a>
-            </div>
-        </div>
-    </div>
-
-    <main class="container">
-        <h2 class="section-title">Get in Touch with Us</h2>
+    <div class="contact-container">
         
-        <div style="display:flex; gap:25px; flex-wrap:wrap;">
-            <!-- Contact Details Card -->
-            <div style="flex:1; min-width:300px; background:var(--white); padding:25px; border-radius:12px; box-shadow:var(--shadow-soft); border:1px solid var(--card-border);">
-                <h3 style="color:var(--blue-primary); margin-bottom:15px;"><i class="fas fa-headset"></i> Contact Information</h3>
-                
-                <p style="margin:10px 0; color:var(--text-muted);">
-                    <i class="fas fa-user" style="color:var(--blue-primary); width:20px;"></i> Contact Person: <strong style="color:var(--text-primary);">Subham Mayur</strong>
-                </p>
-                <p style="margin:10px 0; color:var(--text-muted);">
-                    <i class="fas fa-phone-alt" style="color:var(--blue-primary); width:20px;"></i> Call Support: <strong style="color:var(--text-primary);">+91 9038604483</strong>
-                </p>
-                <p style="margin:10px 0; color:var(--text-muted);">
-                    <i class="fab fa-whatsapp" style="color:var(--success-green); width:20px;"></i> WhatsApp Orders: <strong style="color:var(--text-primary);">+91 6290407730</strong>
-                </p>
-                <p style="margin:10px 0; color:var(--text-muted);">
-                    <i class="fas fa-map-marker-alt" style="color:var(--danger-red); width:20px;"></i> Workshop Location: <strong style="color:var(--text-primary);">Liluah Chakpara, Howrah, West Bengal</strong>
-                </p>
+        <div class="page-heading">
+            <h1>Get in Touch with Us</h1>
+            <p>Have questions about custom gifts or bulk production? We are here to help!</p>
+        </div>
 
-                <div style="margin-top:20px;">
-                    <a href="https://api.whatsapp.com/send?phone=916290407730" target="_blank" style="display:inline-block; width:100%; text-align:center; background:var(--success-green); color:#fff; padding:12px; border-radius:6px; font-weight:bold; text-decoration:none;">
-                        <i class="fab fa-whatsapp"></i> Chat on WhatsApp
+        <div class="contact-grid">
+            
+            <!-- Left Info Card with Live Status & Location Link -->
+            <div class="info-card">
+                <div>
+                    <h3><i class="fas fa-headset" style="color:#2563eb;"></i> Contact Information</h3>
+
+                    <!-- Live Workshop Operational Pill -->
+                    <div class="status-indicator-box">
+                        <span class="pulse-dot"></span>
+                        <span>Workshop Open: Monday – Saturday (10:00 AM – 9:00 PM)</span>
+                    </div>
+
+                    <ul class="info-list">
+                        <li class="info-item">
+                            <div class="info-icon"><i class="fas fa-user"></i></div>
+                            <div>
+                                <span style="font-size:11.5px; color:#64748b; display:block;">Contact Person</span>
+                                <strong>Subham Mayur</strong>
+                            </div>
+                        </li>
+
+                        <li class="info-item">
+                            <div class="info-icon"><i class="fas fa-phone-alt"></i></div>
+                            <div>
+                                <span style="font-size:11.5px; color:#64748b; display:block;">Direct Call Support</span>
+                                <a href="tel:+919038604483">+91 9038604483</a>
+                            </div>
+                        </li>
+
+                        <li class="info-item">
+                            <div class="info-icon" style="color:#16a34a; background:#dcfce7;"><i class="fab fa-whatsapp"></i></div>
+                            <div>
+                                <span style="font-size:11.5px; color:#64748b; display:block;">WhatsApp Orders & Proofs</span>
+                                <a href="https://api.whatsapp.com/send?phone=916290407730" target="_blank">+91 6290407730</a>
+                            </div>
+                        </li>
+
+                        <li class="info-item">
+                            <div class="info-icon" style="color:#dc2626; background:#fee2e2;"><i class="fas fa-map-marker-alt"></i></div>
+                            <div>
+                                <span style="font-size:11.5px; color:#64748b; display:block;">Workshop Location</span>
+                                <strong>Liluah Chakpara, Howrah, West Bengal</strong>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <a href="https://api.whatsapp.com/send?phone=916290407730&text=Hello%20Custom%20Zone,%20I%20have%20an%20inquiry%20regarding%20customized%20gifts." target="_blank" class="btn-whatsapp-direct">
+                        <i class="fab fa-whatsapp" style="font-size:18px;"></i> Instant Chat on WhatsApp
+                    </a>
+                    <a href="https://maps.google.com/?q=Liluah+Chakpara+Howrah+West+Bengal" target="_blank" class="btn-map-directions">
+                        <i class="fas fa-directions"></i> Get Workshop Directions on Google Maps
                     </a>
                 </div>
             </div>
 
-            <!-- Send Message Form -->
-            <div style="flex:1.2; min-width:300px; background:var(--white); padding:25px; border-radius:12px; box-shadow:var(--shadow-soft); border:1px solid var(--card-border);">
-                <h3 style="color:var(--blue-primary); margin-bottom:15px;"><i class="fas fa-envelope"></i> Send an Inquiry</h3>
-                <div style="margin-bottom:12px;">
-                    <input type="text" id="inq-name" placeholder="Your Name" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; box-sizing:border-box;">
+            <!-- Right Advanced Interactive Inquiry Form -->
+            <div class="form-card">
+                <h3><i class="fas fa-envelope" style="color:#2563eb;"></i> Send an Inquiry</h3>
+
+                <!-- Purpose Selector Pills -->
+                <span class="topic-selector-label">What is your inquiry regarding?</span>
+                <div class="topic-pills-row">
+                    <button type="button" class="topic-pill-btn active" onclick="selectInquiryTopic('Customized Gift Inquiry', this)">Custom Gift</button>
+                    <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Bulk Corporate Order', this)">Bulk Orders</button>
+                    <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Urgent 24hr Delivery', this)">Urgent Delivery</button>
+                    <button type="button" class="topic-pill-btn" onclick="selectInquiryTopic('Vendor/Reseller Inquiry', this)">Become a Vendor</button>
                 </div>
-                <div style="margin-bottom:12px;">
-                    <input type="tel" id="inq-phone" placeholder="WhatsApp Phone Number" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div style="margin-bottom:15px;">
-                    <textarea id="inq-msg" rows="4" placeholder="Your inquiry message or customized request..." style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; box-sizing:border-box;"></textarea>
-                </div>
-                <button onclick="sendInquiryWhatsApp()" style="background:var(--blue-primary); color:var(--white); border:none; padding:12px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer;">Send Message</button>
+
+                <form id="contact-inquiry-form" onsubmit="handleInquirySubmit(event)">
+                    <div class="form-field-group">
+                        <label>Your Full Name *</label>
+                        <input type="text" id="inq-name" placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-field-group">
+                        <label>WhatsApp Phone Number *</label>
+                        <input type="tel" id="inq-phone" placeholder="10-digit WhatsApp number" required>
+                    </div>
+
+                    <div class="form-field-group">
+                        <label>Message / Customization Specifications *</label>
+                        <textarea id="inq-message" rows="4" placeholder="Tell us about the item, name to engrave, or date you need it by..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-send-inquiry" id="btn-submit-inquiry">
+                        <i class="fas fa-paper-plane"></i> Send Message & Connect on WhatsApp
+                    </button>
+                </form>
             </div>
+
         </div>
-    </main>
+
+    </div>
 
     <footer class="footer">
-        <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
-        <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
+        <p>&copy; 2026 Custom Zone. All Rights Reserved. | <a href="contact.html">Contact Us</a></p>
     </footer>
 
-    <script src="js/main.js"></script>
     <script>
-        function sendInquiryWhatsApp() {
+        let currentInquiryTopic = "Customized Gift Inquiry";
+
+        function selectInquiryTopic(topic, btnEl) {
+            currentInquiryTopic = topic;
+            document.querySelectorAll('.topic-pill-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+        }
+
+        function updateNavSlot() {
+            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+            const slot = document.getElementById('nav-user-slot-desktop');
+            if (customer && slot) {
+                slot.innerHTML = `<a href="profile.html" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
+                
+                // Pre-fill form if logged in
+                const nameInput = document.getElementById('inq-name');
+                const phoneInput = document.getElementById('inq-phone');
+                if (nameInput && customer.name) nameInput.value = customer.name;
+                if (phoneInput && customer.phone) phoneInput.value = customer.phone;
+            }
+            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
+            document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
+        }
+
+        async function handleInquirySubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-inquiry');
             const name = document.getElementById('inq-name').value.trim();
             const phone = document.getElementById('inq-phone').value.trim();
-            const msg = document.getElementById('inq-msg').value.trim();
+            const msg = document.getElementById('inq-message').value.trim();
 
-            if(!name || !msg) { alert("Please enter your name and message."); return; }
+            if (!name || !phone || !msg) {
+                alert("Please fill all required fields.");
+                return;
+            }
 
-            let text = `*New Customer Inquiry - Custom Zone*\n\n` +
-                       `Name: ${name}\n` +
-                       `Phone: ${phone || 'N/A'}\n` +
-                       `Message: ${msg}`;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Submitting...`;
 
-            window.open(`https://api.whatsapp.com/send?phone=916290407730&text=${encodeURIComponent(text)}`, "_blank");
+            try {
+                // Save inquiry to Firestore
+                await db.collection("inquiries").add({
+                    customerName: name,
+                    phone: phone,
+                    topic: currentInquiryTopic,
+                    message: msg,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    date: new Date().toLocaleDateString('en-GB')
+                });
+
+                // Auto-open WhatsApp with pre-filled message
+                const waText = `Hello Custom Zone,\n\n*Inquiry Regarding:* ${currentInquiryTopic}\n*Name:* ${name}\n*Phone:* ${phone}\n*Message:* ${msg}\n\nPlease respond with pricing & customization details.`;
+                const waUrl = `https://api.whatsapp.com/send?phone=916290407730&text=${encodeURIComponent(waText)}`;
+                
+                window.open(waUrl, '_blank');
+                alert("✅ Inquiry submitted successfully! Connecting to our support desk on WhatsApp.");
+                document.getElementById('inq-message').value = "";
+
+            } catch(err) {
+                alert("Error submitting message. Please try directly on WhatsApp.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-paper-plane"></i> Send Message & Connect on WhatsApp`;
+            }
         }
+
+        window.onload = updateNavSlot;
     </script>
 </body>
 </html>
