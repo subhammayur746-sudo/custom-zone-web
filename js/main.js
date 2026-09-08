@@ -13,6 +13,11 @@ let currentApplicablePrice = 0;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
+// HOME CLIENT-SIDE PAGINATION (12 products per page for fast loading)
+const HOME_PRODUCTS_PER_PAGE = 12;
+let currentHomePage = 1;
+let currentHomeFilteredProducts = [];
+
 // Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
@@ -91,7 +96,9 @@ async function fetchLiveProducts() {
         });
 
         renderCategoryPills();
-        renderHomeProducts(liveProducts);
+        currentHomeFilteredProducts = [...liveProducts];
+        currentHomePage = 1;
+        renderHomeProducts(currentHomeFilteredProducts);
         checkUrlProductParam();
 
     } catch (error) {
@@ -153,22 +160,31 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// HOME PRODUCTS (WITH DIRECT IMAGE CLICK TO ZOOM)
+// HOME PRODUCTS (SLICED 12 PER PAGE + DIRECT IMAGE ZOOM)
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
     container.innerHTML = "";
 
-    if (products.length === 0) {
+    currentHomeFilteredProducts = products;
+    let totalItems = products.length;
+
+    if (totalItems === 0) {
         container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1; color:#595959; padding:25px;'>No products found matching your search.</p>";
+        renderHomePaginationBar(0);
         return;
     }
+
+    // 12 Items Pagination Slice
+    let startIndex = (currentHomePage - 1) * HOME_PRODUCTS_PER_PAGE;
+    let endIndex = Math.min(startIndex + HOME_PRODUCTS_PER_PAGE, totalItems);
+    let pageItems = products.slice(startIndex, endIndex);
 
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     let wishlist = customer && customer.wishlist ? customer.wishlist : [];
     const fallbackImg = "assets/images/logo.png";
 
-    products.forEach(prod => {
+    pageItems.forEach(prod => {
         let images = prod.images && prod.images.length > 0 ? prod.images : [fallbackImg];
         let mainImg = images[0];
         let isWishlisted = wishlist.some(w => w.id === prod.id);
@@ -241,6 +257,74 @@ function renderHomeProducts(products) {
             </div>
         `;
     });
+
+    renderHomePaginationBar(totalItems);
+}
+
+// HOME DYNAMIC PAGINATION TOOLBAR
+function renderHomePaginationBar(totalItems) {
+    let bar = document.getElementById('home-pagination-container');
+    const container = document.getElementById('product-list');
+
+    if (!bar && container) {
+        bar = document.createElement('div');
+        bar.id = 'home-pagination-container';
+        bar.style.cssText = "grid-column: 1/-1; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 25px; padding: 15px 0;";
+        container.parentNode.insertBefore(bar, container.nextSibling);
+    }
+
+    if (!bar) return;
+
+    if (totalItems <= HOME_PRODUCTS_PER_PAGE) {
+        bar.innerHTML = "";
+        return;
+    }
+
+    let totalPages = Math.ceil(totalItems / HOME_PRODUCTS_PER_PAGE);
+    let html = "";
+
+    // Prev Button
+    html += `
+        <button onclick="goToHomePage(${currentHomePage - 1})" ${currentHomePage === 1 ? 'disabled' : ''} 
+                style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === 1 ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === 1 ? '0.5' : '1'};">
+            &laquo; Prev
+        </button>
+    `;
+
+    // Page Buttons
+    let startPage = Math.max(1, currentHomePage - 2);
+    let endPage = Math.min(totalPages, currentHomePage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+        let isAct = i === currentHomePage;
+        html += `
+            <button onclick="goToHomePage(${i})" 
+                    style="background:${isAct ? '#28469E' : '#fff'}; color:${isAct ? '#fff' : '#1e293b'}; border:1px solid ${isAct ? '#28469E' : '#cbd5e1'}; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+                ${i}
+            </button>
+        `;
+    }
+
+    // Next Button
+    html += `
+        <button onclick="goToHomePage(${currentHomePage + 1})" ${currentHomePage === totalPages ? 'disabled' : ''} 
+                style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === totalPages ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === totalPages ? '0.5' : '1'};">
+            Next &raquo;
+        </button>
+    `;
+
+    bar.innerHTML = html;
+}
+
+function goToHomePage(page) {
+    let totalPages = Math.ceil(currentHomeFilteredProducts.length / HOME_PRODUCTS_PER_PAGE);
+    if (page < 1 || page > totalPages) return;
+    currentHomePage = page;
+    renderHomeProducts(currentHomeFilteredProducts);
+    
+    // Smooth scroll to top of product list
+    const pList = document.getElementById('product-list');
+    if (pList) pList.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function directImageZoom(imgUrl) {
@@ -278,6 +362,7 @@ function filterHomeProducts() {
         return matchName && matchMainCat && matchSubCat && matchBudget;
     });
 
+    currentHomePage = 1; // Reset to page 1 on search or filter
     renderHomeProducts(filtered);
 }
 
@@ -324,7 +409,7 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
-// LINKED BULK PRICING FORMULA (CHECKS TARGET VARIANT APPLICABILITY)
+// LINKED BULK PRICING FORMULA
 function recalculateLinkedPrice(product) {
     let baseVariantPrice = currentSelectedVariant 
         ? parseInt(currentSelectedVariant.price) 
@@ -375,7 +460,6 @@ function openProductDetailsModal(productId) {
     const starsEl = document.getElementById('pdm-overall-stars');
     const revCountEl = document.getElementById('pdm-review-count');
 
-    // Perfect Image Fit Constraints for Modal
     if (mainImgEl) {
         mainImgEl.src = defaultImages[0];
         mainImgEl.style.cssText = "width:100%; max-height:360px; aspect-ratio:1/1; object-fit:contain; background:#ffffff; border-radius:8px; display:block; margin:0 auto;";
@@ -442,7 +526,7 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    // 3. Dynamic Bulk Package Area (Updates based on variant selected)
+    // 3. Dynamic Bulk Package Area
     customContainer.innerHTML += `<div id="pdm-bulk-qty-wrapper"></div>`;
     renderApplicableBulkPackages(product);
 
@@ -511,7 +595,6 @@ function openProductDetailsModal(productId) {
     modal.classList.add('show-modal');
 }
 
-// RENDER BULK TIERS ONLY IF APPLICABLE TO CURRENT VARIANT
 function renderApplicableBulkPackages(product) {
     const wrapper = document.getElementById('pdm-bulk-qty-wrapper');
     if (!wrapper) return;
