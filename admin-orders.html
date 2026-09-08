@@ -43,6 +43,7 @@
         .btn-vendor-slip { background: #3730a3; color: #fff; }
         .btn-wa { background: #25d366; color: #fff; }
         .btn-del { background: #e74c3c; color: #fff; }
+        .btn-disabled-lock { background: #cbd5e1 !important; color: #64748b !important; cursor: not-allowed !important; border: 1px dashed #94a3b8 !important; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -53,50 +54,13 @@
         }
 
         @media print {
-            @page {
-                size: portrait;
-                margin: 8mm 10mm;
-            }
-            html, body {
-                background: #ffffff !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-            body * {
-                visibility: hidden !important;
-            }
-            #receipt-modal {
-                position: static !important;
-                display: block !important;
-                width: 100% !important;
-                height: auto !important;
-                background: transparent !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            #printable-slip-area, #printable-slip-area * {
-                visibility: visible !important;
-            }
-            #printable-slip-area {
-                position: relative !important;
-                left: auto !important;
-                top: auto !important;
-                transform: none !important;
-                width: 100% !important;
-                max-width: 580px !important;
-                margin: 0 auto !important;
-                padding: 16px 20px !important;
-                border: 1.5px dashed #0f172a !important;
-                border-radius: 8px !important;
-                box-shadow: none !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            .no-print-slip {
-                display: none !important;
-            }
+            @page { size: portrait; margin: 8mm 10mm; }
+            html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+            body * { visibility: hidden !important; }
+            #receipt-modal { position: static !important; display: block !important; width: 100% !important; height: auto !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+            #printable-slip-area, #printable-slip-area * { visibility: visible !important; }
+            #printable-slip-area { position: relative !important; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 580px !important; margin: 0 auto !important; padding: 16px 20px !important; border: 1.5px dashed #0f172a !important; border-radius: 8px !important; box-shadow: none !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .no-print-slip { display: none !important; }
         }
     </style>
 </head>
@@ -128,10 +92,13 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Orders, Verification & Multi-Vendor Routing</h2>
 
-        <!-- Pending Payments -->
+        <!-- Step 1: Pending Payments (Strictly Admin-Only Verification) -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot)</h3>
+                <div>
+                    <h3 style="color:#d35400; margin:0; font-size:15px;"><i class="fas fa-money-check-alt"></i> 1. Pending Payments (Verify Screenshot)</h3>
+                    <small style="color:#64748b; font-weight:600;">🔒 Security Rule: Only Master Admin can approve payments. Staff can only view count.</small>
+                </div>
                 <span id="pending-count-badge" style="background:#fef3c7; color:#b45309; font-weight:bold; padding:3px 10px; border-radius:12px; font-size:12px;">0 Pending</span>
             </div>
             <table class="admin-table">
@@ -150,7 +117,7 @@
             </table>
         </div>
 
-        <!-- Confirmed Orders -->
+        <!-- Step 2: Confirmed Orders -->
         <div class="admin-card" style="overflow-x:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <h3 style="color:#27ae60; margin:0; font-size:15px;"><i class="fas fa-boxes"></i> 2. All Confirmed Orders & Vendor Partners</h3>
@@ -211,8 +178,26 @@
             window.location.href = "admin-login.html";
         }
 
+        // MASTER ADMIN AUTH CHECK
         function isMainAdminUser() {
             return (loggedInAdmin && loggedInAdmin.role !== 'staff');
+        }
+
+        // AUDIT LOG SYSTEM RECORDER (GUARANTEED SYNC)
+        async function logSystemAction(action, targetId) {
+            try {
+                let actorName = loggedInAdmin.name || loggedInAdmin.username || "Admin";
+                let actorRole = loggedInAdmin.role || "admin";
+                await db.collection("audit_logs").add({
+                    actor: actorName,
+                    role: actorRole,
+                    action: action,
+                    targetId: targetId || "Order",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Audit log error:", e);
+            }
         }
 
         async function fetchDependencies() {
@@ -246,6 +231,7 @@
             loadConfirmedOrders();
         }
 
+        // PENDING PAYMENTS: LOCKED FOR STAFF
         async function loadPendingPayments() {
             const tbody = document.getElementById('pending-payments-tbody');
             const badge = document.getElementById('pending-count-badge');
@@ -260,14 +246,14 @@
                 }
 
                 badge.innerText = `${snap.size} Pending`;
+                let isAdmin = isMainAdminUser();
 
                 snap.forEach(doc => {
                     let p = doc.data();
                     
-                    // Highlight Gift Note and Occasion
                     let noteHTML = p.greetingNote ? `
                         <div style="font-size:11px; background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; margin-top:4px; border:1px solid #fde68a;">
-                            <i class="fas fa-envelope-open-text"></i> <strong>Handwritten Card:</strong> "${p.greetingNote}"
+                            <i class="fas fa-envelope-open-text"></i> <strong>Card Note:</strong> "${p.greetingNote}"
                         </div>
                     ` : '';
 
@@ -276,6 +262,24 @@
                             <i class="fas fa-birthday-cake"></i> <strong>Occasion:</strong> ${p.occasionType || 'Special Day'} (${p.occasionDate || '-'})
                         </div>
                     ` : '';
+
+                    let actionButtonsHTML = "";
+                    if (isAdmin) {
+                        actionButtonsHTML = `
+                            <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">
+                                <i class="fas fa-check-circle"></i> Verify
+                            </button>
+                            <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
+                    } else {
+                        actionButtonsHTML = `
+                            <button class="btn-disabled-lock" onclick="alert('❌ Access Denied: Only Master Admin can verify payments! Please send screenshot to main admin.');" title="Only Admin Can Verify">
+                                <i class="fas fa-lock"></i> Admin Only
+                            </button>
+                        `;
+                    }
 
                     tbody.innerHTML += `
                         <tr>
@@ -288,12 +292,7 @@
                             <td style="max-width:250px; font-size:12px;">${p.actualDeliveryAddress || '-'}</td>
                             <td><strong style="color:#27ae60; font-size:14px;">₹${p.totalAmount}</strong></td>
                             <td style="white-space:nowrap;">
-                                <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                                    <i class="fas fa-check-circle"></i> Verify
-                                </button>
-                                <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                ${actionButtonsHTML}
                             </td>
                         </tr>
                     `;
@@ -302,16 +301,25 @@
         }
 
         async function deletePendingPayment(paymentRef) {
-            if (!isMainAdminUser()) return;
+            if (!isMainAdminUser()) {
+                alert("❌ Access Denied: Only Master Admin can delete pending payments!");
+                return;
+            }
             if (confirm(`Delete pending payment ${paymentRef}?`)) {
                 await db.collection("pending_payments").doc(paymentRef).delete();
+                await logSystemAction("Deleted Pending Payment Record", paymentRef);
                 loadPendingPayments();
             }
         }
 
-        // CONFIRM ORDER WITH GREETING NOTE & OCCASION SYNC
+        // STRICT PAYMENT APPROVAL + AUDIT LOG ENTRY
         async function verifyAndMarkPaid(paymentRef) {
-            if (!confirm(`Verify payment for ${paymentRef}?`)) return;
+            if (!isMainAdminUser()) {
+                alert("❌ Access Denied: Only Master Admin can verify payments!");
+                return;
+            }
+
+            if (!confirm(`Verify payment for ${paymentRef}? This will confirm the order.`)) return;
             try {
                 const pDoc = await db.collection("pending_payments").doc(paymentRef).get();
                 if (!pDoc.exists) return;
@@ -338,6 +346,8 @@
                     });
                 }
 
+                let verifierName = loggedInAdmin.name || loggedInAdmin.username || "Master Admin";
+
                 const confirmedPayload = {
                     orderId: finalOrderId,
                     paymentReference: p.paymentReference,
@@ -356,7 +366,7 @@
                     vendorsList: Array.from(itemVendorsSet),
                     paymentStatus: "Paid",
                     orderStatus: "Processing",
-                    verifiedBy: loggedInAdmin.username || "Admin",
+                    verifiedBy: verifierName,
                     verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     date: new Date().toLocaleDateString('en-GB')
                 };
@@ -364,9 +374,15 @@
                 await db.collection("orders").doc(finalOrderId).set(confirmedPayload);
                 await db.collection("pending_payments").doc(paymentRef).update({ paymentStatus: "Paid", finalOrderId: finalOrderId });
 
-                alert(`🎉 Confirmed Order #${finalOrderId} generated!`);
+                // WRITE REAL-TIME AUDIT LOG
+                await logSystemAction(`Approved Payment & Verified Order #${finalOrderId} (₹${p.totalAmount})`, p.customerName);
+
+                alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created and logged in Audit Trail.`);
                 fetchAdminOrders();
-            } catch(e) { alert("Failed to verify."); }
+            } catch(e) { 
+                console.error("Verification error:", e);
+                alert("Failed to verify."); 
+            }
         }
 
         async function loadConfirmedOrders() {
@@ -495,6 +511,7 @@
                         <td>
                             <strong style="color:#2980b9; font-size:13.5px;">#${orderDisplayId}</strong><br>
                             <small style="color:#7f8c8d;">${ord.date || 'Recent'}</small>
+                            ${ord.verifiedBy ? `<br><small style="color:#16a34a; font-size:10.5px;">By: ${ord.verifiedBy}</small>` : ''}
                         </td>
                         <td>
                             <strong>${ord.customerName || 'Customer'}</strong><br>
@@ -545,6 +562,7 @@
 
         async function updateOrderStatusSync(docId, newStatus) {
             await db.collection("orders").doc(docId).update({ orderStatus: newStatus });
+            await logSystemAction(`Changed Order Status to ${newStatus}`, docId);
             alert(`✓ Status updated to "${newStatus}"`);
         }
 
@@ -552,11 +570,12 @@
             if (!isMainAdminUser()) return;
             if (confirm(`Permanently delete order #${docId}?`)) {
                 await db.collection("orders").doc(docId).delete();
+                await logSystemAction("Permanently Deleted Order", docId);
                 fetchAdminOrders();
             }
         }
 
-        // CUSTOMER RETAIL SLIP (PROMINENT GREETING CARD SECTION)
+        // CUSTOMER RETAIL SLIP
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -598,11 +617,10 @@
                     </div>
                 </div>
 
-                <!-- HANDWRITTEN GIFT CARD NOTE BOX FOR PACKING TEAM -->
                 ${ord.greetingNote ? `
                     <div style="background:#fffbeb; border:1.5px dashed #f59e0b; border-radius:8px; padding:10px; margin-top:14px; text-align:left;">
                         <span style="font-size:10.5px; font-weight:800; color:#b45309; text-transform:uppercase; display:block; margin-bottom:3px;">
-                            💌 Free Handwritten Card Message (Handwrite this on mini card):
+                            💌 Free Handwritten Card Message:
                         </span>
                         <p style="margin:0; font-size:12.5px; color:#78350f; font-style:italic; line-height:1.4;">"${ord.greetingNote}"</p>
                     </div>
@@ -610,7 +628,7 @@
 
                 ${(ord.occasionType || ord.occasionDate) ? `
                     <div style="font-size:11px; color:#9d174d; background:#fdf2f8; border:1px solid #fbcfe8; padding:6px 8px; border-radius:6px; margin-top:8px;">
-                        🎂 <strong>Occasion Date:</strong> ${ord.occasionType || 'Special'} (${ord.occasionDate || '-'})
+                        🎂 <strong>Occasion:</strong> ${ord.occasionType || 'Special'} (${ord.occasionDate || '-'})
                     </div>
                 ` : ''}
             `;
