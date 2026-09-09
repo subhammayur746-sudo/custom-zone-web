@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Sales & Invoice Ledger - Custom Zone Admin</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
+
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; font-weight: 800; margin: 0; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+        
+        .sidebar a, .sidebar .menu-dropdown-toggle { 
+            display: flex; align-items: center; justify-content: space-between; color: #bdc3c7; 
+            padding: 14px 20px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; 
+            transition: 0.2s; cursor: pointer; user-select: none;
+        }
+        .sidebar a:hover, .sidebar a.active, .sidebar .menu-dropdown-toggle:hover { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i, .sidebar .menu-dropdown-toggle i.menu-icon { margin-right: 12px; width: 18px; text-align: center; }
+
+        /* Submenu */
+        .sidebar-submenu { background: #1e2b37; display: flex; flex-direction: column; padding: 4px 0; }
+        .sidebar-submenu a { padding: 10px 20px 10px 48px; font-size: 12.5px; border-left: 4px solid transparent; }
+        .sidebar-submenu a:hover, .sidebar-submenu a.active { background: #2c3e50; color: #2ecc71; border-left-color: #2ecc71; }
+
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
+        
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
+        .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 950px; }
+        .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
+        .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+
+        .filter-bar-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 14px; }
+        .filter-item { display: flex; flex-direction: column; gap: 4px; }
+        .filter-item label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .filter-item input, .filter-item select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12.5px; background: #fff; color: #1e293b; }
+
+        .btn-act { border: none; padding: 6px 11px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .btn-invoice { background: #2563eb; color: #fff; }
+        .btn-wa { background: #16a34a; color: #fff; }
+
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+        .page-btn { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .page-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
+        <a href="admin-dashboard.html"><i class="fas fa-home menu-icon"></i> <span>Dashboard</span></a>
+        <a href="admin-orders.html"><i class="fas fa-shopping-bag menu-icon"></i> <span>Manage Orders</span></a>
+        <a href="admin-products.html"><i class="fas fa-box menu-icon"></i> <span>Manage Products</span></a>
+        
+        <!-- Dropdown Sub-menu for Invoices & Ledgers -->
+        <div class="menu-dropdown-toggle active" onclick="toggleInvoiceSubmenu()">
+            <div><i class="fas fa-file-invoice-dollar menu-icon"></i> <span>Billing & Invoices</span></div>
+            <i class="fas fa-chevron-up" id="inv-caret-icon" style="font-size:11px; transition:0.2s;"></i>
+        </div>
+        <div class="sidebar-submenu open" id="sidebar-invoice-submenu">
+            <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Customer Invoice</a>
+            <a href="admin-customer-bills.html" class="active"><i class="fas fa-users"></i> Customer Ledger</a>
+            <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
+        </div>
+
+        <a href="admin-customers.html"><i class="fas fa-user-friends menu-icon"></i> <span>Customer Directory</span></a>
+        <a href="admin-reviews.html"><i class="fas fa-star menu-icon"></i> <span>Manage Reviews</span></a>
+        <a href="admin-coupons.html"><i class="fas fa-tags menu-icon"></i> <span>Discount & Vouchers</span></a>
+        <a href="admin-ads.html"><i class="fas fa-bullhorn menu-icon"></i> <span>Store Settings</span></a>
+        <a href="admin-users.html"><i class="fas fa-users menu-icon"></i> <span>Staff & Vendors</span></a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt menu-icon"></i> <span>Logout</span></a>
+    </div>
+
+    <div class="main-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+            <div>
+                <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Customer Sales & Invoice Ledger</h2>
+                <small style="color:#64748b;">Permanent record of customer orders, invoice references, and sales performance</small>
+            </div>
+            <div>
+                <button onclick="fetchCustomerLedger(true)" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-sync-alt"></i> Refresh Ledger
+                </button>
+            </div>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="stats-grid">
+            <div class="summary-card" style="border-left: 4px solid #2563eb;">
+                <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Sales Volume</span>
+                <h3 style="margin:6px 0 0 0; font-size:24px; color:#2563eb;" id="stat-total-sales">₹0</h3>
+                <small style="color:#475569;" id="stat-total-count">0 Invoices</small>
+            </div>
+
+            <div class="summary-card" style="border-left: 4px solid #16a34a;">
+                <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Delivered Revenue</span>
+                <h3 style="margin:6px 0 0 0; font-size:24px; color:#16a34a;" id="stat-delivered-sales">₹0</h3>
+                <small style="color:#475569;">Completed Orders</small>
+            </div>
+
+            <div class="summary-card" style="border-left: 4px solid #d97706;">
+                <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Processing & In-Transit</span>
+                <h3 style="margin:6px 0 0 0; font-size:24px; color:#d97706;" id="stat-processing-sales">₹0</h3>
+                <small style="color:#475569;">Active Pipeline</small>
+            </div>
+        </div>
+
+        <!-- Ledger Table & Filters -->
+        <div class="admin-card" style="overflow-x:auto;">
+            <div class="filter-bar-wrap">
+                <div class="filter-item">
+                    <label>Order Status:</label>
+                    <select id="filter-status-select" onchange="applyAllFilters()">
+                        <option value="all">-- All Statuses --</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Packed">Packed</option>
+                        <option value="Shipped">Shipped</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label>From Date:</label>
+                    <input type="date" id="filter-date-from" onchange="applyAllFilters()">
+                </div>
+
+                <div class="filter-item">
+                    <label>To Date:</label>
+                    <input type="date" id="filter-date-to" onchange="applyAllFilters()">
+                </div>
+
+                <div class="filter-item" style="flex:1; min-width:220px;">
+                    <label>Search Customer / Invoice:</label>
+                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No, Name, Phone...">
+                </div>
+
+                <div class="filter-item" style="align-self: flex-end;">
+                    <button onclick="resetFilters()" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; padding:7px 12px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">
+                        Reset Filters
+                    </button>
+                </div>
+            </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Invoice No / Date</th>
+                        <th>Customer Details</th>
+                        <th>Order ID</th>
+                        <th>Items Purchased</th>
+                        <th>Total Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customer-ledger-tbody">
+                    <tr><td colspan="7" style="text-align:center;">Loading customer sales ledger...</td></tr>
+                </tbody>
+            </table>
+
+            <!-- Pagination Bar -->
+            <div class="pagination-container" id="ledger-pagination-bar">
+                <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="pagination-info-text">Showing 0-0 of 0 records</div>
+                <div style="display:flex; gap:5px;" id="pagination-buttons-slot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInAdmin) window.location.href = "admin-login.html";
+
+        let allLedgerMasterList = [];
+        let filteredLedgerList = [];
+        const RECORDS_PER_PAGE = 10;
+        let currentPage = 1;
+
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+
+        function toggleInvoiceSubmenu() {
+            const submenu = document.getElementById('sidebar-invoice-submenu');
+            const caret = document.getElementById('inv-caret-icon');
+            submenu.classList.toggle('open');
+            caret.style.transform = submenu.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function parseOrderDateToObj(dateStr) {
+            if (!dateStr) return new Date(0);
+            if (dateStr.includes('/')) {
+                let parts = dateStr.split('/');
+                if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return new Date(dateStr);
+        }
+
+        async function fetchCustomerLedger() {
+            const tbody = document.getElementById('customer-ledger-tbody');
+            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Loading customer sales records...</td></tr>";
+
+            try {
+                const snap = await db.collection("orders").get();
+                allLedgerMasterList = [];
+
+                snap.forEach(doc => {
+                    let ord = doc.data();
+                    let orderId = ord.orderId || doc.id;
+                    let invoiceNo = "INV-" + String(orderId).replace(/[^0-9]/g, '');
+
+                    allLedgerMasterList.push({
+                        invoiceNo: invoiceNo,
+                        orderId: orderId,
+                        customerName: ord.customerName || ord.name || "Valued Customer",
+                        phone: ord.phone || "",
+                        items: ord.items || [],
+                        totalAmount: parseInt(ord.totalAmount) || parseInt(ord.total) || 0,
+                        date: ord.date || "Recent",
+                        dateObj: parseOrderDateToObj(ord.date),
+                        status: ord.orderStatus || ord.status || "Processing",
+                        docId: doc.id
+                    });
+                });
+
+                allLedgerMasterList.sort((a, b) => b.orderId.localeCompare(a.orderId));
+                filteredLedgerList = [...allLedgerMasterList];
+                applyAllFilters();
+
+            } catch(e) {
+                tbody.innerHTML = "<tr><td colspan='7' style='color:red; text-align:center;'>Error loading customer ledger.</td></tr>";
+            }
+        }
+
+        function applyAllFilters() {
+            let selectedStatus = document.getElementById('filter-status-select').value;
+            let dateFromVal = document.getElementById('filter-date-from').value;
+            let dateToVal = document.getElementById('filter-date-to').value;
+            let term = document.getElementById('ledger-search-input').value.toLowerCase().trim();
+
+            let dateFrom = dateFromVal ? new Date(dateFromVal + "T00:00:00") : null;
+            let dateTo = dateToVal ? new Date(dateToVal + "T23:59:59") : null;
+
+            filteredLedgerList = allLedgerMasterList.filter(l => {
+                let matchStatus = (selectedStatus === 'all') || (l.status.toLowerCase() === selectedStatus.toLowerCase());
+                let matchDate = true;
+                if (dateFrom && l.dateObj < dateFrom) matchDate = false;
+                if (dateTo && l.dateObj > dateTo) matchDate = false;
+
+                let matchTerm = true;
+                if (term) {
+                    matchTerm = l.invoiceNo.toLowerCase().includes(term) ||
+                                l.customerName.toLowerCase().includes(term) ||
+                                l.phone.includes(term) ||
+                                l.orderId.toLowerCase().includes(term);
+                }
+
+                return matchStatus && matchDate && matchTerm;
+            });
+
+            let totalVol = 0, delVol = 0, procVol = 0;
+            filteredLedgerList.forEach(l => {
+                totalVol += l.totalAmount;
+                if (l.status.toLowerCase() === 'delivered') delVol += l.totalAmount;
+                else if (l.status.toLowerCase() !== 'cancelled') procVol += l.totalAmount;
+            });
+
+            document.getElementById('stat-total-sales').innerText = `₹${totalVol.toLocaleString('en-IN')}`;
+            document.getElementById('stat-total-count').innerText = `${filteredLedgerList.length} Invoices`;
+            document.getElementById('stat-delivered-sales').innerText = `₹${delVol.toLocaleString('en-IN')}`;
+            document.getElementById('stat-processing-sales').innerText = `₹${procVol.toLocaleString('en-IN')}`;
+
+            currentPage = 1;
+            renderPaginatedLedger();
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-status-select').value = "all";
+            document.getElementById('filter-date-from').value = "";
+            document.getElementById('filter-date-to').value = "";
+            document.getElementById('ledger-search-input').value = "";
+            applyAllFilters();
+        }
+
+        function renderPaginatedLedger() {
+            const tbody = document.getElementById('customer-ledger-tbody');
+            tbody.innerHTML = "";
+
+            let totalItems = filteredLedgerList.length;
+            if (totalItems === 0) {
+                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px; color:#64748b;'>No customer sales records match your filters.</td></tr>";
+                renderPaginationControls(0);
+                return;
+            }
+
+            let startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
+            let endIndex = Math.min(startIndex + RECORDS_PER_PAGE, totalItems);
+            let pageSlice = filteredLedgerList.slice(startIndex, endIndex);
+
+            pageSlice.forEach(l => {
+                let itemsList = Array.isArray(l.items) ? l.items.map(it => `• ${it.name} x${it.quantity || 1}`).join("<br>") : (l.items || '-');
+                let statusBadge = `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">${l.status}</span>`;
+                if (l.status.toLowerCase() === 'delivered') {
+                    statusBadge = `<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Delivered</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#2563eb; font-size:13.5px;">${l.invoiceNo}</strong><br><small style="color:#64748b;">${l.date}</small></td>
+                        <td><strong>${l.customerName}</strong><br><small>${l.phone}</small></td>
+                        <td><strong style="color:#0f172a;">#${l.orderId}</strong></td>
+                        <td style="font-size:12px; max-width:250px; line-height:1.4;">${itemsList}</td>
+                        <td><strong style="color:#16a34a; font-size:14px;">₹${l.totalAmount}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td style="white-space:nowrap;">
+                            <a href="admin-invoice.html?orderId=${l.orderId}" class="btn-act btn-invoice">
+                                <i class="fas fa-file-invoice"></i> View Invoice
+                            </a>
+                            <button class="btn-act btn-wa" onclick="sendInvoiceWhatsAppDirect('${l.customerName}', '${l.phone}', '${l.invoiceNo}', '${l.totalAmount}')">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            renderPaginationControls(totalItems, startIndex + 1, endIndex);
+        }
+
+        function renderPaginationControls(totalItems, currentFrom = 0, currentTo = 0) {
+            const infoText = document.getElementById('pagination-info-text');
+            const btnsSlot = document.getElementById('pagination-buttons-slot');
+
+            if (totalItems === 0) {
+                infoText.innerText = "No records";
+                btnsSlot.innerHTML = "";
+                return;
+            }
+
+            let totalPages = Math.ceil(totalItems / RECORDS_PER_PAGE);
+            infoText.innerText = `Showing ${currentFrom}-${currentTo} of ${totalItems} records (Page ${currentPage} of ${totalPages})`;
+
+            let html = "";
+            html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
+            btnsSlot.innerHTML = html;
+        }
+
+        function goToPage(p) {
+            let totalPages = Math.ceil(filteredLedgerList.length / RECORDS_PER_PAGE);
+            if (p < 1 || p > totalPages) return;
+            currentPage = p;
+            renderPaginatedLedger();
+        }
+
+        function sendInvoiceWhatsAppDirect(name, phone, invNo, amount) {
+            let cleanPhone = phone.replace(/[^0-9]/g, '');
+            if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+            let msg = `Hello ${name},\nYour Custom Zone Tax Invoice *#${invNo}* has been issued.\nTotal Amount: *₹${amount}*\n\nThank you for shopping with Custom Zone! 🎁`;
+            window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        window.onload = fetchCustomerLedger;
+    </script>
+</body>
+</html>

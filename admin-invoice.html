@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax Invoice Generator - Custom Zone Admin</title>
+    <title>Customer Retail Invoice - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,42 +13,42 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { display: flex; margin: 0; background: #f1f5f9; min-height: 100vh; flex-direction: column; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
 
-        .sidebar { width: 250px; background: #1e293b; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
-        .sidebar-header h2 { color: #ef4444; font-size: 22px; font-weight: 800; margin: 0; }
-        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; font-weight: 800; margin: 0; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
-        .sidebar a { display: block; color: #94a3b8; padding: 13px 20px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; transition: 0.2s; }
-        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #10b981; }
-        .sidebar a i { margin-right: 10px; width: 18px; text-align: center; }
+        .sidebar a, .sidebar .menu-dropdown-toggle { 
+            display: flex; align-items: center; justify-content: space-between; color: #bdc3c7; 
+            padding: 14px 20px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; 
+            transition: 0.2s; cursor: pointer; user-select: none;
+        }
+        .sidebar a:hover, .sidebar a.active, .sidebar .menu-dropdown-toggle:hover { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i, .sidebar .menu-dropdown-toggle i.menu-icon { margin-right: 12px; width: 18px; text-align: center; }
+
+        /* Dropdown Sub-menu */
+        .sidebar-submenu { background: #1e2b37; display: none; flex-direction: column; padding: 4px 0; }
+        .sidebar-submenu.open { display: flex; }
+        .sidebar-submenu a { padding: 10px 20px 10px 48px; font-size: 12.5px; border-left: 4px solid transparent; }
+        .sidebar-submenu a:hover, .sidebar-submenu a.active { background: #2c3e50; color: #2ecc71; border-left-color: #2ecc71; }
 
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
-        .mobile-admin-bar { display: none; background: #1e293b; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
-        .mobile-admin-bar h3 { margin: 0; color: #ef4444; font-size: 18px; font-weight: 800; }
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .invoice-sheet { background: #ffffff; padding: 35px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 820px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
+        .invoice-sheet { background: #ffffff; padding: 35px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 840px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
         .inv-input { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; background: #f8fafc; color: #0f172a; }
         
         .inv-textarea {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 13px;
-            background: #f8fafc;
-            color: #0f172a;
-            resize: vertical;
-            min-height: 38px;
-            line-height: 1.4;
-            word-break: break-word;
-            white-space: pre-wrap;
+            width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; 
+            background: #f8fafc; color: #0f172a; resize: vertical; min-height: 38px; line-height: 1.4; word-break: break-word; white-space: pre-wrap;
         }
 
         .inv-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
@@ -66,24 +66,16 @@
             .table-wrap-mobile { overflow-x: auto; width: 100%; }
         }
 
-        /* 100% BULLETPROOF PRINT / PDF FORMATTING */
         @media print {
-            @page { size: A4 portrait; margin: 10mm 12mm; }
+            @page { size: A4 portrait; margin: 10mm 14mm; }
             html, body { background: #fff !important; color: #000 !important; font-size: 10.5pt !important; width: 100% !important; height: auto !important; }
             .sidebar, .no-print, .btn-remove-row, .mobile-admin-bar { display: none !important; }
             .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
             .invoice-sheet { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
             
             .inv-input, .inv-textarea {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
-                font-size: 10.5pt !important;
-                color: #000 !important;
-                resize: none !important;
-                overflow: visible !important;
-                white-space: normal !important;
-                word-break: break-word !important;
+                border: none !important; background: transparent !important; padding: 0 !important; font-size: 10.5pt !important; 
+                color: #000 !important; resize: none !important; overflow: visible !important; white-space: normal !important; word-break: break-word !important;
             }
             .inv-table { width: 100% !important; }
             .inv-table th { background: #1e293b !important; color: #fff !important; padding: 6px 10px !important; }
@@ -105,16 +97,27 @@
             <h2>CZ Admin</h2>
             <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
         </div>
-        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" class="active" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
-        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="admin-dashboard.html"><i class="fas fa-home menu-icon"></i> <span>Dashboard</span></a>
+        <a href="admin-orders.html"><i class="fas fa-shopping-bag menu-icon"></i> <span>Manage Orders</span></a>
+        <a href="admin-products.html"><i class="fas fa-box menu-icon"></i> <span>Manage Products</span></a>
+        
+        <!-- Dropdown Sub-menu for Invoices & Ledgers -->
+        <div class="menu-dropdown-toggle active" onclick="toggleInvoiceSubmenu()">
+            <div><i class="fas fa-file-invoice-dollar menu-icon"></i> <span>Billing & Invoices</span></div>
+            <i class="fas fa-chevron-down" id="inv-caret-icon" style="font-size:11px; transition:0.2s;"></i>
+        </div>
+        <div class="sidebar-submenu open" id="sidebar-invoice-submenu">
+            <a href="admin-invoice.html" class="active"><i class="fas fa-receipt"></i> Customer Invoice</a>
+            <a href="admin-customer-bills.html"><i class="fas fa-users"></i> Customer Ledger</a>
+            <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
+        </div>
+
+        <a href="admin-customers.html"><i class="fas fa-user-friends menu-icon"></i> <span>Customer Directory</span></a>
+        <a href="admin-reviews.html"><i class="fas fa-star menu-icon"></i> <span>Manage Reviews</span></a>
+        <a href="admin-coupons.html"><i class="fas fa-tags menu-icon"></i> <span>Discount & Vouchers</span></a>
+        <a href="admin-ads.html"><i class="fas fa-bullhorn menu-icon"></i> <span>Store Settings</span></a>
+        <a href="admin-users.html"><i class="fas fa-users menu-icon"></i> <span>Staff & Vendors</span></a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt menu-icon"></i> <span>Logout</span></a>
     </div>
 
     <div class="main-content">
@@ -134,13 +137,13 @@
                 <div style="text-align:right;">
                     <div style="background:#0f172a; color:#fff; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:4px; margin-bottom:6px; display:inline-block;">TAX INVOICE</div>
                     <div style="font-size:12px; color:#334155; line-height:1.6;">
-                        <p style="margin:0;"><strong>Invoice:</strong> <input type="text" id="inv-no" value="INV-1001" class="inv-input" style="width:105px; font-weight:700; text-align:right;"></p>
-                        <p style="margin:0;"><strong>Date:</strong> <input type="text" id="inv-date" value="" class="inv-input" style="width:105px; text-align:right;"></p>
+                        <p style="margin:0;"><strong>Invoice:</strong> <input type="text" id="inv-no" value="INV-1001" class="inv-input" style="width:115px; font-weight:700; text-align:right;"></p>
+                        <p style="margin:0;"><strong>Date:</strong> <input type="text" id="inv-date" value="" class="inv-input" style="width:115px; text-align:right;"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Recipient Information (Fixed Address Wrapping) -->
+            <!-- Recipient Information -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 15px; margin-bottom:18px;">
                 <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; color:#64748b; display:block; margin-bottom:6px;">Billed To / Recipient:</span>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:8px;">
@@ -159,7 +162,7 @@
                 </div>
             </div>
 
-            <!-- Items Table (Full Wrap Description) -->
+            <!-- Items Table -->
             <div class="table-wrap-mobile">
                 <table class="inv-table">
                     <thead>
@@ -253,14 +256,9 @@
         } else if (loggedInAdmin.role === 'staff') {
             let perms = loggedInAdmin.permissions || [];
             if (!perms.includes('invoice')) {
-                alert("❌ Access Denied: You do not have permission to access Manual Invoice!");
+                alert("❌ Access Denied: You do not have permission to access Invoices!");
                 window.location.href = "admin-dashboard.html";
             }
-        }
-
-        function autoExpandTextarea(el) {
-            el.style.height = 'auto';
-            el.style.height = (el.scrollHeight) + 'px';
         }
 
         function toggleSidebarMenu() {
@@ -268,6 +266,18 @@
             const backdrop = document.getElementById('sidebar-backdrop');
             sb.classList.toggle('open');
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+
+        function toggleInvoiceSubmenu() {
+            const submenu = document.getElementById('sidebar-invoice-submenu');
+            const caret = document.getElementById('inv-caret-icon');
+            submenu.classList.toggle('open');
+            caret.style.transform = submenu.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function autoExpandTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
         }
 
         document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
@@ -320,29 +330,6 @@
                                 <td><input type="number" class="inv-input item-qty" value="${it.quantity || 1}" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
                                 <td><input type="number" class="inv-input item-price" value="${unitPrice}" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
                                 <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹${it.chargedAmount || it.price}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    let rawItems = ord.items ? String(ord.items) : "Customized Gift Item";
-                    let lines = rawItems.split('\n').filter(l => l.trim().length > 0);
-                    if (lines.length === 0) lines = [rawItems];
-
-                    lines.forEach(line => {
-                        let cleanName = line.replace(/^- /, '').replace(/\[Delivery:.*?\]/g, '').replace(/\(₹[0-9]+\)/g, '').trim();
-                        let totalOrdAmount = parseInt(ord.totalAmount) || parseInt(ord.total) || 0;
-
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>
-                                    <div style="display:flex; align-items:flex-start; gap:6px;">
-                                        <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${cleanName}</textarea>
-                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
-                                    </div>
-                                </td>
-                                <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
-                                <td><input type="number" class="inv-input item-price" value="${totalOrdAmount}" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
-                                <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹${totalOrdAmount}</td>
                             </tr>
                         `;
                     });
