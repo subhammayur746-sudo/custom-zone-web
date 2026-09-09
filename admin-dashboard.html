@@ -111,8 +111,9 @@
         <a href="admin-dashboard.html" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-file-invoice-dollar"></i> Vendor Ledger & Bills</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -297,26 +298,24 @@
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
                 if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
                 if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                document.getElementById('nav-vendor-bills').style.display = 'none';
                 document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
         }
 
-        // ULTRA-FAST PARALLEL PROMISE DASHBOARD LOADER
         async function loadDashboardStatsFast() {
             const spinner = document.getElementById('refresh-spinner');
             if (spinner) spinner.classList.add('fa-spin');
 
             try {
-                // Fetch all 4 critical collections concurrently in parallel
                 const [prodSnap, ordersSnap, pendingSnap, auditSnap] = await Promise.all([
                     db.collection("products").get(),
                     db.collection("orders").get(),
                     db.collection("pending_payments").where("paymentStatus", "==", "Pending").get(),
-                    db.collection("audit_logs").limit(30).get() // Only fetch recent 30 for superfast overview
+                    db.collection("audit_logs").limit(30).get()
                 ]);
 
-                // 1. Process Product Stats
                 let activeProdCount = 0;
                 let inactiveProdCount = 0;
                 prodSnap.forEach(doc => {
@@ -327,7 +326,6 @@
                 document.getElementById('stat-active-products').innerText = activeProdCount;
                 document.getElementById('stat-inactive-products').innerText = inactiveProdCount;
 
-                // 2. Process Orders Stats
                 let totalConfirmed = 0, processingCount = 0, packedCount = 0, shippedCount = 0, deliveredCount = 0, cancelledCount = 0, deliveredRevenue = 0;
                 let recentOrders = [];
 
@@ -348,7 +346,6 @@
                     recentOrders.push(ord);
                 });
 
-                // 3. Process Pending Payments
                 const pendingSize = pendingSnap.size;
                 const notifBadge = document.getElementById('admin-pending-badge');
                 if (pendingSize > 0) {
@@ -372,8 +369,6 @@
 
                 recentOrders.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
                 renderRecentOrders(recentOrders.slice(0, 8));
-
-                // 4. Render Fast Top 8 Audit Logs
                 renderFastTopAuditLogs(auditSnap);
 
             } catch(e) {
