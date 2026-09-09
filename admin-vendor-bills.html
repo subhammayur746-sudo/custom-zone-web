@@ -40,6 +40,35 @@
         .vendor-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
         .summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
 
+        /* Filter Controls */
+        .filter-bar-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 14px; }
+        .filter-item { display: flex; flex-direction: column; gap: 4px; }
+        .filter-item label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .filter-item input, .filter-item select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12.5px; background: #fff; color: #1e293b; }
+
+        .btn-bill-action { border: none; padding: 6px 10px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .btn-print-bill { background: #3730a3; color: #fff; }
+        .btn-wa-bill { background: #16a34a; color: #fff; }
+
+        /* Pagination Controls */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+        .page-btn { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .page-btn.active { background: #3730a3; color: #fff; border-color: #3730a3; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Modal Styles */
+        #vendor-bill-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
+        #printable-vendor-invoice { background: #fff; width: 100%; max-width: 580px; padding: 25px 20px; border-radius: 12px; position: relative; max-height: 92vh; overflow-y: auto; box-shadow: 0 12px 30px rgba(0,0,0,0.25); }
+
+        @media print {
+            body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+            body * { visibility: hidden !important; }
+            #vendor-bill-modal { position: static !important; display: block !important; width: 100% !important; height: auto !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+            #printable-vendor-invoice, #printable-vendor-invoice * { visibility: visible !important; }
+            #printable-vendor-invoice { position: relative !important; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 580px !important; margin: 0 auto !important; padding: 16px 20px !important; border: 1.5px dashed #0f172a !important; border-radius: 8px !important; box-shadow: none !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .no-print-slip { display: none !important; }
+        }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -79,10 +108,10 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Vendor Purchases, Deals & Sequential Billing Ledger</h2>
-                <small style="color:#64748b;">Tracks all external vendor work orders with sequence format (CZ-VN-0001, CZ-VN-0002...)</small>
+                <small style="color:#64748b;">Permanent ledger with strict sequential invoices (CZ-VN-0001, CZ-VN-0002...) & PDF Generator</small>
             </div>
             <div>
-                <button onclick="fetchVendorBills()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
+                <button onclick="fetchVendorBills(true)" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
                     <i class="fas fa-sync-alt"></i> Refresh Ledger
                 </button>
             </div>
@@ -93,7 +122,7 @@
             <div class="summary-card" style="border-left: 4px solid #3730a3;">
                 <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Purchase Volume</span>
                 <h3 style="margin:6px 0 0 0; font-size:24px; color:#3730a3;" id="stat-total-deals">₹0</h3>
-                <small style="color:#475569;">All Sourced Products</small>
+                <small style="color:#475569;" id="stat-total-count">0 Work Invoices</small>
             </div>
 
             <div class="summary-card" style="border-left: 4px solid #059669;">
@@ -109,16 +138,46 @@
             </div>
         </div>
 
-        <!-- Ledger Table with Filter -->
+        <!-- Ledger Table with Complete Date Range & Vendor Filter -->
         <div class="admin-card" style="overflow-x:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:12px;">
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <label style="font-size:12.5px; font-weight:bold; color:#2c3e50;">Filter by Vendor:</label>
-                    <select id="filter-vendor-select" onchange="filterBillsTable()" style="padding:7px 12px; border:1px solid #ccc; border-radius:4px; font-size:12.5px; font-weight:600;">
+            <div class="filter-bar-wrap">
+                <div class="filter-item">
+                    <label>Filter by Vendor:</label>
+                    <select id="filter-vendor-select" onchange="applyAllFilters()">
                         <option value="all">-- All Vendors --</option>
                     </select>
                 </div>
-                <input type="text" id="bill-search-input" onkeyup="filterBillsTable()" placeholder="🔍 Search Bill No, Vendor, Order Ref..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:260px;">
+
+                <div class="filter-item">
+                    <label>Order Status:</label>
+                    <select id="filter-status-select" onchange="applyAllFilters()">
+                        <option value="all">-- All Statuses --</option>
+                        <option value="Delivered">Delivered (Cleared)</option>
+                        <option value="Processing">Processing / Packed</option>
+                        <option value="Shipped">Shipped</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label>From Date:</label>
+                    <input type="date" id="filter-date-from" onchange="applyAllFilters()">
+                </div>
+
+                <div class="filter-item">
+                    <label>To Date:</label>
+                    <input type="date" id="filter-date-to" onchange="applyAllFilters()">
+                </div>
+
+                <div class="filter-item" style="flex:1; min-width:200px;">
+                    <label>Search Reference:</label>
+                    <input type="text" id="bill-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Bill No, Vendor, Order Ref, Product...">
+                </div>
+
+                <div class="filter-item" style="align-self: flex-end;">
+                    <button onclick="resetFilters()" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; padding:7px 12px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">
+                        Reset Filters
+                    </button>
+                </div>
             </div>
 
             <table class="admin-table">
@@ -137,6 +196,28 @@
                     <tr><td colspan="7" style="text-align:center;">Loading vendor ledger records...</td></tr>
                 </tbody>
             </table>
+
+            <!-- 10-Items Pagination Bar -->
+            <div class="pagination-container" id="vendor-pagination-bar">
+                <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="pagination-info-text">Showing 0-0 of 0 bills</div>
+                <div style="display:flex; gap:5px;" id="pagination-buttons-slot"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Vendor Tax Invoice Modal (Print / Save as PDF) -->
+    <div id="vendor-bill-modal">
+        <div id="printable-vendor-invoice">
+            <span onclick="closeVendorBillModal()" class="no-print-slip" style="position:absolute; top:12px; right:16px; font-size:24px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
+            <div id="vendor-invoice-modal-content"></div>
+            <div class="no-print-slip" style="text-align:center; margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:9px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px;">
+                    <i class="fas fa-print"></i> Print / Save PDF
+                </button>
+                <button onclick="closeVendorBillModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:9px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px;">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
@@ -144,8 +225,14 @@
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInAdmin) window.location.href = "admin-login.html";
 
-        let allBillsCache = [];
-        let vendorsListCache = [];
+        let allBillsMasterList = [];
+        let filteredBillsList = [];
+        let vendorsDataMap = {};
+        let productsCatalogMap = {};
+
+        // 10 Items per page for fast loading
+        const BILLS_PER_PAGE = 10;
+        let currentBillPage = 1;
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -154,52 +241,74 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
-        async function fetchVendorBills() {
+        function parseOrderDateToObj(dateStr) {
+            if (!dateStr) return new Date(0);
+            if (dateStr.includes('/')) {
+                let parts = dateStr.split('/');
+                if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return new Date(dateStr);
+        }
+
+        async function fetchVendorBills(forceRefresh = false) {
             const tbody = document.getElementById('vendor-bills-tbody');
-            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Fetching all vendor transactions...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Fetching all vendor transactions...</td></tr>";
 
             try {
-                // 1. Fetch Vendors
+                // 1. Fetch Vendors Map
                 const vSnap = await db.collection("staff").where("role", "==", "vendor").get();
                 const filterSelect = document.getElementById('filter-vendor-select');
                 filterSelect.innerHTML = '<option value="all">-- All Vendors --</option>';
-                vendorsListCache = [];
+                vendorsDataMap = {};
+
                 vSnap.forEach(doc => {
                     let v = doc.data();
-                    vendorsListCache.push(v);
+                    vendorsDataMap[v.name.trim().toLowerCase()] = {
+                        name: v.name,
+                        phone: v.phone || v.username || ""
+                    };
                     filterSelect.innerHTML += `<option value="${v.name}">${v.name}</option>`;
                 });
 
                 // 2. Fetch Catalog for rates
                 const pSnap = await db.collection("products").get();
-                let catalogMap = {};
+                productsCatalogMap = {};
                 pSnap.forEach(doc => {
                     let p = doc.data();
-                    catalogMap[(p.name || "").trim().toLowerCase()] = {
+                    productsCatalogMap[(p.name || "").trim().toLowerCase()] = {
                         vendorName: p.vendorName || "In-House",
-                        vendorCost: parseInt(p.vendorCost) || 0
+                        vendorCost: parseInt(p.vendorCost) || 0,
+                        image: (p.images && p.images.length > 0) ? p.images[0] : 'assets/images/logo.png'
                     };
                 });
 
                 // 3. Fetch Orders
                 const ordSnap = await db.collection("orders").get();
-                allBillsCache = [];
-                let totalDeals = 0;
-                let deliveredDeals = 0;
-                let processingDeals = 0;
+                allBillsMasterList = [];
+
+                // Track global sequence assignment
+                let assignedCounter = 1;
+                const counterDoc = await db.collection("settings").doc("vendor_invoice_counter").get();
+                if (counterDoc.exists && counterDoc.data().count) {
+                    assignedCounter = counterDoc.data().count;
+                }
+
+                let ordersToUpdateBatch = [];
 
                 ordSnap.forEach(doc => {
                     let ord = doc.data();
                     let orderId = ord.orderId || doc.id;
                     let vInvoiceMap = ord.vendorInvoiceMap || {};
+                    let orderNeedsUpdate = false;
 
                     if (Array.isArray(ord.items)) {
-                        // Group items by vendor
                         let vItemsMap = {};
                         ord.items.forEach(it => {
                             let cKey = (it.name || "").trim().toLowerCase();
-                            let pMeta = catalogMap[cKey];
-                            let vName = it.vendorName || (pMeta ? pMeta.vendorName : "In-House");
+                            let pMeta = productsCatalogMap[cKey];
+                            let vName = (it.vendorName && it.vendorName !== "In-House") 
+                                ? it.vendorName 
+                                : (pMeta && pMeta.vendorName ? pMeta.vendorName : "In-House");
                             let cost = it.vendorCost || (pMeta ? pMeta.vendorCost : 0);
 
                             if (vName && vName !== "In-House") {
@@ -209,41 +318,66 @@
                                     qty: it.quantity || 1,
                                     unitCost: cost,
                                     variant: it.variantName || "",
-                                    userText: it.userText || ""
+                                    userText: it.userText || "",
+                                    image: it.image || (pMeta ? pMeta.image : 'assets/images/logo.png')
                                 });
                             }
                         });
 
-                        // Create a ledger bill record for each vendor in this order
                         for (let vName in vItemsMap) {
                             let items = vItemsMap[vName];
                             let billCost = items.reduce((sum, x) => sum + (x.unitCost * x.qty), 0);
                             let status = ord.orderStatus || ord.status || "Processing";
 
-                            totalDeals += billCost;
-                            if (status.toLowerCase() === "delivered") deliveredDeals += billCost;
-                            else if (status.toLowerCase() !== "cancelled") processingDeals += billCost;
+                            // Ensure sequential number exists permanently (CZ-VN-0001)
+                            let invoiceNo = vInvoiceMap[vName];
+                            if (!invoiceNo) {
+                                invoiceNo = "CZ-VN-" + String(assignedCounter).padStart(4, '0');
+                                assignedCounter++;
+                                vInvoiceMap[vName] = invoiceNo;
+                                orderNeedsUpdate = true;
+                            }
 
-                            allBillsCache.push({
-                                invoiceNo: vInvoiceMap[vName] || ("CZ-VN-" + String(orderId).replace(/[^0-9]/g, '').slice(-4).padStart(4, '0')),
+                            allBillsMasterList.push({
+                                invoiceNo: invoiceNo,
                                 vendorName: vName,
                                 orderId: orderId,
                                 date: ord.date || "Recent",
+                                dateObj: parseOrderDateToObj(ord.date),
                                 items: items,
                                 totalCost: billCost,
                                 status: status,
-                                docId: doc.id
+                                docId: doc.id,
+                                customerName: ord.customerName || "Customer",
+                                phone: ord.phone || "",
+                                address: ord.actualDeliveryAddress || ord.address || ""
                             });
+                        }
+
+                        if (orderNeedsUpdate) {
+                            ordersToUpdateBatch.push({ docId: doc.id, vInvoiceMap: vInvoiceMap });
                         }
                     }
                 });
 
-                document.getElementById('stat-total-deals').innerText = `₹${totalDeals.toLocaleString('en-IN')}`;
-                document.getElementById('stat-delivered-deals').innerText = `₹${deliveredDeals.toLocaleString('en-IN')}`;
-                document.getElementById('stat-processing-deals').innerText = `₹${processingDeals.toLocaleString('en-IN')}`;
+                // Auto-sync sequence numbers to firestore permanently in background
+                if (ordersToUpdateBatch.length > 0) {
+                    ordersToUpdateBatch.forEach(async (batchItem) => {
+                        try {
+                            await db.collection("orders").doc(batchItem.docId).update({ vendorInvoiceMap: batchItem.vInvoiceMap });
+                        } catch(e) {}
+                    });
+                    try {
+                        await db.collection("settings").doc("vendor_invoice_counter").set({ count: assignedCounter });
+                    } catch(e) {}
+                }
 
-                allBillsCache.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
-                renderBillsTable(allBillsCache);
+                // Sort newest bills first by invoice number
+                allBillsMasterList.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
+                filteredBillsList = [...allBillsMasterList];
+                currentBillPage = 1;
+                
+                applyAllFilters();
 
             } catch(e) {
                 console.error(e);
@@ -251,16 +385,88 @@
             }
         }
 
-        function renderBillsTable(bills) {
+        // COMPREHENSIVE FILTER ENGINE (VENDOR + STATUS + DATE FROM/TO + SEARCH)
+        function applyAllFilters() {
+            let selectedVendor = document.getElementById('filter-vendor-select').value;
+            let selectedStatus = document.getElementById('filter-status-select').value;
+            let dateFromVal = document.getElementById('filter-date-from').value;
+            let dateToVal = document.getElementById('filter-date-to').value;
+            let term = document.getElementById('bill-search-input').value.toLowerCase().trim();
+
+            let dateFrom = dateFromVal ? new Date(dateFromVal + "T00:00:00") : null;
+            let dateTo = dateToVal ? new Date(dateToVal + "T23:59:59") : null;
+
+            filteredBillsList = allBillsMasterList.filter(b => {
+                let matchVendor = (selectedVendor === 'all') || (b.vendorName === selectedVendor);
+                
+                let matchStatus = true;
+                if (selectedStatus === 'Delivered') matchStatus = b.status.toLowerCase() === 'delivered';
+                else if (selectedStatus === 'Processing') matchStatus = (b.status.toLowerCase() === 'processing' || b.status.toLowerCase() === 'packed');
+                else if (selectedStatus === 'Shipped') matchStatus = b.status.toLowerCase() === 'shipped';
+
+                let matchDate = true;
+                if (dateFrom && b.dateObj < dateFrom) matchDate = false;
+                if (dateTo && b.dateObj > dateTo) matchDate = false;
+
+                let matchTerm = true;
+                if (term) {
+                    let itemsString = b.items.map(it => it.name).join(' ').toLowerCase();
+                    matchTerm = b.invoiceNo.toLowerCase().includes(term) ||
+                                b.vendorName.toLowerCase().includes(term) ||
+                                b.orderId.toLowerCase().includes(term) ||
+                                itemsString.includes(term);
+                }
+
+                return matchVendor && matchStatus && matchDate && matchTerm;
+            });
+
+            // Update Total Deal Metrics based on active filtered dataset
+            let totalVolume = 0;
+            let deliveredVolume = 0;
+            let processingVolume = 0;
+
+            filteredBillsList.forEach(b => {
+                totalVolume += b.totalCost;
+                if (b.status.toLowerCase() === 'delivered') deliveredVolume += b.totalCost;
+                else if (b.status.toLowerCase() !== 'cancelled') processingVolume += b.totalCost;
+            });
+
+            document.getElementById('stat-total-deals').innerText = `₹${totalVolume.toLocaleString('en-IN')}`;
+            document.getElementById('stat-total-count').innerText = `${filteredBillsList.length} Work Invoices`;
+            document.getElementById('stat-delivered-deals').innerText = `₹${deliveredVolume.toLocaleString('en-IN')}`;
+            document.getElementById('stat-processing-deals').innerText = `₹${processingVolume.toLocaleString('en-IN')}`;
+
+            currentBillPage = 1; // Reset to page 1
+            renderPaginatedBills();
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-vendor-select').value = "all";
+            document.getElementById('filter-status-select').value = "all";
+            document.getElementById('filter-date-from').value = "";
+            document.getElementById('filter-date-to').value = "";
+            document.getElementById('bill-search-input').value = "";
+            applyAllFilters();
+        }
+
+        // RENDER 10 BILLS PER PAGE
+        function renderPaginatedBills() {
             const tbody = document.getElementById('vendor-bills-tbody');
             tbody.innerHTML = "";
 
-            if (bills.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px; color:#64748b;'>No vendor transactions found.</td></tr>";
+            let totalItems = filteredBillsList.length;
+            if (totalItems === 0) {
+                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px; color:#64748b;'>No transactions found for the selected filter/dates.</td></tr>";
+                renderPaginationControls(0);
                 return;
             }
 
-            bills.forEach(b => {
+            let startIndex = (currentBillPage - 1) * BILLS_PER_PAGE;
+            let endIndex = Math.min(startIndex + BILLS_PER_PAGE, totalItems);
+            let pageSlice = filteredBillsList.slice(startIndex, endIndex);
+
+            pageSlice.forEach((b, index) => {
+                let actualIndex = startIndex + index;
                 let itemsListHTML = b.items.map(it => `
                     • <strong>${it.name}</strong> ${it.variant ? `(${it.variant})` : ''} x${it.qty} (₹${it.unitCost * it.qty})
                 `).join("<br>");
@@ -272,38 +478,155 @@
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong style="color:#3730a3; font-size:13px;">${b.invoiceNo}</strong><br><small style="color:#64748b;">${b.date}</small></td>
+                        <td><strong style="color:#3730a3; font-size:13.5px;">${b.invoiceNo}</strong><br><small style="color:#64748b;">${b.date}</small></td>
                         <td><span style="font-weight:700; color:#1e293b;"><i class="fas fa-truck-loading" style="color:#6366f1;"></i> ${b.vendorName}</span></td>
                         <td><strong style="color:#2563eb;">#${b.orderId}</strong></td>
                         <td style="font-size:12px; max-width:280px; line-height:1.4;">${itemsListHTML}</td>
                         <td><strong style="color:#16a34a; font-size:14px;">₹${b.totalCost}</strong></td>
                         <td>${statusBadge}</td>
-                        <td>
-                            <a href="admin-orders.html" style="background:#28469E; color:#fff; padding:5px 10px; border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;">
-                                View in Orders
-                            </a>
+                        <td style="white-space:nowrap;">
+                            <button class="btn-bill-action btn-print-bill" onclick="openVendorInvoicePrintModal(${actualIndex})">
+                                <i class="fas fa-print"></i> Print / PDF
+                            </button>
+                            <button class="btn-bill-action btn-wa-bill" onclick="sendWhatsAppVendorBill(${actualIndex})">
+                                <i class="fab fa-whatsapp"></i> WA Bill
+                            </button>
                         </td>
                     </tr>
                 `;
             });
+
+            renderPaginationControls(totalItems, startIndex + 1, endIndex);
         }
 
-        function filterBillsTable() {
-            let selectedVendor = document.getElementById('filter-vendor-select').value;
-            let term = document.getElementById('bill-search-input').value.toLowerCase().trim();
+        function renderPaginationControls(totalItems, currentFrom = 0, currentTo = 0) {
+            const infoText = document.getElementById('pagination-info-text');
+            const btnsSlot = document.getElementById('pagination-buttons-slot');
 
-            let filtered = allBillsCache.filter(b => {
-                let matchVendor = (selectedVendor === 'all') || (b.vendorName === selectedVendor);
-                let matchTerm = b.invoiceNo.toLowerCase().includes(term) ||
-                                b.vendorName.toLowerCase().includes(term) ||
-                                b.orderId.toLowerCase().includes(term);
-                return matchVendor && matchTerm;
-            });
+            if (totalItems === 0) {
+                infoText.innerText = "No bills to display";
+                btnsSlot.innerHTML = "";
+                return;
+            }
 
-            renderBillsTable(filtered);
+            let totalPages = Math.ceil(totalItems / BILLS_PER_PAGE);
+            infoText.innerText = `Showing ${currentFrom}-${currentTo} of ${totalItems} bills (Page ${currentBillPage} of ${totalPages})`;
+
+            let html = "";
+            html += `<button class="page-btn" onclick="goToBillPage(${currentBillPage - 1})" ${currentBillPage === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+
+            let startPage = Math.max(1, currentBillPage - 2);
+            let endPage = Math.min(totalPages, currentBillPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentBillPage ? 'active' : ''}" onclick="goToBillPage(${i})">${i}</button>`;
+            }
+
+            html += `<button class="page-btn" onclick="goToBillPage(${currentBillPage + 1})" ${currentBillPage === totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
+            btnsSlot.innerHTML = html;
         }
 
-        window.onload = fetchVendorBills;
+        function goToBillPage(page) {
+            let totalPages = Math.ceil(filteredBillsList.length / BILLS_PER_PAGE);
+            if (page < 1 || page > totalPages) return;
+            currentBillPage = page;
+            renderPaginatedBills();
+        }
+
+        // FULL PRINTABLE VENDOR BILL MODAL
+        function openVendorInvoicePrintModal(index) {
+            let b = filteredBillsList[index];
+            if (!b) return;
+
+            let itemsRows = b.items.map(it => `
+                <tr>
+                    <td style="padding:8px 0; border-bottom:1px dashed #e2e8f0; width:55px;">
+                        <img src="${it.image || 'assets/images/logo.png'}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; display:block;">
+                    </td>
+                    <td style="padding:8px 10px; border-bottom:1px dashed #e2e8f0; font-size:12px;">
+                        <strong style="color:#0f172a; font-size:13px;">${it.name}</strong>
+                        ${it.variant ? `<br><span style="color:#4338ca; font-weight:600;">Specification: ${it.variant}</span>` : ''}
+                        ${it.userText ? `<br><span style="color:#b45309; font-weight:700;">Custom Print Text: "${it.userText}"</span>` : ''}
+                        <div style="font-size:11px; color:#64748b; margin-top:2px;">Quantity: <strong>${it.qty} PCS</strong></div>
+                    </td>
+                    <td style="text-align:right; vertical-align:middle; padding:8px 0; border-bottom:1px dashed #e2e8f0; font-weight:700; font-size:13px; color:#3730a3;">
+                        ₹${it.unitCost * it.qty}
+                    </td>
+                </tr>
+            `).join("");
+
+            document.getElementById('vendor-invoice-modal-content').innerHTML = `
+                <div style="text-align:center; border-bottom:2px dashed #3730a3; padding-bottom:12px; margin-bottom:12px;">
+                    <img src="assets/images/logo.png" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px; display:inline-block;" alt="Logo">
+                    <h2 style="margin:0; font-size:18px; font-weight:800; color:#3730a3;">OFFICIAL VENDOR PURCHASE INVOICE</h2>
+                    <p style="margin:1px 0; font-size:11px; color:#475569;">Custom Zone Sourcing & Procurement Desk</p>
+                    <div style="background:#3730a3; color:#fff; font-size:12px; font-weight:800; padding:4px 14px; border-radius:4px; margin-top:6px; display:inline-block;">INVOICE NO: ${b.invoiceNo}</div>
+                </div>
+
+                <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:10px 12px; font-size:12px; margin-bottom:12px; line-height:1.5;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span><strong>Vendor Partner:</strong> <strong style="color:#3730a3;">${b.vendorName}</strong></span>
+                        <span><strong>Bill Date:</strong> ${b.date}</span>
+                    </div>
+                    <div style="border-top:1px dashed #c7d2fe; padding-top:4px; margin-top:4px;">
+                        <div><strong>Order Reference:</strong> #${b.orderId}</div>
+                        <div><strong>Deliver To (Customer):</strong> ${b.customerName} (${b.phone || '-'})</div>
+                        <div style="word-break:break-word;"><strong>Complete Delivery Address:</strong> ${b.address || '-'}</div>
+                    </div>
+                </div>
+
+                <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+                    <thead>
+                        <tr style="border-bottom:1.5px solid #3730a3; font-size:11px; text-transform:uppercase; color:#4338ca;">
+                            <th style="text-align:left; padding-bottom:4px;">Pic</th>
+                            <th style="text-align:left; padding-bottom:4px;">Product Specifications</th>
+                            <th style="text-align:right; padding-bottom:4px;">Payable Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsRows}</tbody>
+                </table>
+
+                <div style="border-top:1.5px solid #3730a3; padding-top:6px; font-size:12px;">
+                    <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:800;">
+                        <span>Total Payable to Vendor:</span>
+                        <span style="color:#3730a3;">₹${b.totalCost}</span>
+                    </div>
+                </div>
+
+                <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px; margin-top:14px; font-size:11px; color:#991b1b; line-height:1.4;">
+                    <strong>NOTE:</strong> WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.
+                </div>
+            `;
+
+            document.getElementById('vendor-bill-modal').style.display = 'flex';
+        }
+
+        function closeVendorBillModal() {
+            document.getElementById('vendor-bill-modal').style.display = 'none';
+        }
+
+        function sendWhatsAppVendorBill(index) {
+            let b = filteredBillsList[index];
+            if (!b) return;
+
+            let vEntry = vendorsDataMap[b.vendorName.trim().toLowerCase()];
+            let vendorPhone = vEntry ? vEntry.phone : "";
+
+            if (!vendorPhone) {
+                alert(`WhatsApp number not found for vendor "${b.vendorName}". Please make sure phone is saved in Staff & Vendors page.`);
+                return;
+            }
+
+            let p = vendorPhone.replace(/[^0-9]/g, '');
+            if (p.length === 10) p = "91" + p;
+
+            let itemsTxt = b.items.map(it => `• Item: ${it.name}\n  Specification: ${it.variant || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.qty} PCS\n  Rate: ₹${it.unitCost * it.qty}`).join('\n\n');
+
+            let msg = `*OFFICIAL VENDOR PURCHASE INVOICE*\nInvoice No: *${b.invoiceNo}*\nVendor Partner: *${b.vendorName}*\nOrder Ref: #${b.orderId}\n\n*Product Specifications (Assigned to You):*\n${itemsTxt}\n\n*Total Agreed Vendor Rate:* ₹${b.totalCost}\n\n*Deliver To (Customer):*\nName: ${b.customerName}\nPhone: ${b.phone}\nAddress: ${b.address || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;
+            window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        window.onload = () => fetchVendorBills();
     </script>
 </body>
 </html>
