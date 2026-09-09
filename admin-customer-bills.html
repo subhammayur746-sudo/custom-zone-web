@@ -22,7 +22,7 @@
         .sidebar-header h2 { color: #e74c3c; font-size: 22px; font-weight: 800; margin: 0; }
         .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
 
@@ -47,7 +47,6 @@
         .filter-item input, .filter-item select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12.5px; background: #fff; color: #1e293b; }
 
         .btn-act { border: none; padding: 6px 11px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
-        .btn-invoice { background: #2563eb; color: #fff; }
         .btn-print { background: #0f172a; color: #fff; }
         .btn-wa { background: #16a34a; color: #fff; }
 
@@ -56,7 +55,6 @@
         .page-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* Full A4 Printable Modal */
         #customer-bill-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
         #printable-customer-invoice { background: #fff; width: 100%; max-width: 820px; padding: 35px 30px; border-radius: 12px; position: relative; max-height: 94vh; overflow-y: auto; box-shadow: 0 12px 30px rgba(0,0,0,0.25); color: #0f172a; }
 
@@ -98,7 +96,7 @@
         <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Manual Invoice</a>
         <a href="admin-customer-bills.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
-        <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor Ledger & Bills</a>
+        <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
         <a href="admin-reviews.html"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -110,7 +108,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Customer Sales & Invoice Ledger</h2>
-                <small style="color:#64748b;">Permanent customer billing records with full A4 print, PDF export, and official stamp placeholder</small>
+                <small style="color:#64748b;">Sequential Invoice numbers starting from <strong>INV-0099</strong> with full A4 print, PDF export, and stamp slot</small>
             </div>
             <div>
                 <button onclick="fetchCustomerLedger(true)" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
@@ -119,7 +117,6 @@
             </div>
         </div>
 
-        <!-- Metric Summary Cards -->
         <div class="stats-grid">
             <div class="summary-card" style="border-left: 4px solid #2563eb;">
                 <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Sales Volume</span>
@@ -140,7 +137,6 @@
             </div>
         </div>
 
-        <!-- Ledger Table & Filters -->
         <div class="admin-card" style="overflow-x:auto;">
             <div class="filter-bar-wrap">
                 <div class="filter-item">
@@ -166,7 +162,7 @@
 
                 <div class="filter-item" style="flex:1; min-width:220px;">
                     <label>Search Customer / Invoice:</label>
-                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No, Name, Phone, Address...">
+                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No (INV-0099), Name, Phone, Address...">
                 </div>
 
                 <div class="filter-item" style="align-self: flex-end;">
@@ -193,7 +189,6 @@
                 </tbody>
             </table>
 
-            <!-- Pagination Bar -->
             <div class="pagination-container" id="ledger-pagination-bar">
                 <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="pagination-info-text">Showing 0-0 of 0 records</div>
                 <div style="display:flex; gap:5px;" id="pagination-buttons-slot"></div>
@@ -201,7 +196,7 @@
         </div>
     </div>
 
-    <!-- Official A4 Customer Tax Invoice Modal (Print / Save PDF) -->
+    <!-- Official A4 Customer Tax Invoice Modal -->
     <div id="customer-bill-modal">
         <div id="printable-customer-invoice">
             <span onclick="closeCustomerBillModal()" class="no-print-slip" style="position:absolute; top:14px; right:18px; font-size:26px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
@@ -242,7 +237,8 @@
             return new Date(dateStr);
         }
 
-        async function fetchCustomerLedger() {
+        // SEQUENTIAL NUMBERING STARTING FROM 0099
+        async function fetchCustomerLedger(forceRefresh = false) {
             const tbody = document.getElementById('customer-ledger-tbody');
             tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Loading customer sales records...</td></tr>";
 
@@ -250,10 +246,32 @@
                 const snap = await db.collection("orders").get();
                 allLedgerMasterList = [];
 
+                let counterDoc = await db.collection("settings").doc("customer_invoice_counter").get();
+                let currentCounter = 99; // STARTING NUMBER 0099
+                if (counterDoc.exists && counterDoc.data().count && counterDoc.data().count >= 99) {
+                    currentCounter = counterDoc.data().count;
+                }
+
+                let ordersToAssignSeq = [];
+
+                // Sort orders ascending to assign numbers chronologically
+                let orderDocs = [];
                 snap.forEach(doc => {
-                    let ord = doc.data();
-                    let orderId = ord.orderId || doc.id;
-                    let invoiceNo = "INV-" + String(orderId).replace(/[^0-9]/g, '');
+                    let d = doc.data();
+                    d.docId = doc.id;
+                    orderDocs.push(d);
+                });
+                orderDocs.sort((a, b) => (a.verifiedAt?.seconds || 0) - (b.verifiedAt?.seconds || 0));
+
+                orderDocs.forEach(ord => {
+                    let orderId = ord.orderId || ord.docId;
+                    let invoiceNo = ord.customerInvoiceNo;
+
+                    if (!invoiceNo) {
+                        invoiceNo = "INV-" + String(currentCounter).padStart(4, '0');
+                        currentCounter++;
+                        ordersToAssignSeq.push({ docId: ord.docId, invNo: invoiceNo });
+                    }
 
                     allLedgerMasterList.push({
                         invoiceNo: invoiceNo,
@@ -270,15 +288,28 @@
                         dateObj: parseOrderDateToObj(ord.date),
                         status: ord.orderStatus || ord.status || "Processing",
                         greetingNote: ord.greetingNote || "",
-                        docId: doc.id
+                        docId: ord.docId
                     });
                 });
 
-                allLedgerMasterList.sort((a, b) => b.orderId.localeCompare(a.orderId));
+                // Auto-sync sequence numbers to orders in background
+                if (ordersToAssignSeq.length > 0) {
+                    ordersToAssignSeq.forEach(async (item) => {
+                        try {
+                            await db.collection("orders").doc(item.docId).update({ customerInvoiceNo: item.invNo });
+                        } catch(e) {}
+                    });
+                    try {
+                        await db.collection("settings").doc("customer_invoice_counter").set({ count: currentCounter });
+                    } catch(e) {}
+                }
+
+                allLedgerMasterList.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
                 filteredLedgerList = [...allLedgerMasterList];
                 applyAllFilters();
 
             } catch(e) {
+                console.error(e);
                 tbody.innerHTML = "<tr><td colspan='7' style='color:red; text-align:center;'>Error loading customer ledger.</td></tr>";
             }
         }
@@ -414,7 +445,7 @@
             renderPaginatedLedger();
         }
 
-        // FULL PROFESSIONAL A4 PRINTABLE CUSTOMER INVOICE (WITH STAMP & SIGNATURE)
+        // FULL PROFESSIONAL A4 PRINTABLE CUSTOMER INVOICE (INV-0099 SEQUENCE + STAMP & SIGNATURE)
         function openCustomerInvoicePrintModal(index) {
             let l = filteredLedgerList[index];
             if (!l) return;
@@ -552,7 +583,7 @@
             window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        window.onload = fetchCustomerLedger;
+        window.onload = () => fetchCustomerLedger();
     </script>
 </body>
 </html>
