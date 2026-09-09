@@ -36,7 +36,7 @@
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
         .admin-card h3 { margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; color: #2c3e50; }
 
-        .form-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 15px; }
+        .form-grid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 15px; }
         .form-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
         .form-group input, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; background: #f8fafc; }
 
@@ -87,45 +87,47 @@
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Staff Permissions & Vendor Management</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Staff Permissions & Vendor Directory</h2>
 
         <div class="admin-card">
-            <h3 id="user-form-title"><i class="fas fa-user-plus"></i> Add New Staff Member or Vendor</h3>
+            <h3 id="user-form-title"><i class="fas fa-user-plus"></i> Add New Account or Vendor</h3>
             <input type="hidden" id="user-doc-id">
 
-            <div class="form-grid-3">
-                <div class="form-group">
-                    <label>Full Name / Business Title *</label>
-                    <input type="text" id="user-name" placeholder="e.g., Sayan Roy / ShreeforSlay" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Login Username / User ID *</label>
-                    <input type="text" id="user-username" placeholder="e.g., sayan_cz" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Password *</label>
-                    <input type="password" id="user-password" placeholder="Account Password" required>
-                </div>
-
-                <div class="form-group">
-                    <label>WhatsApp Contact Phone</label>
-                    <input type="tel" id="user-phone" placeholder="10-digit WhatsApp number">
-                </div>
-
+            <div class="form-grid-row">
                 <div class="form-group">
                     <label>Role Type *</label>
                     <select id="user-role" onchange="handleRoleChange(this.value)">
-                        <option value="staff">Staff Member (Controlled Access)</option>
                         <option value="vendor">Vendor / Supplier Partner</option>
-                        <option value="admin">Super Admin (Full Master Access)</option>
+                        <option value="staff">Staff Member (Controlled Access)</option>
+                        <option value="admin">Super Admin (Full Access)</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="lbl-user-name">Business / Vendor Name *</label>
+                    <input type="text" id="user-name" placeholder="e.g., custombyaditi / ShreeforSlay" required>
+                </div>
+
+                <div class="form-group">
+                    <label>WhatsApp Contact Phone *</label>
+                    <input type="tel" id="user-phone" placeholder="10-digit WhatsApp number" required>
+                </div>
+
+                <!-- Username (Hidden automatically for Vendor) -->
+                <div class="form-group" id="grp-username" style="display:none;">
+                    <label>Login Username / User ID *</label>
+                    <input type="text" id="user-username" placeholder="e.g., sayan_cz">
+                </div>
+
+                <!-- Password (Hidden automatically for Vendor) -->
+                <div class="form-group" id="grp-password" style="display:none;">
+                    <label>Account Password *</label>
+                    <input type="password" id="user-password" placeholder="Account Password">
                 </div>
             </div>
 
-            <!-- DYNAMIC PERMISSION TOGGLES (INCLUDES VENDOR LEDGER & CUSTOMER LEDGER) -->
-            <div class="perm-box" id="perm-section">
+            <!-- PERMISSION TOGGLES (Shown only for Staff) -->
+            <div class="perm-box" id="perm-section" style="display:none;">
                 <span style="font-size:11.5px; font-weight:800; color:#1e293b; text-transform:uppercase;">
                     <i class="fas fa-key" style="color:#2563eb;"></i> Select Allowed Staff Modules:
                 </span>
@@ -143,7 +145,7 @@
 
             <div style="display:flex; gap:10px;">
                 <button onclick="saveUserRecord()" style="background:#27ae60; color:#fff; border:none; padding:10px 22px; border-radius:5px; font-weight:700; cursor:pointer;" id="btn-save-user">
-                    Save Account
+                    Save Record
                 </button>
                 <button onclick="resetUserForm()" style="background:#64748b; color:#fff; border:none; padding:10px 16px; border-radius:5px; font-weight:700; cursor:pointer; display:none;" id="btn-cancel-user">
                     Cancel
@@ -157,15 +159,14 @@
                 <thead>
                     <tr>
                         <th>Name / Supplier</th>
-                        <th>Username / ID</th>
-                        <th>Role</th>
-                        <th>Phone</th>
-                        <th>Allowed Access Modules</th>
+                        <th>Identifier / Role</th>
+                        <th>WhatsApp Phone</th>
+                        <th>Access Scope / Permissions</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="users-table-tbody">
-                    <tr><td colspan="6" style="text-align:center;">Loading staff and vendors...</td></tr>
+                    <tr><td colspan="5" style="text-align:center;">Loading staff and vendors...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -188,12 +189,28 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
+        // SMART ROLE CHANGE: Hide Password & Username for Vendors
         function handleRoleChange(role) {
             const permSec = document.getElementById('perm-section');
-            if (role === 'vendor' || role === 'admin') {
+            const grpUser = document.getElementById('grp-username');
+            const grpPass = document.getElementById('grp-password');
+            const lblName = document.getElementById('lbl-user-name');
+
+            if (role === 'vendor') {
                 permSec.style.display = 'none';
+                grpUser.style.display = 'none';
+                grpPass.style.display = 'none';
+                lblName.innerText = "Vendor / Business Name *";
+            } else if (role === 'admin') {
+                permSec.style.display = 'none';
+                grpUser.style.display = 'block';
+                grpPass.style.display = 'block';
+                lblName.innerText = "Admin Full Name *";
             } else {
                 permSec.style.display = 'block';
+                grpUser.style.display = 'block';
+                grpPass.style.display = 'block';
+                lblName.innerText = "Staff Member Name *";
             }
         }
 
@@ -205,7 +222,7 @@
                 tbody.innerHTML = "";
 
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:15px; color:#64748b;'>No staff or vendors added yet.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:15px; color:#64748b;'>No staff or vendors added yet.</td></tr>";
                     return;
                 }
 
@@ -216,43 +233,67 @@
                 });
 
                 allUsersCache.forEach(u => {
-                    let roleBadge = `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Staff</span>`;
-                    if (u.role === 'vendor') roleBadge = `<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Vendor</span>`;
-                    else if (u.role === 'admin') roleBadge = `<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Admin</span>`;
+                    let roleBadge = "";
+                    let identifier = u.username || "-";
+                    let accessScope = "";
 
-                    let permsList = (u.permissions && u.permissions.length > 0) ? u.permissions.join(", ") : (u.role === 'vendor' ? 'Vendor PO only' : 'All Modules (Admin)');
+                    if (u.role === 'vendor') {
+                        roleBadge = `<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Vendor Partner</span>`;
+                        identifier = `<span style="color:#64748b; font-size:12px;">Sourcing Only (No Login)</span>`;
+                        accessScope = `<span style="color:#3730a3; font-weight:600;"><i class="fab fa-whatsapp"></i> WhatsApp PO & Bills</span>`;
+                    } else if (u.role === 'admin') {
+                        roleBadge = `<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Super Admin</span>`;
+                        identifier = `<strong style="color:#1e293b;">${u.username}</strong>`;
+                        accessScope = `Full Master Access`;
+                    } else {
+                        roleBadge = `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Staff</span>`;
+                        identifier = `<strong style="color:#1e293b;">${u.username}</strong>`;
+                        accessScope = (u.permissions && u.permissions.length > 0) ? u.permissions.join(", ") : "None";
+                    }
 
                     tbody.innerHTML += `
                         <tr>
-                            <td><strong>${u.name}</strong></td>
-                            <td>${u.username}</td>
-                            <td>${roleBadge}</td>
-                            <td>${u.phone || '-'}</td>
-                            <td style="font-size:12px; color:#475569; max-width:250px;">${permsList}</td>
+                            <td><strong style="font-size:13.5px; color:#0f172a;">${u.name}</strong></td>
+                            <td>${identifier}<br>${roleBadge}</td>
+                            <td><span style="font-weight:600; color:#0f172a;">${u.phone || '-'}</span></td>
+                            <td style="font-size:12px; color:#475569; max-width:280px; line-height:1.4;">${accessScope}</td>
                             <td style="white-space:nowrap;">
-                                <button onclick="editUser('${u.docId}')" style="background:#2563eb; color:#fff;" class="btn-act"><i class="fas fa-edit"></i></button>
-                                <button onclick="deleteUser('${u.docId}')" style="background:#ef4444; color:#fff;" class="btn-act"><i class="fas fa-trash"></i></button>
+                                <button onclick="editUser('${u.docId}')" style="background:#2563eb; color:#fff;" class="btn-act" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteUser('${u.docId}')" style="background:#ef4444; color:#fff;" class="btn-act" title="Delete"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
                 });
 
             } catch(e) {
-                tbody.innerHTML = "<tr><td colspan='6' style='color:red; text-align:center;'>Error loading user list.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading user list.</td></tr>";
             }
         }
 
         async function saveUserRecord() {
             const docId = document.getElementById('user-doc-id').value;
             const name = document.getElementById('user-name').value.trim();
-            const username = document.getElementById('user-username').value.trim();
-            const password = document.getElementById('user-password').value.trim();
             const phone = document.getElementById('user-phone').value.trim();
             const role = document.getElementById('user-role').value;
+            
+            let username = document.getElementById('user-username').value.trim();
+            let password = document.getElementById('user-password').value.trim();
 
-            if (!name || !username || !password) {
-                alert("Please provide name, username, and password.");
+            if (!name || !phone) {
+                alert("Please provide Name and WhatsApp Phone Number.");
                 return;
+            }
+
+            // If staff or admin, username and password are required
+            if (role !== 'vendor') {
+                if (!username || !password) {
+                    alert("Please provide Login Username and Password for Staff/Admin.");
+                    return;
+                }
+            } else {
+                // For vendor, auto-set username as phone or clean name without asking
+                username = phone;
+                password = "NO_LOGIN_VENDOR";
             }
 
             let perms = [];
@@ -279,10 +320,10 @@
             try {
                 if (docId) {
                     await db.collection("staff").doc(docId).update(payload);
-                    alert("✅ Account updated successfully!");
+                    alert("✅ Record updated successfully!");
                 } else {
                     await db.collection("staff").add(payload);
-                    alert("✅ New account added successfully!");
+                    alert("✅ New record added successfully!");
                 }
                 resetUserForm();
                 fetchUsersList();
@@ -290,7 +331,7 @@
                 alert("Error saving account.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Save Account";
+                btn.innerText = "Save Record";
             }
         }
 
@@ -298,13 +339,14 @@
             let u = allUsersCache.find(x => x.docId === docId);
             if (!u) return;
 
-            document.getElementById('user-form-title').innerHTML = `<i class="fas fa-edit"></i> Edit Account: ${u.name}`;
+            document.getElementById('user-form-title').innerHTML = `<i class="fas fa-edit"></i> Edit: ${u.name}`;
             document.getElementById('user-doc-id').value = docId;
             document.getElementById('user-name').value = u.name || "";
-            document.getElementById('user-username').value = u.username || "";
-            document.getElementById('user-password').value = u.password || "";
             document.getElementById('user-phone').value = u.phone || "";
-            document.getElementById('user-role').value = u.role || "staff";
+            document.getElementById('user-role').value = u.role || "vendor";
+
+            document.getElementById('user-username').value = u.username || "";
+            document.getElementById('user-password').value = (u.password === "NO_LOGIN_VENDOR") ? "" : (u.password || "");
 
             handleRoleChange(u.role);
 
@@ -317,14 +359,14 @@
         }
 
         function resetUserForm() {
-            document.getElementById('user-form-title').innerHTML = `<i class="fas fa-user-plus"></i> Add New Staff Member or Vendor`;
+            document.getElementById('user-form-title').innerHTML = `<i class="fas fa-user-plus"></i> Add New Account or Vendor`;
             document.getElementById('user-doc-id').value = "";
             document.getElementById('user-name').value = "";
+            document.getElementById('user-phone').value = "";
             document.getElementById('user-username').value = "";
             document.getElementById('user-password').value = "";
-            document.getElementById('user-phone').value = "";
-            document.getElementById('user-role').value = "staff";
-            handleRoleChange("staff");
+            document.getElementById('user-role').value = "vendor";
+            handleRoleChange("vendor");
 
             document.querySelectorAll('.perm-chk').forEach(c => {
                 c.checked = (c.value === 'orders' || c.value === 'products');
@@ -334,13 +376,16 @@
         }
 
         async function deleteUser(docId) {
-            if (confirm("Are you sure you want to delete this account?")) {
+            if (confirm("Are you sure you want to delete this record?")) {
                 await db.collection("staff").doc(docId).delete();
                 fetchUsersList();
             }
         }
 
-        window.onload = fetchUsersList;
+        window.onload = () => {
+            handleRoleChange('vendor');
+            fetchUsersList();
+        };
     </script>
 </body>
 </html>
