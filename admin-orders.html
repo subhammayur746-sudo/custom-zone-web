@@ -77,16 +77,17 @@
             <h2>CZ Admin</h2>
             <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
         </div>
-        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="admin-orders.html" class="active" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-file-invoice-dollar"></i> Vendor Ledger & Bills</a>
-        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
-        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html" class="active"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-customer-bills.html"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor Ledger & Bills</a>
+        <a href="admin-reviews.html"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html"><i class="fas fa-users"></i> Staff & Vendors</a>
         <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -199,7 +200,6 @@
             }
         }
 
-        // SEQUENTIAL GENERATOR FOR VENDOR INVOICE (CZ-VN-0001 SEQUENCE)
         async function getOrAssignVendorInvoiceNumber(orderDocId, vendorName) {
             try {
                 let ordRef = db.collection("orders").doc(orderDocId);
@@ -209,11 +209,8 @@
                 let data = ordDoc.data();
                 let vMap = data.vendorInvoiceMap || {};
 
-                if (vMap[vendorName]) {
-                    return vMap[vendorName]; // Already assigned sequential number
-                }
+                if (vMap[vendorName]) return vMap[vendorName];
 
-                // Get and increment global counter in transaction
                 let counterRef = db.collection("settings").doc("vendor_invoice_counter");
                 let newInvNumber = "CZ-VN-0001";
 
@@ -231,7 +228,6 @@
                 await ordRef.update({ vendorInvoiceMap: vMap });
                 return newInvNumber;
             } catch(e) {
-                console.error(e);
                 return "CZ-VN-0001";
             }
         }
@@ -310,7 +306,7 @@
                         `;
                     } else {
                         actionButtonsHTML = `
-                            <button class="btn-disabled-lock" onclick="alert('❌ Access Denied: Only Master Admin can verify payments! Please send screenshot to main admin.');" title="Only Admin Can Verify">
+                            <button class="btn-disabled-lock" onclick="alert('❌ Access Denied: Only Master Admin can verify payments!');">
                                 <i class="fas fa-lock"></i> Admin Only
                             </button>
                         `;
@@ -336,10 +332,7 @@
         }
 
         async function deletePendingPayment(paymentRef) {
-            if (!isMainAdminUser()) {
-                alert("❌ Access Denied: Only Master Admin can delete pending payments!");
-                return;
-            }
+            if (!isMainAdminUser()) return;
             if (confirm(`Delete pending payment ${paymentRef}?`)) {
                 await db.collection("pending_payments").doc(paymentRef).delete();
                 await logSystemAction("Deleted Pending Payment Record", paymentRef);
@@ -410,10 +403,9 @@
 
                 await logSystemAction(`Approved Payment & Verified Order #${finalOrderId} (₹${p.totalAmount})`, p.customerName);
 
-                alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created and logged in Audit Trail.`);
+                alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created.`);
                 fetchAdminOrders();
             } catch(e) { 
-                console.error("Verification error:", e);
                 alert("Failed to verify."); 
             }
         }
@@ -663,7 +655,6 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // ISOLATED VENDOR INVOICE WITH STRICT SEQUENTIAL CZ-VN-XXXX
         async function viewIsolatedVendorInvoice(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -676,7 +667,6 @@
                 return;
             }
 
-            // GUARANTEED SEQUENTIAL NUMBER (CZ-VN-0001)
             let vInvId = await getOrAssignVendorInvoiceNumber(docId, vendorName);
             let totalPayableToThisVendor = 0;
 
@@ -785,7 +775,6 @@
                 return `• Item: ${it.name}\n  Specification: ${it.variantName || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS\n  Rate: ₹${lineCost}`;
             }).join('\n\n');
 
-            // GUARANTEED SEQUENTIAL NUMBER (CZ-VN-0001)
             let vInvId = await getOrAssignVendorInvoiceNumber(docId, vendorName);
 
             let msg = `*NEW VENDOR WORK ORDER INVOICE*\nInvoice No: *${vInvId}*\nVendor Partner: *${vendorName}*\n\n*Product Specifications (Assigned to You):*\n${itemsTxt}\n\n*Total Agreed Vendor Rate:* ₹${totalVendorPayable}\n\n*Deliver To (Customer):*\nName: ${ord.customerName}\nPhone: ${ord.phone}\nAddress: ${ord.actualDeliveryAddress || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;

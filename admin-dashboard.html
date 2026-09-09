@@ -32,6 +32,23 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
+        /* Dashboard Billing Hub */
+        .billing-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 25px; }
+        .billing-hub-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 18px 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .billing-hub-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+        .billing-hub-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
         .stat-card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
         .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
@@ -89,9 +106,7 @@
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 15px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-card { padding: 12px; }
-            .stat-icon-wrap { width: 40px; height: 40px; font-size: 18px; }
-            .stat-info h3 { font-size: 18px; }
+            .billing-hub-grid { grid-template-columns: 1fr; gap: 10px; }
         }
     </style>
 </head>
@@ -111,9 +126,9 @@
         <a href="admin-dashboard.html" class="active" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-file-invoice-dollar"></i> Vendor Ledger & Bills</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor Ledger & Bills</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -124,7 +139,7 @@
     <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
             <div>
-                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Order Progress</h2>
+                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Accounting Hub</h2>
                 <small style="color:#64748b;">Logged in as: <strong id="logged-user-name" style="color:#28469E;">Admin</strong> (<span id="logged-user-role">Role</span>)</small>
             </div>
             
@@ -140,6 +155,34 @@
             </div>
         </div>
 
+        <!-- NEW: Dedicated Billing & Accounting Hub Cards on Dashboard -->
+        <div class="billing-hub-grid">
+            <a href="admin-invoice.html" class="billing-hub-card" style="border-left: 4px solid #2563eb;">
+                <div>
+                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Create Retail Invoice</h4>
+                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Generate manual tax invoice for customer</p>
+                </div>
+                <div class="billing-hub-icon" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-receipt"></i></div>
+            </a>
+
+            <a href="admin-customer-bills.html" class="billing-hub-card" style="border-left: 4px solid #16a34a;">
+                <div>
+                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Customer Sales Ledger</h4>
+                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Customer invoices & A4 PDF generator</p>
+                </div>
+                <div class="billing-hub-icon" style="background:#f0fdf4; color:#16a34a;"><i class="fas fa-file-invoice-dollar"></i></div>
+            </a>
+
+            <a href="admin-vendor-bills.html" class="billing-hub-card" style="border-left: 4px solid #4338ca;">
+                <div>
+                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Vendor PO & Ledger</h4>
+                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Sequential CZ-VN bills & supplier deals</p>
+                </div>
+                <div class="billing-hub-icon" style="background:#eef2ff; color:#4338ca;"><i class="fas fa-truck-loading"></i></div>
+            </a>
+        </div>
+
+        <!-- Metric Stat Cards -->
         <div class="stats-grid">
             <div class="stat-card" style="border-left:4px solid #059669;">
                 <div class="stat-icon-wrap" style="background:#d1fae5; color:#059669;"><i class="fas fa-boxes"></i></div>
@@ -221,7 +264,7 @@
         </div>
     </div>
 
-    <!-- Full Audit Modal with CSV Export -->
+    <!-- Full Audit Modal -->
     <div class="modal-overlay" id="full-audit-modal">
         <div class="modal-box">
             <div class="modal-header">

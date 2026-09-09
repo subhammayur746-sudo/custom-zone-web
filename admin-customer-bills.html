@@ -22,18 +22,9 @@
         .sidebar-header h2 { color: #e74c3c; font-size: 22px; font-weight: 800; margin: 0; }
         .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
-        .sidebar a, .sidebar .menu-dropdown-toggle { 
-            display: flex; align-items: center; justify-content: space-between; color: #bdc3c7; 
-            padding: 14px 20px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; 
-            transition: 0.2s; cursor: pointer; user-select: none;
-        }
-        .sidebar a:hover, .sidebar a.active, .sidebar .menu-dropdown-toggle:hover { background: #34495e; color: #fff; border-left-color: #27ae60; }
-        .sidebar a i, .sidebar .menu-dropdown-toggle i.menu-icon { margin-right: 12px; width: 18px; text-align: center; }
-
-        /* Submenu */
-        .sidebar-submenu { background: #1e2b37; display: flex; flex-direction: column; padding: 4px 0; }
-        .sidebar-submenu a { padding: 10px 20px 10px 48px; font-size: 12.5px; border-left: 4px solid transparent; }
-        .sidebar-submenu a:hover, .sidebar-submenu a.active { background: #2c3e50; color: #2ecc71; border-left-color: #2ecc71; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
 
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
@@ -57,12 +48,27 @@
 
         .btn-act { border: none; padding: 6px 11px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
         .btn-invoice { background: #2563eb; color: #fff; }
+        .btn-print { background: #0f172a; color: #fff; }
         .btn-wa { background: #16a34a; color: #fff; }
 
         .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
         .page-btn { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .page-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Full A4 Printable Modal */
+        #customer-bill-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
+        #printable-customer-invoice { background: #fff; width: 100%; max-width: 820px; padding: 35px 30px; border-radius: 12px; position: relative; max-height: 94vh; overflow-y: auto; box-shadow: 0 12px 30px rgba(0,0,0,0.25); color: #0f172a; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 10mm 14mm; }
+            html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; font-size: 11pt !important; color: #000 !important; }
+            body * { visibility: hidden !important; }
+            #customer-bill-modal { position: static !important; display: block !important; width: 100% !important; height: auto !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+            #printable-customer-invoice, #printable-customer-invoice * { visibility: visible !important; }
+            #printable-customer-invoice { position: relative !important; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .no-print-slip { display: none !important; }
+        }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -86,34 +92,25 @@
             <h2>CZ Admin</h2>
             <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
         </div>
-        <a href="admin-dashboard.html"><i class="fas fa-home menu-icon"></i> <span>Dashboard</span></a>
-        <a href="admin-orders.html"><i class="fas fa-shopping-bag menu-icon"></i> <span>Manage Orders</span></a>
-        <a href="admin-products.html"><i class="fas fa-box menu-icon"></i> <span>Manage Products</span></a>
-        
-        <!-- Dropdown Sub-menu for Invoices & Ledgers -->
-        <div class="menu-dropdown-toggle active" onclick="toggleInvoiceSubmenu()">
-            <div><i class="fas fa-file-invoice-dollar menu-icon"></i> <span>Billing & Invoices</span></div>
-            <i class="fas fa-chevron-up" id="inv-caret-icon" style="font-size:11px; transition:0.2s;"></i>
-        </div>
-        <div class="sidebar-submenu open" id="sidebar-invoice-submenu">
-            <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Customer Invoice</a>
-            <a href="admin-customer-bills.html" class="active"><i class="fas fa-users"></i> Customer Ledger</a>
-            <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
-        </div>
-
-        <a href="admin-customers.html"><i class="fas fa-user-friends menu-icon"></i> <span>Customer Directory</span></a>
-        <a href="admin-reviews.html"><i class="fas fa-star menu-icon"></i> <span>Manage Reviews</span></a>
-        <a href="admin-coupons.html"><i class="fas fa-tags menu-icon"></i> <span>Discount & Vouchers</span></a>
-        <a href="admin-ads.html"><i class="fas fa-bullhorn menu-icon"></i> <span>Store Settings</span></a>
-        <a href="admin-users.html"><i class="fas fa-users menu-icon"></i> <span>Staff & Vendors</span></a>
-        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt menu-icon"></i> <span>Logout</span></a>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-customer-bills.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor Ledger & Bills</a>
+        <a href="admin-reviews.html"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html"><i class="fas fa-users"></i> Staff & Vendors</a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Customer Sales & Invoice Ledger</h2>
-                <small style="color:#64748b;">Permanent record of customer orders, invoice references, and sales performance</small>
+                <small style="color:#64748b;">Permanent customer billing records with full A4 print, PDF export, and official stamp placeholder</small>
             </div>
             <div>
                 <button onclick="fetchCustomerLedger(true)" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
@@ -169,7 +166,7 @@
 
                 <div class="filter-item" style="flex:1; min-width:220px;">
                     <label>Search Customer / Invoice:</label>
-                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No, Name, Phone...">
+                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No, Name, Phone, Address...">
                 </div>
 
                 <div class="filter-item" style="align-self: flex-end;">
@@ -204,6 +201,22 @@
         </div>
     </div>
 
+    <!-- Official A4 Customer Tax Invoice Modal (Print / Save PDF) -->
+    <div id="customer-bill-modal">
+        <div id="printable-customer-invoice">
+            <span onclick="closeCustomerBillModal()" class="no-print-slip" style="position:absolute; top:14px; right:18px; font-size:26px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
+            <div id="customer-invoice-modal-content"></div>
+            <div class="no-print-slip" style="text-align:center; margin-top:25px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13.5px;">
+                    <i class="fas fa-print"></i> Print / Save as PDF (A4)
+                </button>
+                <button onclick="closeCustomerBillModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13.5px;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInAdmin) window.location.href = "admin-login.html";
@@ -218,13 +231,6 @@
             const backdrop = document.getElementById('sidebar-backdrop');
             sb.classList.toggle('open');
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
-        }
-
-        function toggleInvoiceSubmenu() {
-            const submenu = document.getElementById('sidebar-invoice-submenu');
-            const caret = document.getElementById('inv-caret-icon');
-            submenu.classList.toggle('open');
-            caret.style.transform = submenu.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
         }
 
         function parseOrderDateToObj(dateStr) {
@@ -254,11 +260,16 @@
                         orderId: orderId,
                         customerName: ord.customerName || ord.name || "Valued Customer",
                         phone: ord.phone || "",
+                        address: ord.actualDeliveryAddress || ord.address || "-",
                         items: ord.items || [],
+                        subTotal: parseInt(ord.subTotal) || parseInt(ord.totalAmount) || 0,
+                        deliveryFee: parseInt(ord.deliveryFee) || 0,
+                        discountGiven: parseInt(ord.discountGiven) || 0,
                         totalAmount: parseInt(ord.totalAmount) || parseInt(ord.total) || 0,
                         date: ord.date || "Recent",
                         dateObj: parseOrderDateToObj(ord.date),
                         status: ord.orderStatus || ord.status || "Processing",
+                        greetingNote: ord.greetingNote || "",
                         docId: doc.id
                     });
                 });
@@ -292,6 +303,7 @@
                     matchTerm = l.invoiceNo.toLowerCase().includes(term) ||
                                 l.customerName.toLowerCase().includes(term) ||
                                 l.phone.includes(term) ||
+                                l.address.toLowerCase().includes(term) ||
                                 l.orderId.toLowerCase().includes(term);
                 }
 
@@ -337,7 +349,8 @@
             let endIndex = Math.min(startIndex + RECORDS_PER_PAGE, totalItems);
             let pageSlice = filteredLedgerList.slice(startIndex, endIndex);
 
-            pageSlice.forEach(l => {
+            pageSlice.forEach((l, index) => {
+                let actualIndex = startIndex + index;
                 let itemsList = Array.isArray(l.items) ? l.items.map(it => `• ${it.name} x${it.quantity || 1}`).join("<br>") : (l.items || '-');
                 let statusBadge = `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">${l.status}</span>`;
                 if (l.status.toLowerCase() === 'delivered') {
@@ -353,11 +366,11 @@
                         <td><strong style="color:#16a34a; font-size:14px;">₹${l.totalAmount}</strong></td>
                         <td>${statusBadge}</td>
                         <td style="white-space:nowrap;">
-                            <a href="admin-invoice.html?orderId=${l.orderId}" class="btn-act btn-invoice">
-                                <i class="fas fa-file-invoice"></i> View Invoice
-                            </a>
+                            <button class="btn-act btn-print" onclick="openCustomerInvoicePrintModal(${actualIndex})">
+                                <i class="fas fa-print"></i> Print / PDF (A4)
+                            </button>
                             <button class="btn-act btn-wa" onclick="sendInvoiceWhatsAppDirect('${l.customerName}', '${l.phone}', '${l.invoiceNo}', '${l.totalAmount}')">
-                                <i class="fab fa-whatsapp"></i> WhatsApp
+                                <i class="fab fa-whatsapp"></i> WA
                             </button>
                         </td>
                     </tr>
@@ -401,10 +414,141 @@
             renderPaginatedLedger();
         }
 
+        // FULL PROFESSIONAL A4 PRINTABLE CUSTOMER INVOICE (WITH STAMP & SIGNATURE)
+        function openCustomerInvoicePrintModal(index) {
+            let l = filteredLedgerList[index];
+            if (!l) return;
+
+            let itemsRows = "";
+            if (Array.isArray(l.items) && l.items.length > 0) {
+                itemsRows = l.items.map(it => {
+                    let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
+                    return `
+                        <tr>
+                            <td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:13px;">
+                                <strong style="color:#0f172a;">${it.name}</strong>
+                                ${it.variantName ? `<br><span style="color:#2563eb; font-size:12px;">Option: ${it.variantName}</span>` : ''}
+                                ${it.userText ? `<br><span style="color:#b45309; font-size:12px; font-weight:bold;">Custom Text: "${it.userText}"</span>` : ''}
+                            </td>
+                            <td style="text-align:center; padding:10px 6px; border-bottom:1px solid #e2e8f0; font-weight:600; font-size:13px;">${it.quantity || 1}</td>
+                            <td style="text-align:right; padding:10px 8px; border-bottom:1px solid #e2e8f0; font-size:13px;">₹${unitPrice}</td>
+                            <td style="text-align:right; padding:10px 12px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:13.5px;">₹${it.chargedAmount || it.price}</td>
+                        </tr>
+                    `;
+                }).join("");
+            } else {
+                itemsRows = `
+                    <tr>
+                        <td style="padding:10px 12px; border-bottom:1px solid #e2e8f0;">${l.items || 'Custom Handcrafted Item'}</td>
+                        <td style="text-align:center; padding:10px 6px; border-bottom:1px solid #e2e8f0;">1</td>
+                        <td style="text-align:right; padding:10px 8px; border-bottom:1px solid #e2e8f0;">₹${l.totalAmount}</td>
+                        <td style="text-align:right; padding:10px 12px; border-bottom:1px solid #e2e8f0; font-weight:700;">₹${l.totalAmount}</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('customer-invoice-modal-content').innerHTML = `
+                <!-- Professional A4 Header -->
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:16px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <img src="assets/images/logo.png" style="width:65px; height:65px; object-fit:contain; border-radius:8px;" alt="Logo">
+                        <div>
+                            <h1 style="margin:0; font-size:24px; font-weight:800; color:#0f172a; letter-spacing:-0.5px;">CUSTOM ZONE</h1>
+                            <p style="margin:2px 0 0 0; font-size:12.5px; color:#475569; font-weight:600;">You Imagine. We Customize.</p>
+                            <p style="margin:2px 0 0 0; font-size:11.5px; color:#64748b;">Liluah Chakpara, Howrah, West Bengal | Support: +91 9038604483</p>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="background:#0f172a; color:#fff; font-size:12px; font-weight:800; padding:4px 14px; border-radius:4px; display:inline-block; margin-bottom:6px;">
+                            TAX INVOICE
+                        </div>
+                        <div style="font-size:12.5px; color:#334155; line-height:1.5;">
+                            <div><strong>Invoice No:</strong> <span style="color:#2563eb; font-weight:800;">${l.invoiceNo}</span></div>
+                            <div><strong>Date:</strong> ${l.date}</div>
+                            <div><strong>Order Ref:</strong> #${l.orderId}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billed To Box -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; margin-bottom:18px;">
+                    <span style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:4px;">Billed To / Customer Details:</span>
+                    <strong style="color:#0f172a; font-size:14px;">${l.customerName}</strong> <span style="font-size:12.5px; color:#64748b;">(${l.phone})</span>
+                    <div style="font-size:12.5px; color:#334155; margin-top:3px; line-height:1.4;">${l.address}</div>
+                </div>
+
+                <!-- Items Table -->
+                <table style="width:100%; border-collapse:collapse; margin-bottom:18px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #0f172a; font-size:11.5px; text-transform:uppercase; color:#475569; background:#f1f5f9;">
+                            <th style="text-align:left; padding:8px 12px;">Description</th>
+                            <th style="text-align:center; padding:8px 6px;">Qty</th>
+                            <th style="text-align:right; padding:8px 8px;">Rate (₹)</th>
+                            <th style="text-align:right; padding:8px 12px;">Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsRows}</tbody>
+                </table>
+
+                <!-- Summary Row -->
+                <div style="display:flex; justify-content:flex-end; border-top:2px solid #0f172a; padding-top:10px; margin-bottom:20px;">
+                    <div style="width:260px; font-size:13px;">
+                        <div style="display:flex; justify-content:space-between; padding:3px 0; color:#475569;">
+                            <span>Subtotal:</span>
+                            <strong style="color:#0f172a;">₹${l.subTotal}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:3px 0; color:#475569;">
+                            <span>Delivery Fee:</span>
+                            <strong>${l.deliveryFee === 0 ? 'FREE' : '₹' + l.deliveryFee}</strong>
+                        </div>
+                        ${l.discountGiven > 0 ? `
+                            <div style="display:flex; justify-content:space-between; padding:3px 0; color:#ef4444;">
+                                <span>Discount:</span>
+                                <strong>-₹${l.discountGiven}</strong>
+                            </div>
+                        ` : ''}
+                        <div style="display:flex; justify-content:space-between; border-top:1.5px solid #0f172a; padding-top:6px; margin-top:4px; font-size:16px; font-weight:800; color:#0f172a;">
+                            <span>Grand Total:</span>
+                            <span style="color:#16a34a;">₹${l.totalAmount}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terms & Signatory Section -->
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:16px;">
+                    <div style="font-size:11px; color:#64748b; max-width:320px; line-height:1.5;">
+                        <strong style="color:#0f172a; display:block; margin-bottom:2px;">Terms & Conditions:</strong>
+                        <p style="margin:0;">• All customized items are handcrafted to order.</p>
+                        <p style="margin:0;">• For any queries, WhatsApp us with Invoice No.</p>
+                    </div>
+
+                    <!-- Stamp & Signature Slot -->
+                    <div style="text-align:center; min-width:180px;">
+                        <div id="customer-stamp-container" style="height:70px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                            <img id="official-cust-stamp-img" src="" alt="" style="display:none; max-height:65px; object-fit:contain;">
+                            <div id="cust-stamp-placeholder-text" style="border:1.5px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:600; border-radius:4px;">
+                                [ OFFICIAL STAMP & SIGN ]
+                            </div>
+                        </div>
+                        <div style="border-top:1.5px solid #0f172a; padding-top:4px;">
+                            <strong style="font-size:11.5px; color:#0f172a; display:block;">Authorized Signatory</strong>
+                            <span style="font-size:10px; color:#64748b;">Custom Zone liluah</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('customer-bill-modal').style.display = 'flex';
+        }
+
+        function closeCustomerBillModal() {
+            document.getElementById('customer-bill-modal').style.display = 'none';
+        }
+
         function sendInvoiceWhatsAppDirect(name, phone, invNo, amount) {
             let cleanPhone = phone.replace(/[^0-9]/g, '');
             if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
-            let msg = `Hello ${name},\nYour Custom Zone Tax Invoice *#${invNo}* has been issued.\nTotal Amount: *₹${amount}*\n\nThank you for shopping with Custom Zone! 🎁`;
+            let msg = `Hello ${name},\nYour Custom Zone Tax Invoice *#${invNo}* has been issued.\nTotal Amount: *₹${amount}*\n\nThank you for shopping with Custom Zone! 🎁✨`;
             window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
