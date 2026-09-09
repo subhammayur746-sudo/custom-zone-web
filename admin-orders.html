@@ -80,8 +80,9 @@
         <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
         <a href="admin-orders.html" class="active" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-file-invoice-dollar"></i> Vendor Ledger & Bills</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -178,12 +179,10 @@
             window.location.href = "admin-login.html";
         }
 
-        // MASTER ADMIN AUTH CHECK
         function isMainAdminUser() {
             return (loggedInAdmin && loggedInAdmin.role !== 'staff');
         }
 
-        // AUDIT LOG SYSTEM RECORDER (GUARANTEED SYNC)
         async function logSystemAction(action, targetId) {
             try {
                 let actorName = loggedInAdmin.name || loggedInAdmin.username || "Admin";
@@ -197,6 +196,43 @@
                 });
             } catch(e) {
                 console.error("Audit log error:", e);
+            }
+        }
+
+        // SEQUENTIAL GENERATOR FOR VENDOR INVOICE (CZ-VN-0001 SEQUENCE)
+        async function getOrAssignVendorInvoiceNumber(orderDocId, vendorName) {
+            try {
+                let ordRef = db.collection("orders").doc(orderDocId);
+                let ordDoc = await ordRef.get();
+                if (!ordDoc.exists) return "CZ-VN-0001";
+                
+                let data = ordDoc.data();
+                let vMap = data.vendorInvoiceMap || {};
+
+                if (vMap[vendorName]) {
+                    return vMap[vendorName]; // Already assigned sequential number
+                }
+
+                // Get and increment global counter in transaction
+                let counterRef = db.collection("settings").doc("vendor_invoice_counter");
+                let newInvNumber = "CZ-VN-0001";
+
+                await db.runTransaction(async (transaction) => {
+                    let doc = await transaction.get(counterRef);
+                    let currentCount = 1;
+                    if (doc.exists && doc.data().count) {
+                        currentCount = doc.data().count + 1;
+                    }
+                    transaction.set(counterRef, { count: currentCount });
+                    newInvNumber = "CZ-VN-" + String(currentCount).padStart(4, '0');
+                });
+
+                vMap[vendorName] = newInvNumber;
+                await ordRef.update({ vendorInvoiceMap: vMap });
+                return newInvNumber;
+            } catch(e) {
+                console.error(e);
+                return "CZ-VN-0001";
             }
         }
 
@@ -231,7 +267,6 @@
             loadConfirmedOrders();
         }
 
-        // PENDING PAYMENTS: LOCKED FOR STAFF
         async function loadPendingPayments() {
             const tbody = document.getElementById('pending-payments-tbody');
             const badge = document.getElementById('pending-count-badge');
@@ -312,7 +347,6 @@
             }
         }
 
-        // STRICT PAYMENT APPROVAL + AUDIT LOG ENTRY
         async function verifyAndMarkPaid(paymentRef) {
             if (!isMainAdminUser()) {
                 alert("❌ Access Denied: Only Master Admin can verify payments!");
@@ -374,7 +408,6 @@
                 await db.collection("orders").doc(finalOrderId).set(confirmedPayload);
                 await db.collection("pending_payments").doc(paymentRef).update({ paymentStatus: "Paid", finalOrderId: finalOrderId });
 
-                // WRITE REAL-TIME AUDIT LOG
                 await logSystemAction(`Approved Payment & Verified Order #${finalOrderId} (₹${p.totalAmount})`, p.customerName);
 
                 alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created and logged in Audit Trail.`);
@@ -452,7 +485,6 @@
                 let vendorsOrderMap = getOrderVendorsMap(ord);
                 let vendorNames = Object.keys(vendorsOrderMap);
 
-                // Build Vendor Badges
                 let vendorBadgesHTML = "";
                 vendorNames.forEach(vn => {
                     if (vn === "In-House") {
@@ -463,7 +495,6 @@
                     }
                 });
 
-                // Items list
                 let itemsDetail = "";
                 if (Array.isArray(ord.items)) {
                     itemsDetail = ord.items.map(it => {
@@ -476,7 +507,6 @@
                     itemsDetail = ord.items || '-';
                 }
 
-                // Dedicated Display for Gift Greeting Note & Occasion
                 let noteHTML = ord.greetingNote ? `
                     <div style="font-size:11px; background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; margin-top:4px; border:1px solid #fde68a; line-height:1.3;">
                         <i class="fas fa-envelope-open-text"></i> <strong>Card Note:</strong> "${ord.greetingNote}"
@@ -489,7 +519,6 @@
                     </div>
                 ` : '';
 
-                // Action Buttons
                 let vendorActionsHTML = "";
                 vendorNames.forEach(vn => {
                     if (vn !== "In-House") {
@@ -575,7 +604,6 @@
             }
         }
 
-        // CUSTOMER RETAIL SLIP
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -635,8 +663,8 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // ISOLATED VENDOR INVOICE
-        function viewIsolatedVendorInvoice(docId, vendorName) {
+        // ISOLATED VENDOR INVOICE WITH STRICT SEQUENTIAL CZ-VN-XXXX
+        async function viewIsolatedVendorInvoice(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
@@ -648,7 +676,8 @@
                 return;
             }
 
-            let vInvId = "CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0');
+            // GUARANTEED SEQUENTIAL NUMBER (CZ-VN-0001)
+            let vInvId = await getOrAssignVendorInvoiceNumber(docId, vendorName);
             let totalPayableToThisVendor = 0;
 
             let itemsRows = specificVendorItems.map(it => {
@@ -680,7 +709,7 @@
                     <img src="assets/images/logo.png" style="width:48px; height:48px; object-fit:contain; border-radius:50%; margin-bottom:4px; display:inline-block;" alt="Logo">
                     <h2 style="margin:0; font-size:18px; font-weight:800; color:#3730a3;">VENDOR WORK ORDER INVOICE</h2>
                     <p style="margin:1px 0; font-size:11px; color:#475569;">Custom Zone Sourcing & Production Desk</p>
-                    <div style="background:#3730a3; color:#fff; font-size:11px; font-weight:800; padding:3px 10px; border-radius:4px; margin-top:6px; display:inline-block;">INVOICE NO: ${vInvId}</div>
+                    <div style="background:#3730a3; color:#fff; font-size:11.5px; font-weight:800; padding:3px 12px; border-radius:4px; margin-top:6px; display:inline-block;">INVOICE NO: ${vInvId}</div>
                 </div>
 
                 <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:6px; padding:10px 12px; font-size:12px; margin-bottom:12px; line-height:1.5;">
@@ -731,7 +760,7 @@
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
-        function sendIsolatedVendorWhatsApp(docId, vendorName) {
+        async function sendIsolatedVendorWhatsApp(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
 
@@ -756,7 +785,8 @@
                 return `• Item: ${it.name}\n  Specification: ${it.variantName || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || 1} PCS\n  Rate: ₹${lineCost}`;
             }).join('\n\n');
 
-            let vInvId = "CZ-V-" + String(ord.orderId || '101').replace(/[^0-9]/g, '').slice(-4).padStart(4, '0');
+            // GUARANTEED SEQUENTIAL NUMBER (CZ-VN-0001)
+            let vInvId = await getOrAssignVendorInvoiceNumber(docId, vendorName);
 
             let msg = `*NEW VENDOR WORK ORDER INVOICE*\nInvoice No: *${vInvId}*\nVendor Partner: *${vendorName}*\n\n*Product Specifications (Assigned to You):*\n${itemsTxt}\n\n*Total Agreed Vendor Rate:* ₹${totalVendorPayable}\n\n*Deliver To (Customer):*\nName: ${ord.customerName}\nPhone: ${ord.phone}\nAddress: ${ord.actualDeliveryAddress || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;
             window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');

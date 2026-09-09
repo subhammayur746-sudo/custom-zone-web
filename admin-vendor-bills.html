@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Purchases & Ledger - Custom Zone Admin</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
+
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
+        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+        
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
+        .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
+
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
+        
+        .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
+        .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
+        .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
+
+        .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 950px; }
+        .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
+        .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
+
+        .vendor-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; width: 250px; }
+            .sidebar.open { left: 0; }
+            .sidebar-close-btn { display: block; }
+            .mobile-admin-bar { display: flex; }
+            .main-content { margin-left: 0; width: 100%; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-admin-bar">
+        <h3>CZ Admin</h3>
+        <button class="mobile-toggle-btn" onclick="toggleSidebarMenu()"><i class="fas fa-bars"></i></button>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
+
+    <div class="sidebar" id="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>CZ Admin</h2>
+            <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
+        </div>
+        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-vendor-bills.html" class="active" id="nav-vendor-bills"><i class="fas fa-file-invoice-dollar"></i> Vendor Ledger & Bills</a>
+        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+            <div>
+                <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Vendor Purchases, Deals & Sequential Billing Ledger</h2>
+                <small style="color:#64748b;">Tracks all external vendor work orders with sequence format (CZ-VN-0001, CZ-VN-0002...)</small>
+            </div>
+            <div>
+                <button onclick="fetchVendorBills()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-sync-alt"></i> Refresh Ledger
+                </button>
+            </div>
+        </div>
+
+        <!-- Vendor Deal Totals Cards -->
+        <div class="vendor-summary-grid">
+            <div class="summary-card" style="border-left: 4px solid #3730a3;">
+                <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Purchase Volume</span>
+                <h3 style="margin:6px 0 0 0; font-size:24px; color:#3730a3;" id="stat-total-deals">₹0</h3>
+                <small style="color:#475569;">All Sourced Products</small>
+            </div>
+
+            <div class="summary-card" style="border-left: 4px solid #059669;">
+                <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Delivered Work Orders</span>
+                <h3 style="margin:6px 0 0 0; font-size:24px; color:#059669;" id="stat-delivered-deals">₹0</h3>
+                <small style="color:#475569;">Cleared for Vendor Payout</small>
+            </div>
+
+            <div class="summary-card" style="border-left: 4px solid #d97706;">
+                <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Active In-Transit / Processing</span>
+                <h3 style="margin:6px 0 0 0; font-size:24px; color:#d97706;" id="stat-processing-deals">₹0</h3>
+                <small style="color:#475569;">Under Production / In Transit</small>
+            </div>
+        </div>
+
+        <!-- Ledger Table with Filter -->
+        <div class="admin-card" style="overflow-x:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:12px;">
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <label style="font-size:12.5px; font-weight:bold; color:#2c3e50;">Filter by Vendor:</label>
+                    <select id="filter-vendor-select" onchange="filterBillsTable()" style="padding:7px 12px; border:1px solid #ccc; border-radius:4px; font-size:12.5px; font-weight:600;">
+                        <option value="all">-- All Vendors --</option>
+                    </select>
+                </div>
+                <input type="text" id="bill-search-input" onkeyup="filterBillsTable()" placeholder="🔍 Search Bill No, Vendor, Order Ref..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:260px;">
+            </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Bill / Invoice No</th>
+                        <th>Vendor Name</th>
+                        <th>Order Reference</th>
+                        <th>Product Description & Quantity</th>
+                        <th>Agreed Vendor Cost</th>
+                        <th>Order Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="vendor-bills-tbody">
+                    <tr><td colspan="7" style="text-align:center;">Loading vendor ledger records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInAdmin) window.location.href = "admin-login.html";
+
+        let allBillsCache = [];
+        let vendorsListCache = [];
+
+        function toggleSidebarMenu() {
+            const sb = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('open');
+            backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+
+        async function fetchVendorBills() {
+            const tbody = document.getElementById('vendor-bills-tbody');
+            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Fetching all vendor transactions...</td></tr>";
+
+            try {
+                // 1. Fetch Vendors
+                const vSnap = await db.collection("staff").where("role", "==", "vendor").get();
+                const filterSelect = document.getElementById('filter-vendor-select');
+                filterSelect.innerHTML = '<option value="all">-- All Vendors --</option>';
+                vendorsListCache = [];
+                vSnap.forEach(doc => {
+                    let v = doc.data();
+                    vendorsListCache.push(v);
+                    filterSelect.innerHTML += `<option value="${v.name}">${v.name}</option>`;
+                });
+
+                // 2. Fetch Catalog for rates
+                const pSnap = await db.collection("products").get();
+                let catalogMap = {};
+                pSnap.forEach(doc => {
+                    let p = doc.data();
+                    catalogMap[(p.name || "").trim().toLowerCase()] = {
+                        vendorName: p.vendorName || "In-House",
+                        vendorCost: parseInt(p.vendorCost) || 0
+                    };
+                });
+
+                // 3. Fetch Orders
+                const ordSnap = await db.collection("orders").get();
+                allBillsCache = [];
+                let totalDeals = 0;
+                let deliveredDeals = 0;
+                let processingDeals = 0;
+
+                ordSnap.forEach(doc => {
+                    let ord = doc.data();
+                    let orderId = ord.orderId || doc.id;
+                    let vInvoiceMap = ord.vendorInvoiceMap || {};
+
+                    if (Array.isArray(ord.items)) {
+                        // Group items by vendor
+                        let vItemsMap = {};
+                        ord.items.forEach(it => {
+                            let cKey = (it.name || "").trim().toLowerCase();
+                            let pMeta = catalogMap[cKey];
+                            let vName = it.vendorName || (pMeta ? pMeta.vendorName : "In-House");
+                            let cost = it.vendorCost || (pMeta ? pMeta.vendorCost : 0);
+
+                            if (vName && vName !== "In-House") {
+                                if (!vItemsMap[vName]) vItemsMap[vName] = [];
+                                vItemsMap[vName].push({
+                                    name: it.name,
+                                    qty: it.quantity || 1,
+                                    unitCost: cost,
+                                    variant: it.variantName || "",
+                                    userText: it.userText || ""
+                                });
+                            }
+                        });
+
+                        // Create a ledger bill record for each vendor in this order
+                        for (let vName in vItemsMap) {
+                            let items = vItemsMap[vName];
+                            let billCost = items.reduce((sum, x) => sum + (x.unitCost * x.qty), 0);
+                            let status = ord.orderStatus || ord.status || "Processing";
+
+                            totalDeals += billCost;
+                            if (status.toLowerCase() === "delivered") deliveredDeals += billCost;
+                            else if (status.toLowerCase() !== "cancelled") processingDeals += billCost;
+
+                            allBillsCache.push({
+                                invoiceNo: vInvoiceMap[vName] || ("CZ-VN-" + String(orderId).replace(/[^0-9]/g, '').slice(-4).padStart(4, '0')),
+                                vendorName: vName,
+                                orderId: orderId,
+                                date: ord.date || "Recent",
+                                items: items,
+                                totalCost: billCost,
+                                status: status,
+                                docId: doc.id
+                            });
+                        }
+                    }
+                });
+
+                document.getElementById('stat-total-deals').innerText = `₹${totalDeals.toLocaleString('en-IN')}`;
+                document.getElementById('stat-delivered-deals').innerText = `₹${deliveredDeals.toLocaleString('en-IN')}`;
+                document.getElementById('stat-processing-deals').innerText = `₹${processingDeals.toLocaleString('en-IN')}`;
+
+                allBillsCache.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
+                renderBillsTable(allBillsCache);
+
+            } catch(e) {
+                console.error(e);
+                tbody.innerHTML = "<tr><td colspan='7' style='color:red; text-align:center;'>Error loading vendor bills ledger.</td></tr>";
+            }
+        }
+
+        function renderBillsTable(bills) {
+            const tbody = document.getElementById('vendor-bills-tbody');
+            tbody.innerHTML = "";
+
+            if (bills.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px; color:#64748b;'>No vendor transactions found.</td></tr>";
+                return;
+            }
+
+            bills.forEach(b => {
+                let itemsListHTML = b.items.map(it => `
+                    • <strong>${it.name}</strong> ${it.variant ? `(${it.variant})` : ''} x${it.qty} (₹${it.unitCost * it.qty})
+                `).join("<br>");
+
+                let statusBadge = `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">${b.status}</span>`;
+                if (b.status.toLowerCase() === 'delivered') {
+                    statusBadge = `<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">Cleared (Delivered)</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#3730a3; font-size:13px;">${b.invoiceNo}</strong><br><small style="color:#64748b;">${b.date}</small></td>
+                        <td><span style="font-weight:700; color:#1e293b;"><i class="fas fa-truck-loading" style="color:#6366f1;"></i> ${b.vendorName}</span></td>
+                        <td><strong style="color:#2563eb;">#${b.orderId}</strong></td>
+                        <td style="font-size:12px; max-width:280px; line-height:1.4;">${itemsListHTML}</td>
+                        <td><strong style="color:#16a34a; font-size:14px;">₹${b.totalCost}</strong></td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <a href="admin-orders.html" style="background:#28469E; color:#fff; padding:5px 10px; border-radius:4px; font-size:11px; text-decoration:none; font-weight:bold;">
+                                View in Orders
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterBillsTable() {
+            let selectedVendor = document.getElementById('filter-vendor-select').value;
+            let term = document.getElementById('bill-search-input').value.toLowerCase().trim();
+
+            let filtered = allBillsCache.filter(b => {
+                let matchVendor = (selectedVendor === 'all') || (b.vendorName === selectedVendor);
+                let matchTerm = b.invoiceNo.toLowerCase().includes(term) ||
+                                b.vendorName.toLowerCase().includes(term) ||
+                                b.orderId.toLowerCase().includes(term);
+                return matchVendor && matchTerm;
+            });
+
+            renderBillsTable(filtered);
+        }
+
+        window.onload = fetchVendorBills;
+    </script>
+</body>
+</html>
