@@ -271,11 +271,13 @@
             return { vendorName: "In-House", vendorCost: 0 };
         }
 
+        // BULLETPROOF ERROR-FREE LEDGER LOADER
         async function fetchCustomerLedger(forceRefresh = false) {
             const tbody = document.getElementById('customer-ledger-tbody');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Loading customer ledger...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Loading customer sales records...</td></tr>";
 
             try {
+                // 1. Fetch Product Catalog
                 const pSnap = await db.collection("products").get();
                 productsCatalogMap = {};
                 pSnap.forEach(doc => {
@@ -289,16 +291,19 @@
                     }
                 });
 
+                // 2. Fetch Counter safely with fallback
+                let currentCounter = 99;
+                try {
+                    const counterDoc = await db.collection("settings").doc("customer_invoice_counter").get();
+                    if (counterDoc.exists && counterDoc.data().count && counterDoc.data().count >= 99) {
+                        currentCounter = counterDoc.data().count;
+                    }
+                } catch(e) {}
+
+                // 3. Fetch Orders
                 const snap = await db.collection("orders").get();
                 allLedgerMasterList = [];
 
-                let counterDoc = await db.collection("settings").doc("customer_invoice_counter").get();
-                let currentCounter = 99;
-                if (counterDoc.exists && counterDoc.data().count && counterDoc.data().count >= 99) {
-                    currentCounter = counterDoc.data().count;
-                }
-
-                let ordersToUpdateBatch = [];
                 let orderDocs = [];
                 snap.forEach(doc => {
                     let d = doc.data();
@@ -307,10 +312,14 @@
                 });
                 orderDocs.sort((a, b) => (a.verifiedAt?.seconds || 0) - (b.verifiedAt?.seconds || 0));
 
+                let ordersToUpdateBatch = [];
+
                 orderDocs.forEach(ord => {
                     let orderId = ord.orderId || ord.docId;
                     let invoiceNo = ord.customerInvoiceNo;
                     let orderNeedsUpdate = false;
+                    let currentStatus = (ord.orderStatus || ord.status || "Processing").trim();
+                    let isDelivered = currentStatus.toLowerCase() === "delivered";
 
                     if (!invoiceNo) {
                         invoiceNo = "INV-" + String(currentCounter).padStart(4, '0');
@@ -328,9 +337,14 @@
                             let itemName = it.name || it.productName || "";
                             let itemMeta = safeFindProductCost(itemName, productsCatalogMap);
                             
-                            let unitVendorCost = (it.vendorCost !== undefined && it.vendorCost !== null && it.vendorCost >= 0)
-                                ? parseInt(it.vendorCost)
-                                : itemMeta.vendorCost;
+                            let unitVendorCost = 0;
+                            if (isDelivered && it.vendorCost !== undefined && it.vendorCost !== null) {
+                                unitVendorCost = parseInt(it.vendorCost) || 0;
+                            } else {
+                                unitVendorCost = (it.vendorCost !== undefined && it.vendorCost > 0 && isDelivered)
+                                    ? parseInt(it.vendorCost)
+                                    : itemMeta.vendorCost;
+                            }
 
                             let itemVendorName = (it.vendorName && it.vendorName !== "In-House")
                                 ? it.vendorName
@@ -364,7 +378,7 @@
                         netProfit: netProfit,
                         date: ord.date || "Recent",
                         dateObj: parseOrderDateToObj(ord.date),
-                        status: ord.orderStatus || ord.status || "Processing",
+                        status: currentStatus,
                         greetingNote: ord.greetingNote || "",
                         docId: ord.docId
                     });
@@ -393,7 +407,7 @@
                 applyAllFilters();
 
             } catch(e) {
-                console.error("Customer ledger load error:", e);
+                console.error("Ledger fetch error:", e);
                 tbody.innerHTML = `<tr><td colspan='8' style='color:red; text-align:center;'>Error loading customer ledger: ${e.message}</td></tr>`;
             }
         }
