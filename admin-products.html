@@ -21,7 +21,7 @@
         .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; font-weight: 800; }
         .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
         
@@ -54,30 +54,10 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px 14px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 13px; color: #2c3e50; vertical-align: middle; }
 
-        /* ADVANCED PAGINATION STYLES */
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 18px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e8f0;
-        }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
         .pagination-info { font-size: 12.5px; color: #64748b; font-weight: 600; }
         .pagination-controls { display: flex; align-items: center; gap: 6px; }
-        .page-btn {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            color: #334155;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-        }
+        .page-btn { background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
         .page-btn.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -110,7 +90,9 @@
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" class="active" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-customer-bills.html" id="nav-customer-bills"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -255,7 +237,7 @@
             </div>
         </div>
 
-        <!-- LIVE PRODUCT CATALOG WITH ADVANCED 10-ITEM PAGINATION -->
+        <!-- LIVE PRODUCT CATALOG WITH DIRECT ACTIVE / INACTIVE SWITCH -->
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog (<span id="total-products-count">0</span>)</h3>
@@ -270,7 +252,7 @@
                             <th>Product Details & Vendor</th>
                             <th>Category</th>
                             <th>Pricing / Options</th>
-                            <th>Status</th>
+                            <th>Status (Click to Toggle)</th>
                             <th style="width:120px;">Action</th>
                         </tr>
                     </thead>
@@ -295,7 +277,6 @@
         let uploadedProductImages = [];
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
 
-        // PAGINATION SETTINGS: Exactly 10 products per page
         const PRODUCTS_PER_PAGE = 10;
         let currentProductPage = 1;
 
@@ -340,21 +321,16 @@
             } catch(e) {}
         }
 
-        async function logSystemAction(action, targetId, oldPrice = null, newPrice = null) {
+        async function logSystemAction(action, targetId) {
             try {
                 let currentUser = JSON.parse(localStorage.getItem('cz_logged_in_user')) || loggedInUser || {};
-                let logData = {
+                await db.collection("audit_logs").add({
                     actor: currentUser.name || currentUser.username || "Team Member",
                     role: currentUser.role || "staff",
                     action: action,
-                    targetId: targetId || "Item",
+                    targetId: targetId || "Product",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                if (oldPrice !== null && newPrice !== null && oldPrice !== newPrice) {
-                    logData.oldPrice = oldPrice;
-                    logData.newPrice = newPrice;
-                }
-                await db.collection("audit_logs").add(logData);
+                });
             } catch(e) {}
         }
 
@@ -440,7 +416,6 @@
             renderImagePreviews();
         }
 
-        // SIZES
         function toggleSizeSection(isEnabled) {
             const box = document.getElementById('sizes-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -473,7 +448,6 @@
             list.appendChild(div);
         }
 
-        // VARIANTS
         function toggleVariantSection(isEnabled) {
             const box = document.getElementById('variants-container');
             box.style.display = isEnabled ? 'block' : 'none';
@@ -664,7 +638,6 @@
             div.querySelector('.qty-variant-select').value = targetVariant || "all";
         }
 
-        // FETCH ALL PRODUCTS ONCE AND INITIALIZE PAGINATION
         async function fetchAdminProducts() {
             const tbody = document.getElementById('admin-product-table');
             try {
@@ -695,7 +668,20 @@
             }
         }
 
-        // RENDER PRODUCTS SLICED (10 PER PAGE)
+        // DIRECT ACTIVE/INACTIVE TOGGLE SWITCH IN TABLE
+        async function toggleProductActiveStatus(productId, currentStatus) {
+            let newStatus = !currentStatus;
+            try {
+                await db.collection("products").doc(productId).update({ isActive: newStatus });
+                let p = allProductsCache.find(x => x.id === productId);
+                if (p) p.isActive = newStatus;
+                await logSystemAction(newStatus ? "Activated Product" : "Deactivated Product", p ? p.name : productId);
+                renderPaginatedProducts();
+            } catch(e) {
+                alert("Failed to update status.");
+            }
+        }
+
         function renderPaginatedProducts() {
             const tbody = document.getElementById('admin-product-table');
             tbody.innerHTML = "";
@@ -730,6 +716,7 @@
                     : '';
 
                 let discountPrice = parseInt(p.discountPrice || p.price) || 0;
+                let isActive = p.isActive !== false;
 
                 tbody.innerHTML += `
                     <tr>
@@ -745,9 +732,9 @@
                         <td><span style="background:#f8f9fa; color:#2c3e50; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px; border:1px solid #eee;">${p.mainCategory} • ${p.subCategory || '-'}</span></td>
                         <td><strong style="color:#27ae60; font-size:14px;">₹${discountPrice}</strong><br>${sizeBadge}${variantBadge}${qtyBadge}</td>
                         <td>
-                            <span style="background:${p.isActive !== false ? '#eafaf1' : '#fdedec'}; color:${p.isActive !== false ? '#27ae60' : '#e74c3c'}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:11px;">
-                                ${p.isActive !== false ? 'Active' : 'Inactive'}
-                            </span>
+                            <button onclick="toggleProductActiveStatus('${p.id}', ${isActive})" style="background:${isActive ? '#dcfce7' : '#fee2e2'}; color:${isActive ? '#15803d' : '#b91c1c'}; border:1px solid ${isActive ? '#bbf7d0' : '#fecaca'}; padding:5px 12px; border-radius:20px; font-weight:bold; font-size:11.5px; cursor:pointer;" title="Click to Toggle Status">
+                                ${isActive ? '● Active' : '○ Inactive'}
+                            </button>
                         </td>
                         <td style="white-space:nowrap;">
                             <button onclick="editProduct('${p.id}')" style="background:#3498db; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer;" title="Edit Product"><i class="fas fa-edit"></i></button>
@@ -762,7 +749,6 @@
             renderPaginationControls(totalItems, startIndex + 1, endIndex);
         }
 
-        // RENDER 10-ITEM PAGINATION BAR CONTROLS
         function renderPaginationControls(totalItems, currentFrom = 0, currentTo = 0) {
             const infoText = document.getElementById('pagination-info-text');
             const btnsSlot = document.getElementById('pagination-buttons-slot');
@@ -777,28 +763,15 @@
             infoText.innerText = `Showing ${currentFrom}-${currentTo} of ${totalItems} products (Page ${currentProductPage} of ${totalPages})`;
 
             let html = "";
-            // Prev Button
             html += `<button class="page-btn" onclick="goToProductPage(${currentProductPage - 1})" ${currentProductPage === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
 
-            // Page Numbers with Intelligent Window
             let startPage = Math.max(1, currentProductPage - 2);
             let endPage = Math.min(totalPages, currentProductPage + 2);
-
-            if (startPage > 1) {
-                html += `<button class="page-btn" onclick="goToProductPage(1)">1</button>`;
-                if (startPage > 2) html += `<span style="padding:0 4px; color:#94a3b8;">...</span>`;
-            }
 
             for (let i = startPage; i <= endPage; i++) {
                 html += `<button class="page-btn ${i === currentProductPage ? 'active' : ''}" onclick="goToProductPage(${i})">${i}</button>`;
             }
 
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) html += `<span style="padding:0 4px; color:#94a3b8;">...</span>`;
-                html += `<button class="page-btn" onclick="goToProductPage(${totalPages})">${totalPages}</button>`;
-            }
-
-            // Next Button
             html += `<button class="page-btn" onclick="goToProductPage(${currentProductPage + 1})" ${currentProductPage === totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
 
             btnsSlot.innerHTML = html;
@@ -809,7 +782,6 @@
             if (page < 1 || page > totalPages) return;
             currentProductPage = page;
             renderPaginatedProducts();
-            document.querySelector('.admin-card:last-child').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function filterAdminProducts() {
@@ -819,7 +791,7 @@
                 (p.vendorName && p.vendorName.toLowerCase().includes(term)) || 
                 (p.subCategory && p.subCategory.toLowerCase().includes(term))
             );
-            currentProductPage = 1; // Reset to page 1 on filter
+            currentProductPage = 1;
             renderPaginatedProducts();
         }
 
@@ -858,7 +830,6 @@
             uploadedProductImages = prod.images ? [...prod.images] : [];
             renderImagePreviews();
 
-            // Load Sizes
             const toggleSizes = document.getElementById('toggle-sizes');
             const sizeList = document.getElementById('size-items-list');
             sizeList.innerHTML = "";
@@ -873,7 +844,6 @@
                 document.getElementById('sizes-container').style.display = 'none';
             }
 
-            // Load Variants
             const toggle = document.getElementById('toggle-variants');
             const list = document.getElementById('variant-items-list');
             list.innerHTML = "";
@@ -890,7 +860,6 @@
                 toggleVariantSection(false);
             }
 
-            // Load Qty Tiers with target variant preserved
             const toggleQty = document.getElementById('toggle-qty-pricing');
             const qtyList = document.getElementById('qty-tier-items-list');
             qtyList.innerHTML = "";
@@ -966,20 +935,16 @@
             if (!name) { alert("Please provide product name."); return; }
             if (actualPrice <= 0 || discountPrice <= 0) { alert("Please enter valid prices."); return; }
 
-            // Extract Sizes
             let sizes = [];
             if (isSizesEnabled) {
                 const sizeRows = document.querySelectorAll('.size-item-box');
                 sizeRows.forEach(r => {
                     let sName = r.querySelector('.size-name').value.trim();
                     let sExtra = parseInt(r.querySelector('.size-extra-price').value) || 0;
-                    if (sName) {
-                        sizes.push({ name: sName, extraPrice: sExtra });
-                    }
+                    if (sName) sizes.push({ name: sName, extraPrice: sExtra });
                 });
             }
 
-            // Extract Variants
             let variants = [];
             if (isVariantsEnabled) {
                 const rows = document.querySelectorAll('.variant-item-box');
@@ -1003,7 +968,6 @@
                 });
             }
 
-            // Extract Bulk Tiers with Target Variant
             let qtyTiers = [];
             if (isQtyPricingEnabled) {
                 const qtyRows = document.querySelectorAll('.qty-tier-item-box');
@@ -1046,11 +1010,11 @@
             try {
                 if (id) {
                     await db.collection("products").doc(id).update(prodPayload);
-                    await logSystemAction("Updated Product Details & Options", name, oldPrice, discountPrice);
+                    await logSystemAction("Updated Product Details & Options", name);
                     alert("✅ Product updated successfully!");
                 } else {
                     await db.collection("products").add(prodPayload);
-                    await logSystemAction("Created New Product", name, 0, discountPrice);
+                    await logSystemAction("Created New Product", name);
                     alert("✅ New product added successfully!");
                 }
                 resetProductForm();
@@ -1070,7 +1034,7 @@
             if (confirm(`Permanently delete "${pName}"?`)) {
                 try {
                     await db.collection("products").doc(id).delete();
-                    await logSystemAction("Deleted Product from Inventory", pName);
+                    await logSystemAction("Deleted Product", pName);
                     alert("✓ Product deleted.");
                     fetchAdminProducts();
                 } catch(e) { alert("Failed to delete."); }
