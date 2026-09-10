@@ -109,7 +109,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Customer Sales & Profit Ledger</h2>
-                <small style="color:#64748b;">Tracks real customer revenue, total vendor sourcing cost (with automatic fuzzy matching for past orders), and <strong>Actual Net Profit</strong></small>
+                <small style="color:#64748b;">Tracks real customer revenue, vendor sourcing cost, and Actual Net Profit</small>
             </div>
             <div style="display:flex; gap:8px;">
                 <button onclick="exportCustomerLedgerToExcel()" class="btn-excel">
@@ -172,12 +172,12 @@
 
                 <div class="filter-item" style="flex:1; min-width:220px;">
                     <label>Search Customer / Invoice:</label>
-                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No (INV-0099), Name, Phone, Address...">
+                    <input type="text" id="ledger-search-input" onkeyup="applyAllFilters()" placeholder="🔍 Search Invoice No, Name, Phone...">
                 </div>
 
                 <div class="filter-item" style="align-self: flex-end;">
                     <button onclick="resetFilters()" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; padding:7px 12px; border-radius:5px; font-size:12px; font-weight:700; cursor:pointer;">
-                        Reset Filters
+                        Reset
                     </button>
                 </div>
             </div>
@@ -196,7 +196,7 @@
                     </tr>
                 </thead>
                 <tbody id="customer-ledger-tbody">
-                    <tr><td colspan="8" style="text-align:center;">Loading customer sales & profit ledger...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;">Loading customer sales ledger...</td></tr>
                 </tbody>
             </table>
 
@@ -257,41 +257,38 @@
             return new Date(dateStr);
         }
 
-        // INTELLIGENT FUZZY MATCHING HELPER FOR PAST ORDERS
-        function findProductCostAndVendor(itemName, catalog) {
+        function safeFindProductCost(itemName, catalog) {
             if (!itemName) return { vendorName: "In-House", vendorCost: 0 };
-            let cleanTarget = itemName.toLowerCase().trim();
+            let cleanTarget = String(itemName).toLowerCase().trim();
 
-            // Exact match
             if (catalog[cleanTarget]) return catalog[cleanTarget];
 
-            // Substring fuzzy match
             for (let cKey in catalog) {
                 if (cleanTarget.includes(cKey) || cKey.includes(cleanTarget)) {
                     return catalog[cKey];
                 }
             }
-
             return { vendorName: "In-House", vendorCost: 0 };
         }
 
         async function fetchCustomerLedger(forceRefresh = false) {
             const tbody = document.getElementById('customer-ledger-tbody');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin</i> Synchronizing past order vendor costs...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Loading customer ledger...</td></tr>";
 
             try {
-                // 1. Fetch Product Catalog for Vendor Costs
                 const pSnap = await db.collection("products").get();
                 productsCatalogMap = {};
                 pSnap.forEach(doc => {
                     let p = doc.data();
-                    productsCatalogMap[(p.name || "").trim().toLowerCase()] = {
-                        vendorName: p.vendorName ? p.vendorName.trim() : "In-House",
-                        vendorCost: parseInt(p.vendorCost) || 0
-                    };
+                    let pName = (p.name || "").trim().toLowerCase();
+                    if (pName) {
+                        productsCatalogMap[pName] = {
+                            vendorName: p.vendorName ? p.vendorName.trim() : "In-House",
+                            vendorCost: parseInt(p.vendorCost) || 0
+                        };
+                    }
                 });
 
-                // 2. Fetch Orders & Counter
                 const snap = await db.collection("orders").get();
                 allLedgerMasterList = [];
 
@@ -302,7 +299,6 @@
                 }
 
                 let ordersToUpdateBatch = [];
-
                 let orderDocs = [];
                 snap.forEach(doc => {
                     let d = doc.data();
@@ -323,24 +319,24 @@
                         orderNeedsUpdate = true;
                     }
 
-                    // Compute Order Vendor Cost & Net Profit with robust fuzzy matching
                     let orderVendorCost = 0;
                     let orderItems = ord.items || [];
                     let updatedItems = [];
 
                     if (Array.isArray(orderItems)) {
                         orderItems.forEach(it => {
-                            let itemMeta = findProductCostAndVendor(it.name, productsCatalogMap);
+                            let itemName = it.name || it.productName || "";
+                            let itemMeta = safeFindProductCost(itemName, productsCatalogMap);
                             
-                            let unitVendorCost = (it.vendorCost !== undefined && it.vendorCost > 0)
-                                ? it.vendorCost
+                            let unitVendorCost = (it.vendorCost !== undefined && it.vendorCost !== null && it.vendorCost >= 0)
+                                ? parseInt(it.vendorCost)
                                 : itemMeta.vendorCost;
-                            
+
                             let itemVendorName = (it.vendorName && it.vendorName !== "In-House")
                                 ? it.vendorName
                                 : itemMeta.vendorName;
 
-                            orderVendorCost += (unitVendorCost * (it.quantity || 1));
+                            orderVendorCost += (unitVendorCost * (parseInt(it.quantity || it.qty) || 1));
 
                             updatedItems.push({
                                 ...it,
@@ -373,8 +369,9 @@
                         docId: ord.docId
                     });
 
-                    // Force update Firestore with corrected vendor costs so future loads are instant
-                    ordersToUpdateBatch.push({ docId: ord.docId, customerInvoiceNo: invoiceNo, items: updatedItems });
+                    if (orderNeedsUpdate) {
+                        ordersToUpdateBatch.push({ docId: ord.docId, customerInvoiceNo: invoiceNo, items: updatedItems });
+                    }
                 });
 
                 if (ordersToUpdateBatch.length > 0) {
@@ -396,8 +393,8 @@
                 applyAllFilters();
 
             } catch(e) {
-                console.error(e);
-                tbody.innerHTML = "<tr><td colspan='8' style='color:red; text-align:center;'>Error loading customer ledger.</td></tr>";
+                console.error("Customer ledger load error:", e);
+                tbody.innerHTML = `<tr><td colspan='8' style='color:red; text-align:center;'>Error loading customer ledger: ${e.message}</td></tr>`;
             }
         }
 
@@ -477,7 +474,7 @@
                 let actualIndex = startIndex + index;
                 let itemsList = Array.isArray(l.items) ? l.items.map(it => {
                     let vTag = it.vendorName && it.vendorName !== "In-House" ? `[${it.vendorName}]` : '[In-House]';
-                    return `• ${it.name} x${it.quantity || 1} <span style="font-size:10px; color:#64748b;">${vTag}</span>`;
+                    return `• ${it.name} x${it.quantity || it.qty || 1} <span style="font-size:10px; color:#64748b;">${vTag}</span>`;
                 }).join("<br>") : (l.items || '-');
 
                 let statusBadge = `<span style="background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px;">${l.status}</span>`;
@@ -587,7 +584,7 @@
             let itemsRows = "";
             if (Array.isArray(l.items) && l.items.length > 0) {
                 itemsRows = l.items.map(it => {
-                    let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
+                    let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || it.qty || 1));
                     return `
                         <tr>
                             <td style="padding:10px 12px; border-bottom:1px solid #e2e8f0; font-size:13px;">
@@ -595,7 +592,7 @@
                                 ${it.variantName ? `<br><span style="color:#2563eb; font-size:12px;">Option: ${it.variantName}</span>` : ''}
                                 ${it.userText ? `<br><span style="color:#b45309; font-size:12px; font-weight:bold;">Custom Text: "${it.userText}"</span>` : ''}
                             </td>
-                            <td style="text-align:center; padding:10px 6px; border-bottom:1px solid #e2e8f0; font-weight:600; font-size:13px;">${it.quantity || 1}</td>
+                            <td style="text-align:center; padding:10px 6px; border-bottom:1px solid #e2e8f0; font-weight:600; font-size:13px;">${it.quantity || it.qty || 1}</td>
                             <td style="text-align:right; padding:10px 8px; border-bottom:1px solid #e2e8f0; font-size:13px;">₹${unitPrice}</td>
                             <td style="text-align:right; padding:10px 12px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:13.5px;">₹${it.chargedAmount || it.price}</td>
                         </tr>
