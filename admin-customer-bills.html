@@ -109,7 +109,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Customer Sales & Profit Ledger</h2>
-                <small style="color:#64748b;">Tracks real customer revenue, total vendor sourcing cost (including past orders), and <strong>Actual Net Profit</strong></small>
+                <small style="color:#64748b;">Tracks real customer revenue, total vendor sourcing cost (with automatic fuzzy matching for past orders), and <strong>Actual Net Profit</strong></small>
             </div>
             <div style="display:flex; gap:8px;">
                 <button onclick="exportCustomerLedgerToExcel()" class="btn-excel">
@@ -121,7 +121,6 @@
             </div>
         </div>
 
-        <!-- 4 Stat Metric Cards Including Actual Net Profit -->
         <div class="stats-grid">
             <div class="summary-card" style="border-left: 4px solid #2563eb;">
                 <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Sales Volume</span>
@@ -129,7 +128,6 @@
                 <small style="color:#475569;" id="stat-total-count">0 Invoices</small>
             </div>
 
-            <!-- ACTUAL NET PROFIT CARD -->
             <div class="summary-card" style="border-left: 4px solid #10b981; background: #f0fdf4;">
                 <span style="font-size:11px; font-weight:800; color:#15803d; text-transform:uppercase;"><i class="fas fa-coins"></i> Actual Net Profit</span>
                 <h3 style="margin:6px 0 0 0; font-size:24px; color:#059669;" id="stat-net-profit">₹0</h3>
@@ -259,10 +257,27 @@
             return new Date(dateStr);
         }
 
-        // BACKFILL VENDOR COST FOR PAST ORDERS & CALCULATE PROFIT
+        // INTELLIGENT FUZZY MATCHING HELPER FOR PAST ORDERS
+        function findProductCostAndVendor(itemName, catalog) {
+            if (!itemName) return { vendorName: "In-House", vendorCost: 0 };
+            let cleanTarget = itemName.toLowerCase().trim();
+
+            // Exact match
+            if (catalog[cleanTarget]) return catalog[cleanTarget];
+
+            // Substring fuzzy match
+            for (let cKey in catalog) {
+                if (cleanTarget.includes(cKey) || cKey.includes(cleanTarget)) {
+                    return catalog[cKey];
+                }
+            }
+
+            return { vendorName: "In-House", vendorCost: 0 };
+        }
+
         async function fetchCustomerLedger(forceRefresh = false) {
             const tbody = document.getElementById('customer-ledger-tbody');
-            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Calculating live profits & backfilling past orders...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin</i> Synchronizing past order vendor costs...</td></tr>";
 
             try {
                 // 1. Fetch Product Catalog for Vendor Costs
@@ -308,22 +323,22 @@
                         orderNeedsUpdate = true;
                     }
 
-                    // Compute Order Vendor Cost & Net Profit (Backfilling old orders from catalog map)
+                    // Compute Order Vendor Cost & Net Profit with robust fuzzy matching
                     let orderVendorCost = 0;
                     let orderItems = ord.items || [];
                     let updatedItems = [];
 
                     if (Array.isArray(orderItems)) {
                         orderItems.forEach(it => {
-                            let cKey = (it.name || "").trim().toLowerCase();
-                            let pMeta = productsCatalogMap[cKey];
-
-                            // If item doesn't have vendorCost recorded, fetch from current catalog
+                            let itemMeta = findProductCostAndVendor(it.name, productsCatalogMap);
+                            
                             let unitVendorCost = (it.vendorCost !== undefined && it.vendorCost > 0)
                                 ? it.vendorCost
-                                : (pMeta && pMeta.vendorCost ? pMeta.vendorCost : 0);
+                                : itemMeta.vendorCost;
                             
-                            let itemVendorName = it.vendorName || (pMeta ? pMeta.vendorName : "In-House");
+                            let itemVendorName = (it.vendorName && it.vendorName !== "In-House")
+                                ? it.vendorName
+                                : itemMeta.vendorName;
 
                             orderVendorCost += (unitVendorCost * (it.quantity || 1));
 
@@ -358,12 +373,10 @@
                         docId: ord.docId
                     });
 
-                    if (orderNeedsUpdate) {
-                        ordersToUpdateBatch.push({ docId: ord.docId, customerInvoiceNo: invoiceNo, items: updatedItems });
-                    }
+                    // Force update Firestore with corrected vendor costs so future loads are instant
+                    ordersToUpdateBatch.push({ docId: ord.docId, customerInvoiceNo: invoiceNo, items: updatedItems });
                 });
 
-                // Auto-sync sequence numbers and backfilled costs to database in background
                 if (ordersToUpdateBatch.length > 0) {
                     ordersToUpdateBatch.forEach(async (item) => {
                         try {
@@ -429,7 +442,7 @@
             document.getElementById('stat-total-sales').innerText = `₹${totalVol.toLocaleString('en-IN')}`;
             document.getElementById('stat-total-count').innerText = `${filteredLedgerList.length} Invoices`;
             document.getElementById('stat-net-profit').innerText = `₹${totalNetProfit.toLocaleString('en-IN')}`;
-            document.getElementById('stat-profit-subtext').innerText = `Vendor Sourcing Cost: ₹${totalVendorCost.toLocaleString('en-IN')}`;
+            document.getElementById('stat-profit-subtext').innerText = `Vendor Cost Deducted: ₹${totalVendorCost.toLocaleString('en-IN')}`;
             document.getElementById('stat-delivered-sales').innerText = `₹${delVol.toLocaleString('en-IN')}`;
             document.getElementById('stat-processing-sales').innerText = `₹${procVol.toLocaleString('en-IN')}`;
 
