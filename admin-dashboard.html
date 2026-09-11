@@ -32,7 +32,6 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        /* Dashboard Billing Hub */
         .billing-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 25px; }
         .billing-hub-card {
             background: #ffffff;
@@ -61,37 +60,17 @@
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
         .notif-bell-btn {
-            position: relative;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #2c3e50;
-            font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
+            position: relative; background: #ffffff; border: 1px solid #cbd5e1; padding: 8px 12px;
+            border-radius: 8px; cursor: pointer; color: #2c3e50; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
         }
         .notif-badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #ef4444;
-            color: #fff;
-            font-size: 10.5px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 10px;
-            display: none;
-            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
+            position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff;
+            font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 10px; display: none;
         }
 
         .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; }
         .audit-scroll-container { max-height: 240px; overflow-y: auto; padding-right: 4px; }
         .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
-        .audit-item-row:last-child { border-bottom: none; }
         .audit-actor-badge { background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
@@ -128,7 +107,8 @@
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
         <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
-        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor Ledger & Bills</a>
+        <a href="admin-customer-bills.html" id="nav-customer-bills"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -155,7 +135,31 @@
             </div>
         </div>
 
-        <!-- NEW: Dedicated Billing & Accounting Hub Cards on Dashboard -->
+        <!-- CENTRAL STAMP & SIGNATURE UPLOAD HUB -->
+        <div class="admin-card" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                <div>
+                    <h3 style="margin:0; font-size:15px; color:#1e293b; border:none; padding:0;"><i class="fas fa-stamp" style="color:#3730a3;"></i> Central Company Stamp & Authorized Signature</h3>
+                    <small style="color:#64748b;">Upload your official stamp and signature once. It will automatically apply to all 5 invoices, slips & POs.</small>
+                </div>
+                <div>
+                    <button onclick="document.getElementById('central-stamp-file-input').click()" style="background:#3730a3; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Stamp & Sign Image
+                    </button>
+                    <input type="file" id="central-stamp-file-input" accept="image/*" onchange="handleCentralStampUpload(this)" style="display:none;">
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:15px; background:#fff; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+                <div style="width:120px; height:65px; border:1.5px dashed #cbd5e1; border-radius:4px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fafbfc;" id="central-stamp-preview-box">
+                    <span style="font-size:10.5px; color:#94a3b8; font-weight:600;">No Image</span>
+                </div>
+                <div style="flex:1; font-size:12px; color:#475569;" id="central-stamp-status-text">
+                    Status: <strong style="color:#d97706;">Not uploaded yet.</strong> Upload a transparent PNG or scanned stamp/signature image.
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Hub Cards -->
         <div class="billing-hub-grid">
             <a href="admin-invoice.html" class="billing-hub-card" style="border-left: 4px solid #2563eb;">
                 <div>
@@ -248,7 +252,6 @@
             </table>
         </div>
 
-        <!-- Real-Time Audit Log Feed -->
         <div class="audit-log-section">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                 <span style="font-size:12px; font-weight:800; color:#1e293b; text-transform:uppercase;">
@@ -341,13 +344,58 @@
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
                 if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
                 if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
-                document.getElementById('nav-vendor-bills').style.display = 'none';
+                if (!perms.includes('vendor_bills')) document.getElementById('nav-vendor-bills').style.display = 'none';
+                if (!perms.includes('customer_bills')) document.getElementById('nav-customer-bills').style.display = 'none';
                 document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
         }
 
+        // CENTRAL STAMP & SIGNATURE UPLOAD & LOCAL STORAGE SYNC
+        async function loadCentralStampPreview() {
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            const box = document.getElementById('central-stamp-preview-box');
+            const txt = document.getElementById('central-stamp-status-text');
+
+            if (savedStamp) {
+                box.innerHTML = `<img src="${savedStamp}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+                txt.innerHTML = `Status: <strong style="color:#16a34a;">Active & Synced</strong>. Applied automatically to all invoices and POs.`;
+            }
+        }
+
+        function handleCentralStampUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 400;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const base64Img = canvas.toDataURL('image/png', 0.85);
+                    localStorage.setItem('cz_central_stamp_sign', base64Img);
+                    loadCentralStampPreview();
+                    alert("✅ Central company stamp & signature updated successfully! It will now appear on all invoices.");
+                };
+            };
+            reader.readAsDataURL(file);
+            input.value = "";
+        }
+
         async function loadDashboardStatsFast() {
+            loadCentralStampPreview();
             const spinner = document.getElementById('refresh-spinner');
             if (spinner) spinner.classList.add('fa-spin');
 
@@ -410,7 +458,7 @@
                     document.getElementById('stat-revenue').innerText = `₹${deliveredRevenue.toLocaleString('en-IN')}`;
                 }
 
-                recentOrders.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
+                recentOrders.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || b.timestamp?.seconds || 0));
                 renderRecentOrders(recentOrders.slice(0, 8));
                 renderFastTopAuditLogs(auditSnap);
 

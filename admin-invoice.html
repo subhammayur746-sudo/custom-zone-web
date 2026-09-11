@@ -17,7 +17,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
 
-        /* CLEAN DIRECT SIDEBAR */
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
         .sidebar-header h2 { color: #e74c3c; font-size: 22px; font-weight: 800; margin: 0; }
@@ -83,7 +82,6 @@
     </div>
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebarMenu()"></div>
 
-    <!-- DIRECT LINK SIDEBAR -->
     <div class="sidebar no-print" id="admin-sidebar">
         <div class="sidebar-header">
             <h2>CZ Admin</h2>
@@ -202,20 +200,26 @@
                 </div>
             </div>
 
+            <!-- CENTRAL STAMP & SIGNATURE RENDER BLOCK -->
             <div class="auth-sign-block" style="display:none; justify-content:space-between; align-items:flex-end; margin-top:35px; padding-top:15px; border-top:1px dashed #cbd5e1;">
                 <div style="font-size:10.5px; color:#64748b;">
                     <p style="margin:0; font-weight:700; color:#0f172a;">Thank you for your order!</p>
                     <p style="margin:0;">customzone.in</p>
                 </div>
-                <div style="text-align:center;">
-                    <div style="border-bottom:1px solid #94a3b8; width:150px; height:35px; margin-bottom:4px;"></div>
-                    <span style="font-size:10.5px; font-weight:700; color:#0f172a;">Authorized Signatory</span>
+                <div style="text-align:center; min-width:180px;">
+                    <div style="height:65px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;" id="invoice-stamp-slot">
+                        <span style="font-size:9.5px; color:#94a3b8; border:1px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:4px;">[ STAMP & SIGN ]</span>
+                    </div>
+                    <div style="border-top:1.5px solid #0f172a; padding-top:3px;">
+                        <strong style="font-size:11px; color:#0f172a; display:block;">Authorized Signatory</strong>
+                        <span style="font-size:9.5px; color:#64748b;">Custom Zone</span>
+                    </div>
                 </div>
             </div>
 
             <div class="no-print" style="margin-top:25px; text-align:center; border-top:1px solid #e2e8f0; padding-top:18px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer;">
-                    <i class="fas fa-print"></i> Print / Save as PDF
+                <button onclick="printManualInvoiceWithStamp()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer;">
+                    <i class="fas fa-print"></i> Print / Save as PDF (A4)
                 </button>
                 <button onclick="sendInvoiceOnWhatsApp()" style="background:#16a34a; color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:13px; cursor:pointer;">
                     <i class="fab fa-whatsapp"></i> Send on WhatsApp
@@ -287,7 +291,7 @@
 
                 if (Array.isArray(ord.items) && ord.items.length > 0) {
                     ord.items.forEach(it => {
-                        let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
+                        let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || it.qty || 1));
                         let cleanName = `${it.name}${it.variantName ? ` (${it.variantName})` : ''}${it.userText ? ` [Custom: ${it.userText}]` : ''}`;
                         tbody.innerHTML += `
                             <tr>
@@ -297,7 +301,7 @@
                                         <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                     </div>
                                 </td>
-                                <td><input type="number" class="inv-input item-qty" value="${it.quantity || 1}" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
+                                <td><input type="number" class="inv-input item-qty" value="${it.quantity || it.qty || 1}" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
                                 <td><input type="number" class="inv-input item-price" value="${unitPrice}" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
                                 <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹${it.chargedAmount || it.price}</td>
                             </tr>
@@ -364,6 +368,15 @@
             let discount = parseFloat(document.getElementById('inv-discount').value) || 0;
             document.getElementById('inv-subtotal').innerText = `₹${subtotal}`;
             document.getElementById('inv-grand-total').innerText = `₹${Math.max(0, subtotal + delivery - discount)}`;
+        }
+
+        function printManualInvoiceWithStamp() {
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            const slot = document.getElementById('invoice-stamp-slot');
+            if (savedStamp) {
+                slot.innerHTML = `<img src="${savedStamp}" style="max-height:60px; object-fit:contain;">`;
+            }
+            window.print();
         }
 
         function sendInvoiceOnWhatsApp() {
