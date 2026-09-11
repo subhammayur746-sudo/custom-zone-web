@@ -73,9 +73,12 @@ async function loadAvailableCoupons() {
         snapshot.forEach(doc => {
             let c = doc.data();
             let codeName = c.code || doc.id;
-            let discountVal = c.discountAmount || c.discount || 0;
+            // Robust check for both admin naming conventions
+            let discountVal = c.discountAmount !== undefined ? c.discountAmount : (c.discount || 0);
+            let minOrdVal = c.minOrderAmount !== undefined ? c.minOrderAmount : (c.minOrder || 0);
+
             if(c.type !== 'referral' && c.type !== 'gift_card' && !codeName.startsWith('GIFT-') && !codeName.startsWith('REF-')) {
-                offers.push(`Use <strong>${codeName}</strong> (₹${discountVal} OFF on min ₹${c.minOrder || 0})`);
+                offers.push(`Use <strong>${codeName}</strong> (₹${discountVal} OFF on min ₹${minOrdVal})`);
             }
         });
 
@@ -354,16 +357,20 @@ async function applyCoupon() {
                 return;
             }
 
-            if(currentSubTotal < (coupon.minOrder || 0)) {
+            // Universal field mapping for minOrder & discount
+            let minOrdVal = coupon.minOrderAmount !== undefined ? coupon.minOrderAmount : (coupon.minOrder || 0);
+            let discountVal = coupon.discountAmount !== undefined ? coupon.discountAmount : (coupon.discount || 0);
+
+            if(currentSubTotal < minOrdVal) {
                 msg.style.color = "var(--danger-red)";
-                msg.innerText = `❌ Requires a minimum order of ₹${coupon.minOrder}.`;
+                msg.innerText = `❌ Requires a minimum order of ₹${minOrdVal}.`;
                 appliedDiscount = 0;
                 appliedCouponCode = "";
                 renderCart();
                 return;
             }
 
-            appliedDiscount = parseInt(coupon.discountAmount || coupon.discount) || 0;
+            appliedDiscount = parseInt(discountVal) || 0;
             appliedCouponCode = rawCode;
             msg.style.color = "var(--success-green)";
             msg.innerText = `✅ Code "${rawCode}" applied! You saved ₹${appliedDiscount}.`;
@@ -503,7 +510,7 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const upiId = "subhammayur746@oksbi";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
     const dynamicFastQR = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=5&data=${encodeURIComponent(upiPayUrl)}`;
-    const localStandeeQR = `assets/images/payment-qr.jpeg`;
+    const localStandeeQR = `assets/images/payment-jpeg.jpeg`; // Fixed extension fallback
     const rootStandeeQR = `payment-qr.jpeg`;
 
     const configuredWhatsApp = "916290407730";

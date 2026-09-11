@@ -170,6 +170,9 @@
 
                 allCouponsCache.forEach(c => {
                     let isActive = c.isActive !== false;
+                    let discountVal = c.discountAmount !== undefined ? c.discountAmount : (c.discount || 0);
+                    let minOrderVal = c.minOrderAmount !== undefined ? c.minOrderAmount : (c.minOrder || 0);
+
                     let statusBadge = isActive 
                         ? `<span style="background:#dcfce7; color:#15803d; padding:3px 10px; border-radius:20px; font-weight:700; font-size:11.5px;">Active</span>`
                         : `<span style="background:#fee2e2; color:#b91c1c; padding:3px 10px; border-radius:20px; font-weight:700; font-size:11.5px;">Inactive</span>`;
@@ -180,8 +183,8 @@
                     tbody.innerHTML += `
                         <tr>
                             <td><strong style="font-size:14px; color:#0f172a; letter-spacing:0.5px;">${c.code}</strong></td>
-                            <td><strong style="color:#16a34a; font-size:14px;">₹${c.discountAmount} OFF</strong></td>
-                            <td><span style="color:#475569; font-weight:600;">₹${c.minOrderAmount || 0}</span></td>
+                            <td><strong style="color:#16a34a; font-size:14px;">₹${discountVal} OFF</strong></td>
+                            <td><span style="color:#475569; font-weight:600;">₹${minOrderVal}</span></td>
                             <td>${statusBadge}</td>
                             <td style="white-space:nowrap;">
                                 <button onclick="toggleCouponStatus('${c.docId}', ${isActive})" style="background:${toggleBtnBg};" class="btn-act" title="Toggle Status"><i class="fas ${toggleIcon}"></i></button>
