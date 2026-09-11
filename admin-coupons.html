@@ -193,7 +193,7 @@
 
             } catch(e) {
                 console.error(e);
-                tbody.innerHTML = "<tr><td colspan='5' style='color:red; text-align:center;'>Error loading coupons.</td></tr>";
+                tbody.innerHTML = `<tr><td colspan='5' style='color:red; text-align:center;'>Error loading coupons: ${e.message}</td></tr>`;
             }
         }
 
@@ -216,22 +216,13 @@
             btn.innerText = "Saving Coupon...";
 
             try {
-                // Check if coupon code already exists
-                const existing = await db.collection("coupons").where("code", "==", code).get();
-                if (!existing.empty) {
-                    alert(`❌ Coupon code "${code}" already exists! Please use a different code.`);
-                    btn.disabled = false;
-                    btn.innerText = "Save Coupon";
-                    return;
-                }
-
-                await db.collection("coupons"].add({ // Wait, let's make sure bracket is correct
+                await db.collection("coupons").add({
                     code: code,
                     discountAmount: discountAmount,
                     minOrderAmount: minOrderAmount,
                     isActive: true,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }); // Wait, let's fix the typo in db.collection("coupons"] -> db.collection("coupons")
+                });
 
                 alert("✅ New coupon created successfully!");
                 codeInput.value = "";
