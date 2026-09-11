@@ -410,7 +410,6 @@
             }
         }
 
-        // FAST DROPDOWN FOR PAYMENT STATUS
         async function updateVendorPaymentDropdown(docId, vendorName, newPayStatus) {
             try {
                 let ordRef = db.collection("orders").doc(docId);
