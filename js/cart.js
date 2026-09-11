@@ -73,7 +73,6 @@ async function loadAvailableCoupons() {
         snapshot.forEach(doc => {
             let c = doc.data();
             let codeName = c.code || doc.id;
-            // Robust check for both admin naming conventions
             let discountVal = c.discountAmount !== undefined ? c.discountAmount : (c.discount || 0);
             let minOrdVal = c.minOrderAmount !== undefined ? c.minOrderAmount : (c.minOrder || 0);
 
@@ -91,7 +90,6 @@ async function loadAvailableCoupons() {
     } catch(e) { badge.style.display = "none"; }
 }
 
-// FULL ADDRESS AUTO-FILL (PIN, DISTRICT, POST OFFICE, AREA ALL SEPARATED)
 function autoFillCustomerAddress() {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     if (!customer) return;
@@ -114,7 +112,6 @@ function autoFillCustomerAddress() {
         addressInput.value = customer.flatAddress || customer.savedAddress || "";
     }
 
-    // Fallback parser for old format
     if ((!customer.pin || !customer.district) && customer.savedAddress) {
         try {
             let raw = customer.savedAddress;
@@ -291,6 +288,7 @@ async function lookupPincode(pin) {
     }
 }
 
+// FIXED COUPON QUERY WITH FIRESTORE WHERE CLAUSE
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
@@ -334,11 +332,23 @@ async function applyCoupon() {
             return;
         }
 
-        let doc = await db.collection("coupons").doc(rawCode).get();
-        if (doc.exists && doc.data().isActive !== false) {
-            const coupon = doc.data();
-            let usedPhones = coupon.usedByPhones || [];
+        // Query by 'code' field instead of document ID
+        let couponQuery = await db.collection("coupons").where("code", "==", rawCode).limit(1).get();
+        
+        if (!couponQuery.empty) {
+            let couponDoc = couponQuery.docs[0];
+            let coupon = couponDoc.data();
 
+            if (coupon.isActive === false) {
+                msg.style.color = "var(--danger-red)";
+                msg.innerText = "❌ This coupon is currently inactive.";
+                appliedDiscount = 0;
+                appliedCouponCode = "";
+                renderCart();
+                return;
+            }
+
+            let usedPhones = coupon.usedByPhones || [];
             if (usedPhones.includes(phoneInput)) {
                 msg.style.color = "var(--danger-red)";
                 msg.innerText = `❌ You have already used "${rawCode}" with phone ${phoneInput}!`;
@@ -357,7 +367,6 @@ async function applyCoupon() {
                 return;
             }
 
-            // Universal field mapping for minOrder & discount
             let minOrdVal = coupon.minOrderAmount !== undefined ? coupon.minOrderAmount : (coupon.minOrder || 0);
             let discountVal = coupon.discountAmount !== undefined ? coupon.discountAmount : (coupon.discount || 0);
 
@@ -394,12 +403,12 @@ async function applyCoupon() {
         renderCart();
 
     } catch(e) {
+        console.error(e);
         msg.style.color = "var(--danger-red)";
         msg.innerText = "Error verifying coupon.";
     }
 }
 
-// CAPTURE COMPLETE GREETING NOTE & OCCASION DATE
 async function submitOrderViaWhatsApp() {
     let cartItems = JSON.parse(localStorage.getItem('cz_cart')) || [];
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
@@ -422,7 +431,6 @@ async function submitOrderViaWhatsApp() {
     const postOffice = document.getElementById('cust-postoffice').value.trim();
     const address = document.getElementById('cust-address').value.trim();
 
-    // Greeting Note & Occasion Capture
     const greeting = document.getElementById('cust-greeting-note')?.value.trim() 
                   || document.getElementById('greeting-note')?.value.trim() || '';
 
@@ -476,13 +484,16 @@ async function submitOrderViaWhatsApp() {
         await db.collection("pending_payments").doc(paymentReference).set(pendingPaymentRecord);
 
         if (appliedCouponCode && appliedCouponCode !== "FIRST10" && appliedCouponCode !== "FRIST10") {
-            await db.collection("coupons").doc(appliedCouponCode).update({
-                usedByPhones: firebase.firestore.FieldValue.arrayUnion(phone),
-                isUsed: true
-            });
+            // Find coupon document ID by code to update usage
+            let cSnap = await db.collection("coupons").where("code", "==", appliedCouponCode).limit(1).get();
+            if (!cSnap.empty) {
+                await db.collection("coupons").doc(cSnap.docs[0].id).update({
+                    usedByPhones: firebase.firestore.FieldValue.arrayUnion(phone),
+                    isUsed: true
+                });
+            }
         }
 
-        // Save occasion to customer document if provided
         if (occasionDate || occasionType) {
             try {
                 await db.collection("customers").doc(phone).update({
@@ -510,7 +521,7 @@ function renderPaymentGateScreen(paymentRef, amount, customerName, phone) {
     const upiId = "subhammayur746@oksbi";
     const upiPayUrl = `upi://pay?pa=${upiId}&pn=CustomZone&am=${amount}&cu=INR&tn=Ref_${paymentRef}`;
     const dynamicFastQR = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=5&data=${encodeURIComponent(upiPayUrl)}`;
-    const localStandeeQR = `assets/images/payment-jpeg.jpeg`; // Fixed extension fallback
+    const localStandeeQR = `assets/images/payment-jpeg.jpeg`;
     const rootStandeeQR = `payment-qr.jpeg`;
 
     const configuredWhatsApp = "916290407730";
