@@ -140,7 +140,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
                 <div>
                     <h3 style="margin:0; font-size:15px; color:#1e293b; border:none; padding:0;"><i class="fas fa-stamp" style="color:#3730a3;"></i> Central Company Stamp & Authorized Signature</h3>
-                    <small style="color:#64748b;">Upload your official stamp and signature once. It will automatically apply to all 5 invoices, slips & POs.</small>
+                    <small style="color:#64748b;">Upload your official stamp and signature once. It will automatically apply to all invoices, slips & POs.</small>
                 </div>
                 <div>
                     <button onclick="document.getElementById('central-stamp-file-input').click()" style="background:#3730a3; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
@@ -328,6 +328,23 @@
             window.location.href = "admin-login.html";
         }
 
+        // GLOBAL BULLETPROOF SYSTEM ACTION LOGGER
+        async function logSystemAction(action, targetId) {
+            try {
+                let actorName = loggedInAdmin.name || loggedInAdmin.username || "Admin";
+                let actorRole = loggedInAdmin.role || "admin";
+                await db.collection("audit_logs").add({
+                    actor: actorName,
+                    role: actorRole,
+                    action: action,
+                    targetId: targetId || "General",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Audit log sync error:", e);
+            }
+        }
+
         function applyNavPermissions() {
             document.getElementById('logged-user-name').innerText = loggedInAdmin.name || loggedInAdmin.username || "Admin";
             document.getElementById('logged-user-role').innerText = isMainAdmin() ? "Super Admin" : "Staff Member";
@@ -351,7 +368,6 @@
             }
         }
 
-        // CENTRAL STAMP & SIGNATURE UPLOAD & LOCAL STORAGE SYNC
         async function loadCentralStampPreview() {
             let savedStamp = localStorage.getItem('cz_central_stamp_sign');
             const box = document.getElementById('central-stamp-preview-box');
@@ -387,7 +403,8 @@
                     const base64Img = canvas.toDataURL('image/png', 0.85);
                     localStorage.setItem('cz_central_stamp_sign', base64Img);
                     loadCentralStampPreview();
-                    alert("✅ Central company stamp & signature updated successfully! It will now appear on all invoices.");
+                    logSystemAction("Updated Central Company Stamp & Signature", "Dashboard");
+                    alert("✅ Central company stamp & signature updated successfully!");
                 };
             };
             reader.readAsDataURL(file);
@@ -404,7 +421,7 @@
                     db.collection("products").get(),
                     db.collection("orders").get(),
                     db.collection("pending_payments").where("paymentStatus", "==", "Pending").get(),
-                    db.collection("audit_logs").limit(30).get()
+                    db.collection("audit_logs").limit(50).get()
                 ]);
 
                 let activeProdCount = 0;
