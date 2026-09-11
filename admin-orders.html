@@ -37,7 +37,7 @@
         .admin-table th { background: #f8f9fa; color: #2c3e50; text-align: left; font-size: 13px; padding: 12px; border-bottom: 2px solid #eee; }
         .admin-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
         
-        .btn-act { border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 11.5px; margin-right: 3px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+        .btn-act { border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11.5px; margin-right: 4px; margin-bottom: 4px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
         .btn-invoice { background: #3498db; color: #fff; }
         .btn-receipt { background: #8e44ad; color: #fff; }
         .btn-vendor-slip { background: #3730a3; color: #fff; }
@@ -132,7 +132,7 @@
                         <th>Assigned Vendors</th>
                         <th>Items & Total</th>
                         <th>Status</th>
-                        <th style="min-width:320px;">Actions (Customer & Separate Vendor PO)</th>
+                        <th style="min-width:340px;">Actions (Customer & Separate Vendor PO)</th>
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
@@ -356,6 +356,38 @@
             return map;
         }
 
+        async function getOrAssignVendorInvoiceNumber(orderDocId, vendorName) {
+            try {
+                let ordRef = db.collection("orders").doc(orderDocId);
+                let ordDoc = await ordRef.get();
+                if (!ordDoc.exists) return "CZ-VN-0001";
+                
+                let data = ordDoc.data();
+                let vMap = data.vendorInvoiceMap || {};
+
+                if (vMap[vendorName]) return vMap[vendorName];
+
+                let counterRef = db.collection("settings").doc("vendor_invoice_counter");
+                let newInvNumber = "CZ-VN-0001";
+
+                await db.runTransaction(async (transaction) => {
+                    let doc = await transaction.get(counterRef);
+                    let currentCount = 1;
+                    if (doc.exists && doc.data().count) {
+                        currentCount = doc.data().count + 1;
+                    }
+                    transaction.set(counterRef, { count: currentCount });
+                    newInvNumber = "CZ-VN-" + String(currentCount).padStart(4, '0');
+                });
+
+                vMap[vendorName] = newInvNumber;
+                await ordRef.update({ vendorInvoiceMap: vMap });
+                return newInvNumber;
+            } catch(e) {
+                return "CZ-VN-0001";
+            }
+        }
+
         function renderOrdersTable(orders) {
             const tbody = document.getElementById('confirmed-orders-tbody');
             tbody.innerHTML = "";
@@ -382,10 +414,11 @@
                 let vendorActionsHTML = "";
                 vendorNames.forEach(vn => {
                     if (vn !== "In-House") {
+                        let safeVName = vn.replace(/"/g, '&quot;').replace(/'/g, "&#39;");
                         vendorActionsHTML += `
                             <div style="margin-top:4px;">
-                                <button class="btn-act btn-vendor-slip" onclick="viewIsolatedVendorInvoice('${ord.docId}', '${vn.replace(/'/g, "\\'")}')"><i class="fas fa-file-invoice"></i> PO: ${vn.split(' ')[0]}</button>
-                                <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendIsolatedVendorWhatsApp('${ord.docId}', '${vn.replace(/'/g, "\\'")}')"><i class="fab fa-whatsapp"></i> ${vn.split(' ')[0]}</button>
+                                <button class="btn-act btn-vendor-slip" onclick="viewIsolatedVendorInvoice('${ord.docId}', '${safeVName}')"><i class="fas fa-file-invoice"></i> PO: ${vn.split(' ')[0]}</button>
+                                <button class="btn-act btn-wa" style="background:#15803d;" onclick="sendIsolatedVendorWhatsApp('${ord.docId}', '${safeVName}')"><i class="fab fa-whatsapp"></i> ${vn.split(' ')[0]}</button>
                             </div>
                         `;
                     }
@@ -513,7 +546,6 @@
                     </div>
                 ` : ''}
 
-                <!-- STAMP & SIGNATURE RENDER BLOCK -->
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:16px;">
                     <div style="font-size:11px; color:#64748b;">
                         <p style="margin:0; font-weight:700; color:#0f172a;">Custom Zone Dispatch Desk</p>
@@ -634,7 +666,6 @@
                     <strong>VENDOR POLICY NOTE:</strong> WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.
                 </div>
 
-                <!-- STAMP & SIGNATURE RENDER BLOCK -->
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:16px;">
                     <div style="font-size:11px; color:#64748b;">
                         <p style="margin:0; font-weight:700; color:#0f172a;">Custom Zone Production Desk</p>
