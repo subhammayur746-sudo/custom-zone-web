@@ -120,7 +120,6 @@
             </div>
         </div>
 
-        <!-- Metric Summary Cards Including Total Paid & Unpaid -->
         <div class="vendor-summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
             <div class="summary-card" style="border-left: 4px solid #3730a3;">
                 <span style="font-size:11px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Purchase Volume</span>
@@ -218,7 +217,7 @@
             <span onclick="closeVendorBillModal()" class="no-print-slip" style="position:absolute; top:14px; right:18px; font-size:26px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
             <div id="vendor-invoice-modal-content"></div>
             <div class="no-print-slip" style="text-align:center; margin-top:25px; display:flex; gap:10px; justify-content:center;">
-                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13.5px;">
+                <button onclick="printVendorInvoiceWithStamp()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13.5px;">
                     <i class="fas fa-print"></i> Print / Save as PDF (A4)
                 </button>
                 <button onclick="closeVendorBillModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13.5px;">
@@ -338,7 +337,7 @@
                             if (!vItemsMap[vName]) vItemsMap[vName] = [];
                             vItemsMap[vName].push({
                                 name: it.name,
-                                qty: it.quantity || 1,
+                                qty: it.quantity || it.qty || 1,
                                 unitCost: cost,
                                 variant: it.variantName || "",
                                 userText: it.userText || "",
@@ -411,21 +410,19 @@
             }
         }
 
-        // TOGGLE VENDOR PAYMENT STATUS (PAID / UNPAID)
-        async function toggleVendorPaymentStatus(docId, vendorName, currentPayStatus) {
-            let nextStatus = currentPayStatus === "Paid" ? "Unpaid" : "Paid";
+        // FAST DROPDOWN FOR PAYMENT STATUS
+        async function updateVendorPaymentDropdown(docId, vendorName, newPayStatus) {
             try {
                 let ordRef = db.collection("orders").doc(docId);
                 let doc = await ordRef.get();
                 if (doc.exists) {
                     let data = doc.data();
                     let vPayMap = data.vendorPaymentStatusMap || {};
-                    vPayMap[vendorName] = nextStatus;
+                    vPayMap[vendorName] = newPayStatus;
                     await ordRef.update({ vendorPaymentStatusMap: vPayMap });
 
-                    // Update local cache & re-render
                     let target = allBillsMasterList.find(b => b.docId === docId && b.vendorName === vendorName);
-                    if (target) target.payStatus = nextStatus;
+                    if (target) target.payStatus = newPayStatus;
 
                     applyAllFilters();
                 }
@@ -519,9 +516,12 @@
                     • <strong>${it.name}</strong> ${it.variant ? `(${it.variant})` : ''} x${it.qty} (₹${it.unitCost * it.qty})
                 `).join("<br>");
 
-                let payBadge = b.payStatus === 'Paid'
-                    ? `<button onclick="toggleVendorPaymentStatus('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', '${b.payStatus}')" style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; padding:4px 10px; border-radius:20px; font-weight:bold; font-size:11.5px; cursor:pointer;" title="Click to change to Unpaid">✓ PAID</button>`
-                    : `<button onclick="toggleVendorPaymentStatus('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', '${b.payStatus}')" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; padding:4px 10px; border-radius:20px; font-weight:bold; font-size:11.5px; cursor:pointer;" title="Click to Mark Paid">UNPAID</button>`;
+                let payDropdown = `
+                    <select onchange="updateVendorPaymentDropdown('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', this.value)" style="padding:5px 10px; font-size:12px; font-weight:bold; border-radius:20px; border:1px solid ${b.payStatus === 'Paid' ? '#bbf7d0' : '#fecaca'}; background:${b.payStatus === 'Paid' ? '#dcfce7' : '#fee2e2'}; color:${b.payStatus === 'Paid' ? '#15803d' : '#b91c1c'}; cursor:pointer;">
+                        <option value="Unpaid" ${b.payStatus === 'Unpaid' ? 'selected' : ''}>UNPAID</option>
+                        <option value="Paid" ${b.payStatus === 'Paid' ? 'selected' : ''}>PAID</option>
+                    </select>
+                `;
 
                 let vendorTag = b.vendorName === "In-House"
                     ? `<span style="background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold;">In-House</span>`
@@ -534,7 +534,7 @@
                         <td><strong style="color:#2563eb;">#${b.orderId}</strong></td>
                         <td style="font-size:12px; max-width:280px; line-height:1.4;">${itemsListHTML}</td>
                         <td><strong style="color:#16a34a; font-size:14px;">₹${b.totalCost}</strong></td>
-                        <td>${payBadge}</td>
+                        <td>${payDropdown}</td>
                         <td style="white-space:nowrap;">
                             <button class="btn-bill-action btn-print-bill" onclick="openVendorInvoicePrintModal(${actualIndex})">
                                 <i class="fas fa-print"></i> Print (A4)
@@ -698,6 +698,7 @@
                     <strong>VENDOR POLICY NOTE:</strong> WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.
                 </div>
 
+                <!-- STAMP & SIGNATURE RENDER BLOCK -->
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:16px;">
                     <div style="font-size:11px; color:#64748b;">
                         <p style="margin:0; font-weight:700; color:#0f172a;">Custom Zone Production Desk</p>
@@ -705,11 +706,8 @@
                     </div>
 
                     <div style="text-align:center; min-width:180px;">
-                        <div id="vendor-stamp-container" style="height:70px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                            <img id="official-stamp-img" src="" alt="" style="display:none; max-height:65px; object-fit:contain;">
-                            <div id="stamp-placeholder-text" style="border:1.5px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:600; border-radius:4px;">
-                                [ OFFICIAL STAMP & SIGN ]
-                            </div>
+                        <div style="height:70px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;" id="vendor-stamp-slot">
+                            <span style="border:1.5px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:600; border-radius:4px;">[ STAMP & SIGN ]</span>
                         </div>
                         <div style="border-top:1.5px solid #1e293b; padding-top:4px;">
                             <strong style="font-size:11.5px; color:#0f172a; display:block;">Authorized Signatory</strong>
@@ -719,7 +717,22 @@
                 </div>
             `;
 
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            if (savedStamp) {
+                const slot = document.getElementById('vendor-stamp-slot');
+                if (slot) slot.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+            }
+
             document.getElementById('vendor-bill-modal').style.display = 'flex';
+        }
+
+        function printVendorInvoiceWithStamp() {
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            const slot = document.getElementById('vendor-stamp-slot');
+            if (savedStamp && slot) {
+                slot.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+            }
+            window.print();
         }
 
         function closeVendorBillModal() {

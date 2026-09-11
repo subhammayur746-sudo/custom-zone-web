@@ -213,7 +213,7 @@
             <span onclick="closeCustomerBillModal()" class="no-print-slip" style="position:absolute; top:14px; right:18px; font-size:26px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
             <div id="customer-invoice-modal-content"></div>
             <div class="no-print-slip" style="text-align:center; margin-top:25px; display:flex; gap:10px; justify-content:center;">
-                <button onclick="window.print()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13.5px;">
+                <button onclick="printCustomerInvoiceWithStamp()" style="background:#0f172a; color:#fff; border:none; padding:10px 24px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13.5px;">
                     <i class="fas fa-print"></i> Print / Save as PDF (A4)
                 </button>
                 <button onclick="closeCustomerBillModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; font-size:13.5px;">
@@ -260,9 +260,7 @@
         function safeFindProductCost(itemName, catalog) {
             if (!itemName) return { vendorName: "In-House", vendorCost: 0 };
             let cleanTarget = String(itemName).toLowerCase().trim();
-
             if (catalog[cleanTarget]) return catalog[cleanTarget];
-
             for (let cKey in catalog) {
                 if (cleanTarget.includes(cKey) || cKey.includes(cleanTarget)) {
                     return catalog[cKey];
@@ -271,13 +269,11 @@
             return { vendorName: "In-House", vendorCost: 0 };
         }
 
-        // BULLETPROOF ERROR-FREE LEDGER LOADER
         async function fetchCustomerLedger(forceRefresh = false) {
             const tbody = document.getElementById('customer-ledger-tbody');
             tbody.innerHTML = "<tr><td colspan='8' style='text-align:center;'><i class='fas fa-spinner fa-spin'></i> Loading customer sales records...</td></tr>";
 
             try {
-                // 1. Fetch Product Catalog
                 const pSnap = await db.collection("products").get();
                 productsCatalogMap = {};
                 pSnap.forEach(doc => {
@@ -291,7 +287,6 @@
                     }
                 });
 
-                // 2. Fetch Counter safely with fallback
                 let currentCounter = 99;
                 try {
                     const counterDoc = await db.collection("settings").doc("customer_invoice_counter").get();
@@ -300,7 +295,6 @@
                     }
                 } catch(e) {}
 
-                // 3. Fetch Orders
                 const snap = await db.collection("orders").get();
                 allLedgerMasterList = [];
 
@@ -312,12 +306,9 @@
                 });
                 orderDocs.sort((a, b) => (a.verifiedAt?.seconds || 0) - (b.verifiedAt?.seconds || 0));
 
-                let ordersToUpdateBatch = [];
-
                 orderDocs.forEach(ord => {
                     let orderId = ord.orderId || ord.docId;
                     let invoiceNo = ord.customerInvoiceNo;
-                    let orderNeedsUpdate = false;
                     let currentStatus = (ord.orderStatus || ord.status || "Processing").trim();
                     let isDelivered = currentStatus.toLowerCase() === "delivered";
 
@@ -325,7 +316,6 @@
                         invoiceNo = "INV-" + String(currentCounter).padStart(4, '0');
                         currentCounter++;
                         ord.customerInvoiceNo = invoiceNo;
-                        orderNeedsUpdate = true;
                     }
 
                     let orderVendorCost = 0;
@@ -382,25 +372,7 @@
                         greetingNote: ord.greetingNote || "",
                         docId: ord.docId
                     });
-
-                    if (orderNeedsUpdate) {
-                        ordersToUpdateBatch.push({ docId: ord.docId, customerInvoiceNo: invoiceNo, items: updatedItems });
-                    }
                 });
-
-                if (ordersToUpdateBatch.length > 0) {
-                    ordersToUpdateBatch.forEach(async (item) => {
-                        try {
-                            await db.collection("orders").doc(item.docId).update({ 
-                                customerInvoiceNo: item.customerInvoiceNo,
-                                items: item.items
-                            });
-                        } catch(e) {}
-                    });
-                    try {
-                        await db.collection("settings").doc("customer_invoice_counter").set({ count: currentCounter });
-                    } catch(e) {}
-                }
 
                 allLedgerMasterList.sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
                 filteredLedgerList = [...allLedgerMasterList];
@@ -686,6 +658,7 @@
                     </div>
                 </div>
 
+                <!-- STAMP & SIGNATURE RENDER BLOCK -->
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:16px;">
                     <div style="font-size:11px; color:#64748b; max-width:320px; line-height:1.5;">
                         <strong style="color:#0f172a; display:block; margin-bottom:2px;">Terms & Conditions:</strong>
@@ -694,11 +667,8 @@
                     </div>
 
                     <div style="text-align:center; min-width:180px;">
-                        <div id="customer-stamp-container" style="height:70px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                            <img id="official-cust-stamp-img" src="" alt="" style="display:none; max-height:65px; object-fit:contain;">
-                            <div id="cust-stamp-placeholder-text" style="border:1.5px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:600; border-radius:4px;">
-                                [ OFFICIAL STAMP & SIGN ]
-                            </div>
+                        <div style="height:70px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;" id="customer-stamp-slot">
+                            <span style="border:1.5px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:600; border-radius:4px;">[ STAMP & SIGN ]</span>
                         </div>
                         <div style="border-top:1.5px solid #0f172a; padding-top:4px;">
                             <strong style="font-size:11.5px; color:#0f172a; display:block;">Authorized Signatory</strong>
@@ -708,7 +678,22 @@
                 </div>
             `;
 
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            if (savedStamp) {
+                const slot = document.getElementById('customer-stamp-slot');
+                if (slot) slot.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+            }
+
             document.getElementById('customer-bill-modal').style.display = 'flex';
+        }
+
+        function printCustomerInvoiceWithStamp() {
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            const slot = document.getElementById('customer-stamp-slot');
+            if (savedStamp && slot) {
+                slot.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+            }
+            window.print();
         }
 
         function closeCustomerBillModal() {
