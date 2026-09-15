@@ -395,6 +395,7 @@
 
             orders.forEach(ord => {
                 let orderDisplayId = ord.orderId || ord.docId;
+                let currentStatus = ord.orderStatus || ord.status || 'Processing';
                 let vendorsOrderMap = getOrderVendorsMap(ord);
                 let vendorNames = Object.keys(vendorsOrderMap);
 
@@ -432,11 +433,11 @@
                         <td><div style="font-size:12px; max-width:210px; max-height:75px; overflow-y:auto;">${itemsDetail}</div><strong style="color:#27ae60; font-size:13px;">₹${ord.totalAmount || 0}</strong></td>
                         <td>
                             <select onchange="updateOrderStatusSync('${ord.docId}', this.value)" style="padding:4px; font-size:11.5px; font-weight:bold; border-radius:4px;">
-                                <option value="Processing" ${ord.orderStatus === 'Processing' ? 'selected' : ''}>Processing</option>
-                                <option value="Packed" ${ord.orderStatus === 'Packed' ? 'selected' : ''}>Packed</option>
-                                <option value="Shipped" ${ord.orderStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                                <option value="Delivered" ${ord.orderStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                                <option value="Cancelled" ${ord.orderStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>Processing</option>
+                                <option value="Packed" ${currentStatus === 'Packed' ? 'selected' : ''}>Packed</option>
+                                <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                <option value="Cancelled" ${currentStatus === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                             </select>
                         </td>
                         <td style="white-space:nowrap;">
@@ -460,13 +461,23 @@
         }
 
         async function updateOrderStatusSync(docId, newStatus) {
-            await db.collection("orders").doc(docId).update({ orderStatus: newStatus });
-            
-            // Update local cache so WhatsApp button picks up new status instantly
-            let ord = allOrdersCache.find(o => o.docId === docId);
-            if (ord) ord.orderStatus = newStatus;
+            try {
+                await db.collection("orders").doc(docId).update({ 
+                    orderStatus: newStatus,
+                    status: newStatus 
+                });
+                
+                let ord = allOrdersCache.find(o => o.docId === docId || o.orderId === docId);
+                if (ord) {
+                    ord.orderStatus = newStatus;
+                    ord.status = newStatus;
+                }
 
-            alert(`✓ Status updated to "${newStatus}"`);
+                alert(`✓ Order status permanently updated to "${newStatus}"!`);
+            } catch(e) {
+                console.error("Failed to update status:", e);
+                alert("❌ Failed to update status in database.");
+            }
         }
 
         async function deleteOrderPermanent(docId) {
@@ -477,7 +488,6 @@
             }
         }
 
-        // FULL A4 CUSTOMER SLIP WITH PRODUCT IMAGE
         function viewCustomerSlip(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -578,7 +588,6 @@
             document.getElementById('receipt-modal').style.display = 'flex';
         }
 
-        // FULL A4 VENDOR ISOLATED PO SLIP WITH STAMP
         async function viewIsolatedVendorInvoice(docId, vendorName) {
             let ord = allOrdersCache.find(o => o.docId === docId);
             if (!ord) return;
@@ -711,16 +720,15 @@
 
         function closeReceiptModal() { document.getElementById('receipt-modal').style.display = 'none'; }
 
-        // FIXED WHATSAPP CUSTOMER MESSAGE WITH LIVE FIRESTORE STATUS
         async function sendCustomerWhatsApp(docId) {
-            let ord = allOrdersCache.find(o => o.docId === docId);
+            let ord = allOrdersCache.find(o => o.docId === docId || o.orderId === docId);
             if (!ord) return;
 
             try {
                 let freshDoc = await db.collection("orders").doc(docId).get();
                 if (freshDoc.exists) {
                     let freshData = freshDoc.data();
-                    ord.orderStatus = freshData.orderStatus || ord.orderStatus || 'Processing';
+                    ord.orderStatus = freshData.orderStatus || freshData.status || ord.orderStatus || 'Processing';
                 }
             } catch(e) {}
 
@@ -728,7 +736,7 @@
             if (phoneNum.length === 10) phoneNum = "91" + phoneNum;
             if (!phoneNum) { alert("Customer phone number not found."); return; }
 
-            let currentStatus = ord.orderStatus || 'Processing';
+            let currentStatus = ord.orderStatus || ord.status || 'Processing';
             let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order *#${ord.orderId || ord.docId}* status: *${currentStatus}*.\nTotal: ₹${ord.totalAmount || 0}.\nThank you! 🎁`;
 
             window.open(`https://api.whatsapp.com/send?phone=${phoneNum}&text=${encodeURIComponent(msg)}`, '_blank');
