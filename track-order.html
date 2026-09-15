@@ -12,50 +12,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
-
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: #eef3f8; min-height: 100vh; display: flex; flex-direction: column; color: #1e293b; }
-
-        .track-page-container { max-width: 760px; margin: 35px auto; padding: 0 16px; width: 100%; flex: 1; }
-        .page-heading { text-align: center; margin-bottom: 25px; }
-        .page-heading h1 { color: #1e3a8a; font-size: 26px; font-weight: 800; }
-        .page-heading p { color: #64748b; font-size: 13px; margin-top: 4px; }
-
-        .track-card {
-            background: #ffffff;
-            padding: 28px 24px;
-            border-radius: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-            margin-bottom: 24px;
-        }
-
-        .search-row { display: flex; gap: 10px; margin-top: 15px; }
-        .search-row input {
-            flex: 1; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: #f8fafc; outline: none;
-        }
-        .search-row input:focus { border-color: #2563eb; background: #fff; }
-        
-        .btn-track-action {
-            background: #2563eb; color: #fff; border: none; padding: 12px 22px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; transition: 0.2s; white-space: nowrap;
-        }
-        .btn-track-action:hover { background: #1d4ed8; }
-
-        .order-result-box { margin-top: 20px; display: none; }
-        .status-timeline { display: flex; flex-direction: column; gap: 14px; margin-top: 15px; border-left: 2.5px solid #cbd5e1; padding-left: 18px; margin-left: 6px; }
-        .timeline-step { position: relative; font-size: 13px; color: #64748b; font-weight: 600; }
-        .timeline-step.completed { color: #16a34a; font-weight: 700; }
-        .timeline-step.active { color: #2563eb; font-weight: 800; }
-        
-        @media (max-width: 768px) {
-            .search-row { flex-direction: column; }
-            .btn-track-action { width: 100%; }
-        }
-    </style>
 </head>
 <body>
 
+    <!-- Professional Navbar -->
     <header class="navbar">
         <div class="nav-brand-section">
             <button class="mobile-menu-btn" onclick="toggleMobileDrawer()" title="Menu"><i class="fas fa-bars"></i></button>
@@ -75,7 +35,7 @@
         </nav>
         <div class="nav-actions">
             <span id="nav-user-slot-desktop">
-                <a href="profile.html" id="nav-user-link" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="profile.html" id="nav-user-link" style="color:var(--text-primary); font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> Profile</a>
             </span>
             <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
@@ -103,30 +63,25 @@
         </div>
     </div>
 
-    <div class="track-page-container">
-        
-        <div class="page-heading">
-            <h1>Track Your Order</h1>
-            <p>Enter your Order ID or registered WhatsApp phone number to check live status.</p>
-        </div>
+    <!-- Main Container -->
+    <div class="container" style="max-width: 650px;">
+        <div class="section-title">Track Your Order</div>
+        <p style="text-align:center; color:var(--text-muted); font-size:13.5px; margin-bottom:20px;">Enter your Order ID or registered WhatsApp phone number to check live status.</p>
 
-        <div class="track-card">
-            <h3 style="color:#0f172a; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-search" style="color:#2563eb;"></i> Order Lookup
+        <div style="background: var(--card-bg); padding: 22px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--card-border);">
+            <h3 style="color: var(--blue-primary); font-size: 16px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-search"></i> Order Lookup
             </h3>
             
-            <div class="search-row">
-                <input type="text" id="track-input" placeholder="Enter Order ID (e.g. CZ70111) or Phone Number">
-                <button onclick="performOrderTracking()" class="btn-track-action">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="track-input" placeholder="Enter Order ID (e.g. CZ70111) or Phone Number" style="flex: 1; padding: 11px 14px; border: 1px solid var(--card-border); border-radius: 6px; font-size: 13px; outline: none; background: var(--white);">
+                <button onclick="performOrderTracking()" style="background: var(--blue-primary); color: var(--white); border: none; padding: 11px 22px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s;">
                     <i class="fas fa-satellite-dish"></i> Track Now
                 </button>
             </div>
 
-            <div class="order-result-box" id="track-result-container">
-                <!-- Result content populated dynamically -->
-            </div>
+            <div id="track-result-container" style="margin-top: 20px; display: none;"></div>
         </div>
-
     </div>
 
     <footer class="footer">
@@ -143,16 +98,6 @@
             }
         }
 
-        function updateNavSlot() {
-            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-            const slot = document.getElementById('nav-user-slot-desktop');
-            if (customer && slot) {
-                slot.innerHTML = `<a href="profile.html" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
-            }
-            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
-            document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
-        }
-
         async function performOrderTracking() {
             let query = document.getElementById('track-input').value.trim();
             const resultBox = document.getElementById('track-result-container');
@@ -163,19 +108,17 @@
             }
 
             resultBox.style.display = "block";
-            resultBox.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching order records...</p>`;
+            resultBox.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching order records...</p>`;
 
             try {
                 let orderFound = null;
                 let cleanQuery = query.toUpperCase();
 
-                // 1. Search in orders collection by orderId or document ID
                 let orderDoc = await db.collection("orders").doc(cleanQuery).get();
                 if (orderDoc.exists) {
                     orderFound = orderDoc.data();
                     orderFound.docId = orderDoc.id;
                 } else {
-                    // Try querying by orderId field or phone
                     let qSnap = await db.collection("orders").where("orderId", "==", cleanQuery).limit(1).get();
                     if (!qSnap.empty) {
                         orderFound = qSnap.docs[0].data();
@@ -192,21 +135,20 @@
                 }
 
                 if (!orderFound) {
-                    // Check in pending_payments
                     let pDoc = await db.collection("pending_payments").doc(query).get();
                     if (pDoc.exists) {
                         let pData = pDoc.data();
                         resultBox.innerHTML = `
-                            <div style="background:#fffbeb; border:1px solid #f59e0b; border-radius:10px; padding:16px; margin-top:15px;">
-                                <strong style="color:#b45309; font-size:15px;">Payment Verification Pending</strong>
-                                <p style="font-size:13px; color:#78350f; margin-top:6px;">Reference: <strong>${pData.paymentReference}</strong></p>
-                                <p style="font-size:12.5px; color:#78350f; margin-top:2px;">Status: Payment verification in progress by admin.</p>
+                            <div style="background:#fffbeb; border:1px solid #f59e0b; border-radius:8px; padding:15px; margin-top:15px;">
+                                <strong style="color:#b45309; font-size:14px;">Payment Verification Pending</strong>
+                                <p style="font-size:12.5px; color:#78350f; margin-top:4px;">Reference: <strong>${pData.paymentReference}</strong></p>
+                                <p style="font-size:12px; color:#78350f; margin-top:2px;">Status: Payment verification in progress by admin.</p>
                             </div>
                         `;
                         return;
                     }
 
-                    resultBox.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:14px; border-radius:8px; text-align:center; font-size:13px; font-weight:600;">❌ No order found matching "${query}". Please check your Order ID or phone number.</div>`;
+                    resultBox.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:12px; border-radius:6px; text-align:center; font-size:12.5px; font-weight:600;">❌ No order found matching "${query}". Please check your Order ID or phone number.</div>`;
                     return;
                 }
 
@@ -221,36 +163,44 @@
                 };
 
                 resultBox.innerHTML = `
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:18px; margin-top:15px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+                    <div style="background:var(--blue-light); border:1px solid var(--card-border); border-radius:8px; padding:16px; margin-top:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--card-border); padding-bottom:8px; margin-bottom:10px;">
                             <div>
-                                <strong style="font-size:16px; color:#0f172a;">Order #${orderFound.orderId || orderFound.docId}</strong>
-                                <div style="font-size:12px; color:#64748b;">Customer: ${orderFound.customerName} (${orderFound.phone})</div>
+                                <strong style="font-size:15px; color:var(--text-primary);">Order #${orderFound.orderId || orderFound.docId}</strong>
+                                <div style="font-size:11.5px; color:var(--text-muted);">Customer: ${orderFound.customerName} (${orderFound.phone})</div>
                             </div>
-                            <span style="background:#2563eb; color:#fff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">${status}</span>
+                            <span style="background:var(--blue-primary); color:var(--white); padding:3px 10px; border-radius:15px; font-size:11.5px; font-weight:bold;">${status}</span>
                         </div>
                         
-                        <div style="font-size:13px; color:#334155; margin-bottom:14px;">
+                        <div style="font-size:12.5px; color:var(--text-primary); margin-bottom:12px;">
                             <strong>Items Ordered:</strong><br>${itemsList}
-                            <div style="margin-top:6px;"><strong>Total Amount:</strong> <span style="color:#16a34a; font-weight:bold;">₹${orderFound.totalAmount || 0}</span></div>
+                            <div style="margin-top:6px;"><strong>Total Amount:</strong> <span style="color:var(--success-green); font-weight:bold;">₹${orderFound.totalAmount || 0}</span></div>
                         </div>
 
-                        <div class="status-timeline">
-                            <div class="timeline-step ${stepsClasses.processing}">1. Order Confirmed & Processing</div>
-                            <div class="timeline-step ${stepsClasses.packed}">2. Quality Check & Packed</div>
-                            <div class="timeline-step ${stepsClasses.shipped}">3. Dispatched / Shipped</div>
-                            <div class="timeline-step ${stepsClasses.delivered}">4. Successfully Delivered</div>
+                        <div style="display:flex; flex-direction:column; gap:10px; border-left:2px solid var(--blue-primary); padding-left:14px; margin-left:4px; font-size:12.5px;">
+                            <div class="${stepsClasses.processing}" style="font-weight:${stepsClasses.processing === 'active' ? '800':'600'}; color:${stepsClasses.processing ? 'var(--blue-primary)':'var(--text-muted)'};">1. Order Confirmed & Processing</div>
+                            <div class="${stepsClasses.packed}" style="font-weight:${stepsClasses.packed === 'active' ? '800':'600'}; color:${stepsClasses.packed ? 'var(--blue-primary)':'var(--text-muted)'};">2. Quality Check & Packed</div>
+                            <div class="${stepsClasses.shipped}" style="font-weight:${stepsClasses.shipped === 'active' ? '800':'600'}; color:${stepsClasses.shipped ? 'var(--blue-primary)':'var(--text-muted)'};">3. Dispatched / Shipped</div>
+                            <div class="${stepsClasses.delivered}" style="font-weight:${stepsClasses.delivered === 'active' ? '800':'600'}; color:${stepsClasses.delivered ? 'var(--success-green)':'var(--text-muted)'};">4. Successfully Delivered</div>
                         </div>
                     </div>
                 `;
 
             } catch(err) {
                 console.error(err);
-                resultBox.innerHTML = `<div style="color:red; text-align:center;">Error fetching tracking details.</div>`;
+                resultBox.innerHTML = `<div style="color:var(--danger-red); text-align:center;">Error fetching tracking details.</div>`;
             }
         }
 
-        window.onload = updateNavSlot;
+        window.onload = () => {
+            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+            const slot = document.getElementById('nav-user-slot-desktop');
+            if (customer && slot) {
+                slot.innerHTML = `<a href="profile.html" style="color:var(--text-primary); font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
+            }
+            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
+            document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
+        };
     </script>
 </body>
 </html>
