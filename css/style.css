@@ -1019,3 +1019,125 @@ body {
     .cart-item-img { width: 55px; height: 55px; }
     .cart-item-title { font-size: 13px; }
 }
+/* --- ANDROID APP DOWNLOAD BANNER STYLING --- */
+.cz-app-download-section {
+    background: linear-gradient(135deg, #28469E 0%, #1a2f6b 100%);
+    padding: 35px 20px;
+    margin: 40px auto 20px auto;
+    border-radius: 16px;
+    max-width: 1150px;
+    box-shadow: 0 10px 30px rgba(40, 70, 158, 0.15);
+    color: #ffffff;
+}
+
+.cz-app-download-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.cz-app-download-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    min-width: 280px;
+}
+
+.cz-app-icon-box {
+    width: 65px;
+    height: 65px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    color: #22c55e;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cz-app-text-box h3 {
+    margin: 0 0 6px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+}
+
+.cz-app-text-box p {
+    margin: 0 0 8px 0;
+    font-size: 13.5px;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.cz-trust-badge {
+    font-size: 11.5px;
+    color: #86efac;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cz-app-action-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.cz-apk-download-btn {
+    background: #22c55e;
+    color: #ffffff;
+    padding: 13px 26px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+    white-space: nowrap;
+}
+
+.cz-apk-download-btn:hover {
+    background: #16a34a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.45);
+}
+
+.cz-apk-size {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+    .cz-app-download-section {
+        padding: 25px 15px;
+        margin: 25px 12px;
+        border-radius: 12px;
+    }
+    .cz-app-download-container {
+        flex-direction: column;
+        text-align: center;
+    }
+    .cz-app-download-content {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .cz-app-action-box {
+        width: 100%;
+    }
+    .cz-apk-download-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

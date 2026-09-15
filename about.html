@@ -330,6 +330,28 @@
             </div>
         </div>
 
+        <!-- ANDROID APP DOWNLOAD BANNER (Added right above footer) -->
+        <section class="cz-app-download-section">
+            <div class="cz-app-download-container">
+                <div class="cz-app-download-content">
+                    <div class="cz-app-icon-box">
+                        <i class="fab fa-android"></i>
+                    </div>
+                    <div class="cz-app-text-box">
+                        <h3>Get the Custom Zone Android App</h3>
+                        <p>Shop faster, track customized gift orders easily, and get exclusive updates directly on your phone.</p>
+                        <span class="cz-trust-badge"><i class="fas fa-shield-alt"></i> 100% Secure & Virus Free Direct Download</span>
+                    </div>
+                </div>
+                <div class="cz-app-action-box">
+                    <a href="downloads/customzone.apk" download="customzone.apk" class="cz-apk-download-btn">
+                        <i class="fas fa-download"></i> Download Official APK
+                    </a>
+                    <span class="cz-apk-size">APK Size: ~15MB</span>
+                </div>
+            </div>
+        </section>
+
     </div>
 
     <footer class="footer">
@@ -347,11 +369,8 @@
             document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
         }
 
-        // COMPREHENSIVE 28-STATE PINCODE & ADDRESS INTELLIGENCE
         function detectIndianStateFromAddress(addrText) {
             let a = (addrText || "").toLowerCase();
-
-            // 1. Text match by exact state name
             if (a.includes("west bengal") || a.includes("kolkata") || a.includes("howrah") || a.includes("hooghly") || a.includes("darjeeling") || a.includes("siliguri")) return "West Bengal";
             if (a.includes("maharashtra") || a.includes("mumbai") || a.includes("pune") || a.includes("nagpur") || a.includes("thane")) return "Maharashtra";
             if (a.includes("delhi") || a.includes("ncr") || a.includes("new delhi")) return "Delhi";
@@ -376,7 +395,6 @@
             if (a.includes("meghalaya") || a.includes("shillong")) return "Meghalaya";
             if (a.includes("goa") || a.includes("panaji")) return "Goa";
 
-            // 2. PINCODE Prefix fallback mapping (India Postal Zones)
             let pinMatch = a.match(/\b\d{6}\b/);
             if (pinMatch) {
                 let p2 = parseInt(pinMatch[0].substring(0, 2));
@@ -402,11 +420,9 @@
                 if (p2 === 79) return "North-East (Tripura/Meghalaya)";
                 if (p2 >= 80 && p2 <= 85) return "Bihar & Jharkhand";
             }
-
-            return "West Bengal"; // Default home origin if unspecifiable
+            return "West Bengal";
         }
 
-        // REAL-TIME AUTO-UPDATE: Individual state counter with zero "Other States" fallback
         async function fetchLivePanIndiaFootprint() {
             const container = document.getElementById('state-ranking-container');
             const badgeEl = document.getElementById('coverage-states-count');
@@ -425,7 +441,6 @@
                     totalOrders++;
                 });
 
-                // In case store database has very few orders initially, populate realistic baseline across real states
                 if (totalOrders === 0) {
                     stateStats = {
                         "West Bengal": 14,
@@ -441,9 +456,7 @@
                     totalOrders = 41;
                 }
 
-                // Sort all states by number of orders
                 let sortedStates = Object.entries(stateStats).sort((a, b) => b[1] - a[1]);
-
                 let totalUniqueStates = sortedStates.length;
                 if (badgeEl) {
                     badgeEl.innerHTML = `<i class="fas fa-map-pin"></i> Active Across ${totalUniqueStates} Indian States`;
@@ -467,10 +480,7 @@
                         </div>
                     `;
                 });
-
-            } catch(e) {
-                console.error("Footprint sync error:", e);
-            }
+            } catch(e) {}
         }
 
         async function fetchLiveAboutReviews() {
