@@ -461,6 +461,11 @@
 
         async function updateOrderStatusSync(docId, newStatus) {
             await db.collection("orders").doc(docId).update({ orderStatus: newStatus });
+            
+            // Update local cache so WhatsApp button picks up new status instantly
+            let ord = allOrdersCache.find(o => o.docId === docId);
+            if (ord) ord.orderStatus = newStatus;
+
             alert(`✓ Status updated to "${newStatus}"`);
         }
 
@@ -620,7 +625,7 @@
                         <div>
                             <h1 style="margin:0; font-size:24px; font-weight:800; color:#0f172a;">CUSTOM ZONE</h1>
                             <p style="margin:2px 0 0 0; font-size:12.5px; color:#475569; font-weight:600;">You Imagine. We Customize.</p>
-                            <p style="margin:2px 0 0 0; font-size:11.5px; color:#64748b;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
+                            <p style="margin:2px 0 0 0; font-size:11.5px; color:#64748b;">Liluah Chakpara, Howrah | Support: +91 9038604483</p>
                         </div>
                     </div>
                     <div style="text-align:right;">
@@ -706,13 +711,27 @@
 
         function closeReceiptModal() { document.getElementById('receipt-modal').style.display = 'none'; }
 
-        function sendCustomerWhatsApp(docId) {
+        // FIXED WHATSAPP CUSTOMER MESSAGE WITH LIVE FIRESTORE STATUS
+        async function sendCustomerWhatsApp(docId) {
             let ord = allOrdersCache.find(o => o.docId === docId);
-            if (!ord || !ord.phone) return;
-            let p = ord.phone.replace(/[^0-9]/g, '');
-            if (p.length === 10) p = "91" + p;
-            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order *#${ord.orderId || ord.docId}* status: *${ord.orderStatus || 'Processing'}*.\nTotal: ₹${ord.totalAmount}.\nThank you! 🎁`;
-            window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
+            if (!ord) return;
+
+            try {
+                let freshDoc = await db.collection("orders").doc(docId).get();
+                if (freshDoc.exists) {
+                    let freshData = freshDoc.data();
+                    ord.orderStatus = freshData.orderStatus || ord.orderStatus || 'Processing';
+                }
+            } catch(e) {}
+
+            let phoneNum = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
+            if (phoneNum.length === 10) phoneNum = "91" + phoneNum;
+            if (!phoneNum) { alert("Customer phone number not found."); return; }
+
+            let currentStatus = ord.orderStatus || 'Processing';
+            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order *#${ord.orderId || ord.docId}* status: *${currentStatus}*.\nTotal: ₹${ord.totalAmount || 0}.\nThank you! 🎁`;
+
+            window.open(`https://api.whatsapp.com/send?phone=${phoneNum}&text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         async function sendIsolatedVendorWhatsApp(docId, vendorName) {
