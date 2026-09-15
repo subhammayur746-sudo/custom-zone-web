@@ -12,13 +12,53 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #eef3f8; min-height: 100vh; display: flex; flex-direction: column; color: #1e293b; }
+
+        .track-page-container { max-width: 760px; margin: 35px auto; padding: 0 16px; width: 100%; flex: 1; }
+        .page-heading { text-align: center; margin-bottom: 25px; }
+        .page-heading h1 { color: #1e3a8a; font-size: 26px; font-weight: 800; }
+        .page-heading p { color: #64748b; font-size: 13px; margin-top: 4px; }
+
+        .track-card {
+            background: #ffffff;
+            padding: 28px 24px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+
+        .search-row { display: flex; gap: 10px; margin-top: 15px; }
+        .search-row input {
+            flex: 1; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: #f8fafc; outline: none;
+        }
+        .search-row input:focus { border-color: #2563eb; background: #fff; }
+        
+        .btn-track-action {
+            background: #2563eb; color: #fff; border: none; padding: 12px 22px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer; transition: 0.2s; white-space: nowrap;
+        }
+        .btn-track-action:hover { background: #1d4ed8; }
+
+        .order-result-box { margin-top: 20px; display: none; }
+        .status-timeline { display: flex; flex-direction: column; gap: 14px; margin-top: 15px; border-left: 2.5px solid #cbd5e1; padding-left: 18px; margin-left: 6px; }
+        .timeline-step { position: relative; font-size: 13px; color: #64748b; font-weight: 600; }
+        .timeline-step.completed { color: #16a34a; font-weight: 700; }
+        .timeline-step.active { color: #2563eb; font-weight: 800; }
+        
+        @media (max-width: 768px) {
+            .search-row { flex-direction: column; }
+            .btn-track-action { width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- Unified Navbar -->
     <header class="navbar">
         <div class="nav-brand-section">
-            <button class="mobile-menu-btn" onclick="openMobileDrawer()"><i class="fas fa-bars"></i></button>
+            <button class="mobile-menu-btn" onclick="toggleMobileDrawer()" title="Menu"><i class="fas fa-bars"></i></button>
             <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
                 <div class="brand-text-container">
@@ -27,17 +67,15 @@
                 </div>
             </a>
         </div>
-
         <nav class="nav-menu-links">
             <a href="index.html">Home</a>
             <a href="about.html">About Us</a>
             <a href="contact.html">Contact Us</a>
             <a href="track-order.html" class="active">Track Order</a>
         </nav>
-
         <div class="nav-actions">
             <span id="nav-user-slot-desktop">
-                <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-nav-login"><i class="fas fa-user"></i> Login</a>
+                <a href="profile.html" id="nav-user-link" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> Profile</a>
             </span>
             <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
@@ -46,121 +84,173 @@
         </div>
     </header>
 
-    <main class="container">
-        <h2 class="section-title">Track Your Live Order Status</h2>
-        
-        <div style="max-width: 550px; margin: 0 auto; background: var(--white); padding: 30px 25px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--card-border);">
-            <div style="text-align:center; margin-bottom:20px;">
-                <i class="fas fa-shield-alt" style="font-size: 38px; color: var(--blue-primary); margin-bottom: 8px;"></i>
-                <p style="color: var(--text-muted); font-size: 13px; margin:0;">Enter your Registered Phone / Customer ID and Final Order ID to track.</p>
+    <!-- Mobile Side Drawer -->
+    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="toggleMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                <strong style="color:var(--blue-primary); font-size:16px;">Custom Zone</strong>
             </div>
-            
-            <div style="margin-bottom:12px;">
-                <label style="font-size:12px; font-weight:bold; color:var(--text-primary); display:block; margin-bottom:4px;">Phone Number OR Customer ID *</label>
-                <input type="text" id="track-identifier" placeholder="e.g. 9876543210 or CZ-CUST-10245" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; box-sizing:border-box;">
-            </div>
-
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; font-weight:bold; color:var(--text-primary); display:block; margin-bottom:4px;">Final Confirmed Order ID *</label>
-                <input type="text" id="track-order-id" placeholder="e.g. CZ10245" style="width:100%; padding:10px; border:1px solid var(--card-border); border-radius:6px; text-transform:uppercase; font-weight:bold; box-sizing:border-box;">
-            </div>
-
-            <button onclick="trackOrderSecure()" id="btn-track" style="background: var(--blue-primary); color: var(--white); border: none; padding: 12px; width:100%; border-radius: 6px; font-weight: bold; cursor: pointer;">
-                Verify & Track Order
-            </button>
-
-            <!-- Result Box -->
-            <div id="track-result-box" style="display: none; text-align: left; background: var(--blue-light); border: 1px solid var(--card-border); border-radius: 8px; padding: 18px; margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px; margin-bottom: 10px;">
-                    <strong id="res-order-id" style="color: var(--blue-primary); font-size: 15px;"></strong>
-                    <span id="res-status-badge" style="padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white;"></span>
-                </div>
-                <p style="margin: 4px 0; font-size: 13px; color: var(--text-muted);">Customer: <strong id="res-name" style="color:var(--text-primary);">-</strong></p>
-                <p style="margin: 4px 0; font-size: 13px; color: var(--text-muted);">Payment: <strong style="color:var(--success-green);">PAID ✓</strong></p>
-                <div style="margin-top: 10px; padding: 10px; background: var(--white); border-radius: 6px; font-size: 12px; color: var(--text-primary); border: 1px solid var(--card-border);" id="res-items"></div>
-            </div>
-            
-            <p id="track-error-msg" style="color: var(--danger-red); font-size: 13px; font-weight: bold; margin-top: 15px; display: none; text-align:center;"></p>
+            <button onclick="toggleMobileDrawer()" style="background:none; border:none; font-size:22px; color:var(--text-muted); cursor:pointer;">&times;</button>
         </div>
-    </main>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html"><i class="fas fa-headset"></i> Contact Us</a>
+            <a href="track-order.html" class="active"><i class="fas fa-truck"></i> Track Order</a>
+            <a href="profile.html"><i class="fas fa-user-circle"></i> My Profile</a>
+        </div>
+    </div>
+
+    <div class="track-page-container">
+        
+        <div class="page-heading">
+            <h1>Track Your Order</h1>
+            <p>Enter your Order ID or registered WhatsApp phone number to check live status.</p>
+        </div>
+
+        <div class="track-card">
+            <h3 style="color:#0f172a; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-search" style="color:#2563eb;"></i> Order Lookup
+            </h3>
+            
+            <div class="search-row">
+                <input type="text" id="track-input" placeholder="Enter Order ID (e.g. CZ70111) or Phone Number">
+                <button onclick="performOrderTracking()" class="btn-track-action">
+                    <i class="fas fa-satellite-dish"></i> Track Now
+                </button>
+            </div>
+
+            <div class="order-result-box" id="track-result-container">
+                <!-- Result content populated dynamically -->
+            </div>
+        </div>
+
+    </div>
 
     <footer class="footer">
-        <p>&copy; 2026 Custom Zone. All Rights Reserved.</p>
-        <p>Located at Liluah Chakpara, Howrah | <a href="contact.html">Contact Us</a></p>
+        <p>&copy; 2026 Custom Zone. All Rights Reserved. | <a href="contact.html">Contact Us</a></p>
     </footer>
 
-    <script src="js/main.js"></script>
     <script>
-        async function trackOrderSecure() {
-            const identifier = document.getElementById('track-identifier').value.trim();
-            const orderId = document.getElementById('track-order-id').value.trim().toUpperCase();
-            const resBox = document.getElementById('track-result-box');
-            const errMsg = document.getElementById('track-error-msg');
-            const btn = document.getElementById('btn-track');
-
-            if (!identifier || !orderId) {
-                alert("Please enter both your Phone/Customer ID and Order ID.");
-                return;
-            }
-
-            // Rule: Payment reference is NOT final Order ID
-            if (orderId.startsWith("CZ-PAY-")) {
-                errMsg.style.display = "block";
-                errMsg.innerText = "⚠️ This is a temporary payment reference. Final Order ID is generated only after payment is verified by admin.";
-                resBox.style.display = "none";
-                return;
-            }
-
-            resBox.style.display = "none";
-            errMsg.style.display = "none";
-            btn.disabled = true;
-            btn.innerText = "Verifying...";
-
-            try {
-                const doc = await db.collection("orders").doc(orderId).get();
-                if (!doc.exists) {
-                    errMsg.style.display = "block";
-                    errMsg.innerText = "❌ Order not found or verification details do not match.";
-                    return;
-                }
-
-                const ord = doc.data();
-
-                // Ownership validation: Matches Customer ID or Phone
-                let cleanPhone = identifier.replace(/[^0-9]/g, '');
-                let matchesCustomer = (ord.customerId === identifier) || (cleanPhone && ord.phone === cleanPhone);
-
-                if (!matchesCustomer) {
-                    errMsg.style.display = "block";
-                    errMsg.innerText = "❌ Order not found or verification details do not match.";
-                    return;
-                }
-
-                document.getElementById('res-order-id').innerText = "#" + ord.orderId;
-                document.getElementById('res-name').innerText = ord.customerName || "Customer";
-                
-                let badge = document.getElementById('res-status-badge');
-                badge.innerText = ord.orderStatus || "Processing";
-                badge.style.background = ord.orderStatus === "Delivered" ? "var(--success-green)" : "var(--blue-primary)";
-
-                let itemsHTML = "";
-                if (Array.isArray(ord.items)) {
-                    itemsHTML = ord.items.map(it => `${it.name} (Qty: ${it.quantity || 1})`).join("<br>");
-                } else {
-                    itemsHTML = ord.items || "-";
-                }
-                document.getElementById('res-items').innerHTML = itemsHTML;
-
-                resBox.style.display = "block";
-
-            } catch (e) {
-                errMsg.style.display = "block";
-                errMsg.innerText = "Error connecting to verification server.";
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Verify & Track Order";
+        function toggleMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            if (drawer && overlay) {
+                drawer.classList.toggle('open');
+                overlay.style.display = drawer.classList.contains('open') ? 'block' : 'none';
             }
         }
+
+        function updateNavSlot() {
+            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+            const slot = document.getElementById('nav-user-slot-desktop');
+            if (customer && slot) {
+                slot.innerHTML = `<a href="profile.html" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
+            }
+            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
+            document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
+        }
+
+        async function performOrderTracking() {
+            let query = document.getElementById('track-input').value.trim();
+            const resultBox = document.getElementById('track-result-container');
+
+            if (!query) {
+                alert("Please enter an Order ID or phone number.");
+                return;
+            }
+
+            resultBox.style.display = "block";
+            resultBox.innerHTML = `<p style="text-align:center; color:#64748b; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching order records...</p>`;
+
+            try {
+                let orderFound = null;
+                let cleanQuery = query.toUpperCase();
+
+                // 1. Search in orders collection by orderId or document ID
+                let orderDoc = await db.collection("orders").doc(cleanQuery).get();
+                if (orderDoc.exists) {
+                    orderFound = orderDoc.data();
+                    orderFound.docId = orderDoc.id;
+                } else {
+                    // Try querying by orderId field or phone
+                    let qSnap = await db.collection("orders").where("orderId", "==", cleanQuery).limit(1).get();
+                    if (!qSnap.empty) {
+                        orderFound = qSnap.docs[0].data();
+                        orderFound.docId = qSnap.docs[0].id;
+                    } else {
+                        let phoneSnap = await db.collection("orders").where("phone", "==", query).get();
+                        if (!phoneSnap.empty) {
+                            let docs = [];
+                            phoneSnap.forEach(d => { let x = d.data(); x.docId = d.id; docs.push(x); });
+                            docs.sort((a, b) => (b.verifiedAt?.seconds || 0) - (a.verifiedAt?.seconds || 0));
+                            orderFound = docs[0];
+                        }
+                    }
+                }
+
+                if (!orderFound) {
+                    // Check in pending_payments
+                    let pDoc = await db.collection("pending_payments").doc(query).get();
+                    if (pDoc.exists) {
+                        let pData = pDoc.data();
+                        resultBox.innerHTML = `
+                            <div style="background:#fffbeb; border:1px solid #f59e0b; border-radius:10px; padding:16px; margin-top:15px;">
+                                <strong style="color:#b45309; font-size:15px;">Payment Verification Pending</strong>
+                                <p style="font-size:13px; color:#78350f; margin-top:6px;">Reference: <strong>${pData.paymentReference}</strong></p>
+                                <p style="font-size:12.5px; color:#78350f; margin-top:2px;">Status: Payment verification in progress by admin.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    resultBox.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:14px; border-radius:8px; text-align:center; font-size:13px; font-weight:600;">❌ No order found matching "${query}". Please check your Order ID or phone number.</div>`;
+                    return;
+                }
+
+                let status = orderFound.orderStatus || orderFound.status || "Processing";
+                let itemsList = Array.isArray(orderFound.items) ? orderFound.items.map(it => `• ${it.name} (x${it.quantity || it.qty || 1})`).join("<br>") : (orderFound.items || '-');
+
+                let stepsClasses = {
+                    processing: status === 'Processing' ? 'active' : 'completed',
+                    packed: status === 'Packed' ? 'active' : (['Shipped', 'Delivered'].includes(status) ? 'completed' : ''),
+                    shipped: status === 'Shipped' ? 'active' : (status === 'Delivered' ? 'completed' : ''),
+                    delivered: status === 'Delivered' ? 'active' : ''
+                };
+
+                resultBox.innerHTML = `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:18px; margin-top:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+                            <div>
+                                <strong style="font-size:16px; color:#0f172a;">Order #${orderFound.orderId || orderFound.docId}</strong>
+                                <div style="font-size:12px; color:#64748b;">Customer: ${orderFound.customerName} (${orderFound.phone})</div>
+                            </div>
+                            <span style="background:#2563eb; color:#fff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">${status}</span>
+                        </div>
+                        
+                        <div style="font-size:13px; color:#334155; margin-bottom:14px;">
+                            <strong>Items Ordered:</strong><br>${itemsList}
+                            <div style="margin-top:6px;"><strong>Total Amount:</strong> <span style="color:#16a34a; font-weight:bold;">₹${orderFound.totalAmount || 0}</span></div>
+                        </div>
+
+                        <div class="status-timeline">
+                            <div class="timeline-step ${stepsClasses.processing}">1. Order Confirmed & Processing</div>
+                            <div class="timeline-step ${stepsClasses.packed}">2. Quality Check & Packed</div>
+                            <div class="timeline-step ${stepsClasses.shipped}">3. Dispatched / Shipped</div>
+                            <div class="timeline-step ${stepsClasses.delivered}">4. Successfully Delivered</div>
+                        </div>
+                    </div>
+                `;
+
+            } catch(err) {
+                console.error(err);
+                resultBox.innerHTML = `<div style="color:red; text-align:center;">Error fetching tracking details.</div>`;
+            }
+        }
+
+        window.onload = updateNavSlot;
     </script>
 </body>
 </html>
