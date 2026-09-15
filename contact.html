@@ -24,7 +24,6 @@
 
         .contact-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
 
-        /* Left Info Card */
         .info-card {
             background: #ffffff;
             padding: 28px 24px;
@@ -40,124 +39,53 @@
         .info-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
         .info-item { display: flex; align-items: flex-start; gap: 12px; font-size: 13.5px; color: #334155; }
         .info-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 8px;
-            background: #eff6ff;
-            color: #2563eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
+            width: 38px; height: 38px; border-radius: 8px; background: #eff6ff; color: #2563eb;
+            display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
         }
         .info-item a { color: #1e293b; text-decoration: none; font-weight: 700; }
         .info-item a:hover { color: #2563eb; }
 
-        /* Live Workshop Status Pill */
         .status-indicator-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 8px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #166534;
+            background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 12px; font-weight: 700; color: #166534;
         }
         .pulse-dot { width: 9px; height: 9px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 3px rgba(34,197,94,0.3); }
 
         .btn-whatsapp-direct {
-            background: #16a34a;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: 0.2s;
+            background: #16a34a; color: #ffffff; display: flex; align-items: center; justify-content: center;
+            gap: 8px; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; text-decoration: none; transition: 0.2s;
         }
         .btn-whatsapp-direct:hover { background: #15803d; }
 
         .btn-map-directions {
-            background: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            margin-top: 10px;
+            background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; display: flex; align-items: center;
+            justify-content: center; gap: 8px; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; margin-top: 10px;
         }
         .btn-map-directions:hover { background: #dbeafe; }
 
-        /* Right Inquiry Form Card */
         .form-card {
-            background: #ffffff;
-            padding: 28px 24px;
-            border-radius: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
+            background: #ffffff; padding: 28px 24px; border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0;
         }
         .form-card h3 { color: #0f172a; font-size: 18px; font-weight: 800; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
-        /* Topic Pills */
         .topic-selector-label { font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 8px; display: block; }
         .topic-pills-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
         .topic-pill-btn {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 11.5px;
-            font-weight: 700;
-            color: #475569;
-            cursor: pointer;
-            transition: 0.2s;
+            background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 20px;
+            font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer; transition: 0.2s;
         }
         .topic-pill-btn.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
 
         .form-field-group { margin-bottom: 14px; }
         .form-field-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
         .form-field-group input, .form-field-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 13px;
-            background: #f8fafc;
-            color: #0f172a;
+            width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #f8fafc; color: #0f172a;
         }
-        .form-field-group input:focus, .form-field-group textarea:focus {
-            outline: none;
-            border-color: #2563eb;
-            background: #ffffff;
-        }
+        .form-field-group input:focus, .form-field-group textarea:focus { outline: none; border-color: #2563eb; background: #ffffff; }
 
         .btn-send-inquiry {
-            width: 100%;
-            background: #2563eb;
-            color: #ffffff;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 6px;
+            width: 100%; background: #2563eb; color: #ffffff; border: none; padding: 12px; border-radius: 6px;
+            font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 6px;
         }
         .btn-send-inquiry:hover { background: #1d4ed8; }
 
@@ -169,9 +97,9 @@
 </head>
 <body>
 
-    <!-- Professional Navbar -->
     <header class="navbar">
         <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="toggleMobileDrawer()" title="Menu"><i class="fas fa-bars"></i></button>
             <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
                 <div class="brand-text-container">
@@ -197,6 +125,25 @@
         </div>
     </header>
 
+    <!-- Mobile Side Drawer -->
+    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="toggleMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                <strong style="color:var(--blue-primary); font-size:16px;">Custom Zone</strong>
+            </div>
+            <button onclick="toggleMobileDrawer()" style="background:none; border:none; font-size:22px; color:var(--text-muted); cursor:pointer;">&times;</button>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html" class="active"><i class="fas fa-headset"></i> Contact Us</a>
+            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
+            <a href="profile.html"><i class="fas fa-user-circle"></i> My Profile</a>
+        </div>
+    </div>
+
     <div class="contact-container">
         
         <div class="page-heading">
@@ -206,12 +153,10 @@
 
         <div class="contact-grid">
             
-            <!-- Left Info Card with Live Status & Location Link -->
             <div class="info-card">
                 <div>
                     <h3><i class="fas fa-headset" style="color:#2563eb;"></i> Contact Information</h3>
 
-                    <!-- Live Workshop Operational Pill -->
                     <div class="status-indicator-box">
                         <span class="pulse-dot"></span>
                         <span>Workshop Open: Mon – Sat (10:00 AM – 9:00 PM)</span>
@@ -253,7 +198,7 @@
                 </div>
 
                 <div>
-                    <a href="https://api.whatsapp.com/send?phone=916290407730&text=Hello%20Custom%20Zone,%20I%20have%20an%20inquiry%20regarding%20customized%20gifts." target="_blank" class="btn-whatsapp-direct">
+                    <a href="https://api.whatsapp.com/send?phone=916290407730&text=Hello%20Custom%20Zone,%20I%20have%20an%20inquiry." target="_blank" class="btn-whatsapp-direct">
                         <i class="fab fa-whatsapp" style="font-size:18px;"></i> Instant Chat on WhatsApp
                     </a>
                     <a href="https://maps.google.com/?q=Liluah+Chakpara+Howrah+West+Bengal" target="_blank" class="btn-map-directions">
@@ -262,11 +207,9 @@
                 </div>
             </div>
 
-            <!-- Right Advanced Interactive Inquiry Form -->
             <div class="form-card">
                 <h3><i class="fas fa-envelope" style="color:#2563eb;"></i> Send an Inquiry</h3>
 
-                <!-- Purpose Selector Pills -->
                 <span class="topic-selector-label">What is your inquiry regarding?</span>
                 <div class="topic-pills-row">
                     <button type="button" class="topic-pill-btn active" onclick="selectInquiryTopic('Customized Gift Inquiry', this)">Custom Gift</button>
@@ -288,7 +231,7 @@
 
                     <div class="form-field-group">
                         <label id="lbl-msg-desc">Message / Details *</label>
-                        <textarea id="inq-message" rows="4" placeholder="Tell us about your requirements or product catalog..." required></textarea>
+                        <textarea id="inq-message" rows="4" placeholder="Tell us about your requirements..." required></textarea>
                     </div>
 
                     <button type="submit" class="btn-send-inquiry" id="btn-submit-inquiry">
@@ -308,6 +251,15 @@
     <script>
         let currentInquiryTopic = "Customized Gift Inquiry";
 
+        function toggleMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            if (drawer && overlay) {
+                drawer.classList.toggle('open');
+                overlay.style.display = drawer.classList.contains('open') ? 'block' : 'none';
+            }
+        }
+
         function selectInquiryTopic(topic, btnEl) {
             currentInquiryTopic = topic;
             document.querySelectorAll('.topic-pill-btn').forEach(b => b.classList.remove('active'));
@@ -320,24 +272,23 @@
             if (topic === 'Vendor/Supplier Onboarding') {
                 nameLabel.innerText = "Business Name / Supplier Full Name *";
                 msgLabel.innerText = "Products You Supply / Sourcing Details *";
-                msgInput.placeholder = "e.g., We manufacture acrylic Spotify frames, resin art items, wooden crafts. We want to supply our products to Custom Zone...";
+                msgInput.placeholder = "e.g., We manufacture acrylic Spotify frames, resin art items...";
             } else if (topic === 'Bulk Corporate Order') {
                 nameLabel.innerText = "Company / Contact Person Name *";
                 msgLabel.innerText = "Order Quantity & Expected Delivery Date *";
-                msgInput.placeholder = "e.g., Looking for 50 pieces customized mugs/shirts for event on 25th...";
+                msgInput.placeholder = "e.g., Looking for 50 pieces customized mugs/shirts...";
             } else {
                 nameLabel.innerText = "Your Full Name *";
                 msgLabel.innerText = "Customization Requirements *";
-                msgInput.placeholder = "Tell us about the item, name to engrave, or date you need it by...";
+                msgInput.placeholder = "Tell us about the item, name to engrave...";
             }
         }
 
-        function updateNavSlot() {
+        window.onload = () => {
             let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
             const slot = document.getElementById('nav-user-slot-desktop');
             if (customer && slot) {
                 slot.innerHTML = `<a href="profile.html" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
-                
                 const nameInput = document.getElementById('inq-name');
                 const phoneInput = document.getElementById('inq-phone');
                 if (nameInput && customer.name) nameInput.value = customer.name;
@@ -345,7 +296,7 @@
             }
             let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
             document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
-        }
+        };
 
         async function handleInquirySubmit(e) {
             e.preventDefault();
@@ -372,31 +323,19 @@
                     date: new Date().toLocaleDateString('en-GB')
                 });
 
-                // Context-Aware Smart WhatsApp Message Dispatcher
-                let waText = "";
-                if (currentInquiryTopic === 'Vendor/Supplier Onboarding') {
-                    waText = `*NEW VENDOR/SUPPLIER PARTNERSHIP PROPOSAL*\n\n*Business / Supplier:* ${name}\n*Contact WhatsApp:* ${phone}\n\n*Product Supply Details:*\n${msg}\n\n👉 *Note:* We would like to share our wholesale product catalog and pricing sheet with Custom Zone. Please let us know how to proceed.`;
-                } else if (currentInquiryTopic === 'Bulk Corporate Order') {
-                    waText = `*BULK / CORPORATE ORDER INQUIRY*\n\n*Organization/Name:* ${name}\n*Phone:* ${phone}\n\n*Requirement:*\n${msg}\n\nPlease share discounted quotation for bulk volume.`;
-                } else {
-                    waText = `Hello Custom Zone,\n\n*Inquiry:* ${currentInquiryTopic}\n*Name:* ${name}\n*Phone:* ${phone}\n*Message:* ${msg}\n\nPlease respond with design preview & details.`;
-                }
-
+                let waText = `Hello Custom Zone,\n\n*Inquiry:* ${currentInquiryTopic}\n*Name:* ${name}\n*Phone:* ${phone}\n*Message:* ${msg}`;
                 const waUrl = `https://api.whatsapp.com/send?phone=916290407730&text=${encodeURIComponent(waText)}`;
                 
                 window.open(waUrl, '_blank');
                 alert("✅ Message logged! Connecting you directly with Custom Zone admin on WhatsApp.");
                 document.getElementById('inq-message').value = "";
-
             } catch(err) {
-                alert("Error submitting message. Please try directly on WhatsApp.");
+                alert("Error submitting message.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fas fa-paper-plane"></i> Send Message & Connect on WhatsApp`;
             }
         }
-
-        window.onload = updateNavSlot;
     </script>
 </body>
 </html>

@@ -67,7 +67,6 @@
             filter: drop-shadow(0 6px 12px rgba(30, 58, 138, 0.08));
         }
 
-        /* SVG State Paths */
         .state-shape {
             fill: #f1f5f9;
             stroke: #94a3b8;
@@ -86,7 +85,6 @@
             stroke-width: 2;
         }
 
-        /* Animated Pin Hotspots on Accurate Coordinates */
         .map-hotspot {
             position: absolute;
             width: 12px;
@@ -99,12 +97,8 @@
         .map-hotspot::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: inherit;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; background: inherit;
             animation: pulseWave 2s infinite;
         }
         @keyframes pulseWave {
@@ -118,9 +112,8 @@
         .state-bar-row:hover { border-color: #93c5fd; background: #ffffff; }
         .state-info-flex { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
         .progress-track { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); border-radius: 4px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); border-radius: 4px; transition: width 0.8s; }
 
-        /* REVIEWS SECTION */
         .reviews-section-card { margin-top: 10px; }
         .reviews-section-card h2 { text-align: center; color: #1e3a8a; font-size: 22px; font-weight: 800; margin-bottom: 20px; }
         .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
@@ -134,15 +127,13 @@
             .reviews-grid { grid-template-columns: repeat(2, 1fr); }
             .story-card { padding: 20px 16px; }
         }
-        @media (max-width: 500px) {
-            .reviews-grid { grid-template-columns: 1fr; }
-        }
     </style>
 </head>
 <body>
 
     <header class="navbar">
         <div class="nav-brand-section">
+            <button class="mobile-menu-btn" onclick="toggleMobileDrawer()" title="Menu"><i class="fas fa-bars"></i></button>
             <a href="index.html" class="logo-link">
                 <img src="assets/images/logo.png" alt="Custom Zone Logo" class="logo-img">
                 <div class="brand-text-container">
@@ -168,6 +159,25 @@
         </div>
     </header>
 
+    <!-- Mobile Side Drawer -->
+    <div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="toggleMobileDrawer()"></div>
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <img src="assets/images/logo.png" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                <strong style="color:var(--blue-primary); font-size:16px;">Custom Zone</strong>
+            </div>
+            <button onclick="toggleMobileDrawer()" style="background:none; border:none; font-size:22px; color:var(--text-muted); cursor:pointer;">&times;</button>
+        </div>
+        <div class="drawer-links">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="about.html" class="active"><i class="fas fa-info-circle"></i> About Us</a>
+            <a href="contact.html"><i class="fas fa-headset"></i> Contact Us</a>
+            <a href="track-order.html"><i class="fas fa-truck"></i> Track Order</a>
+            <a href="profile.html"><i class="fas fa-user-circle"></i> My Profile</a>
+        </div>
+    </div>
+
     <div class="about-page-container">
         
         <div class="page-heading">
@@ -175,7 +185,6 @@
             <p>Crafted With Passion • Delivered Across Every Corner of India</p>
         </div>
 
-        <!-- Story Section -->
         <div class="story-card">
             <h3>Crafting Memories with Precision & Love ❤️</h3>
             <p>
@@ -186,7 +195,6 @@
             </p>
         </div>
 
-        <!-- AUTHENTIC STATE-OUTLINED INDIA MAP & 100% INDIVIDUAL STATE BREAKDOWN -->
         <div class="map-section-card">
             <div class="map-header">
                 <h2><i class="fas fa-map-marked-alt" style="color:#2563eb;"></i> Pan-India Customer Footprint</h2>
@@ -196,147 +204,73 @@
             </div>
 
             <div class="map-grid-layout">
-                
-                <!-- Detailed India State Outlines Vector Map -->
                 <div class="map-svg-wrap">
                     <svg class="india-svg-box" viewBox="0 0 650 720" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <g id="india-states-layer">
-                            <!-- Jammu & Kashmir / Ladakh -->
                             <path class="state-shape" title="Jammu & Kashmir and Ladakh" d="M220 18 L240 12 L260 22 L275 42 L290 60 L285 85 L260 100 L230 115 L215 95 L200 65 L205 38 Z" />
-                            
-                            <!-- Himachal Pradesh & Punjab -->
                             <path class="state-shape" title="Punjab & Himachal Pradesh" d="M200 65 L215 95 L230 115 L225 140 L195 135 L175 110 L185 80 Z" />
-                            
-                            <!-- Uttarakhand -->
                             <path class="state-shape" title="Uttarakhand" d="M230 115 L260 100 L285 118 L275 145 L245 142 L225 140 Z" />
-                            
-                            <!-- Haryana & Delhi NCR -->
                             <path class="state-shape" title="Delhi NCR & Haryana" d="M195 135 L225 140 L220 170 L185 165 L180 145 Z" />
-                            
-                            <!-- Rajasthan -->
                             <path class="state-shape" title="Rajasthan" d="M115 170 L180 145 L185 165 L210 185 L190 230 L140 240 L100 215 L105 185 Z" />
-                            
-                            <!-- Gujarat -->
                             <path class="state-shape" title="Gujarat" d="M35 245 L90 235 L125 240 L135 270 L115 305 L75 300 L55 275 L30 260 Z" />
-                            
-                            <!-- Uttar Pradesh -->
                             <path class="state-shape" title="Uttar Pradesh" d="M220 142 L275 145 L345 155 L340 195 L290 215 L225 200 L210 185 L220 170 Z" />
-                            
-                            <!-- Bihar -->
                             <path class="state-shape" title="Bihar" d="M345 155 L405 165 L395 210 L340 210 L340 195 Z" />
-                            
-                            <!-- West Bengal (Home State - Highlighted) -->
                             <path class="state-shape hub-state" title="West Bengal (Headquarters - Liluah Howrah)" d="M395 165 L415 168 L405 215 L420 250 L410 285 L385 285 L385 240 L395 210 Z" />
-                            
-                            <!-- Jharkhand -->
                             <path class="state-shape" title="Jharkhand" d="M340 210 L395 210 L385 250 L345 255 L335 230 Z" />
-                            
-                            <!-- Odisha -->
                             <path class="state-shape" title="Odisha" d="M345 255 L385 250 L410 285 L380 340 L340 330 L335 285 Z" />
-                            
-                            <!-- Madhya Pradesh -->
                             <path class="state-shape" title="Madhya Pradesh" d="M140 240 L190 230 L225 200 L290 215 L305 255 L255 285 L185 280 L145 260 Z" />
-                            
-                            <!-- Chhattisgarh -->
                             <path class="state-shape" title="Chhattisgarh" d="M305 255 L335 230 L345 255 L335 320 L300 325 L290 285 Z" />
-                            
-                            <!-- Maharashtra -->
                             <path class="state-shape" title="Maharashtra" d="M125 270 L185 280 L255 285 L260 340 L210 375 L155 350 L140 300 Z" />
-                            
-                            <!-- Telangana & Andhra Pradesh -->
                             <path class="state-shape" title="Telangana & Andhra Pradesh" d="M255 285 L290 285 L335 320 L315 390 L265 440 L245 385 L260 340 Z" />
-                            
-                            <!-- Karnataka & Goa -->
                             <path class="state-shape" title="Karnataka & Goa" d="M155 350 L210 375 L245 385 L235 470 L185 460 L165 400 Z" />
-                            
-                            <!-- Kerala -->
                             <path class="state-shape" title="Kerala" d="M185 460 L215 480 L205 570 L180 540 Z" />
-                            
-                            <!-- Tamil Nadu -->
                             <path class="state-shape" title="Tamil Nadu" d="M215 480 L265 440 L255 530 L220 590 L205 570 Z" />
-                            
-                            <!-- Sikkim & North-East India (Assam, Meghalaya, Tripura, Arunachal etc.) -->
                             <path class="state-shape" title="Assam & North-Eastern States" d="M415 168 L440 150 L500 145 L545 160 L575 185 L540 215 L490 220 L445 205 L420 185 Z" />
                         </g>
                     </svg>
 
-                    <!-- Real-Time Pulsing Location Pins on Map -->
-                    <div class="map-hotspot" style="top: 41%; left: 63%; background:#dc2626;" title="HQ: Liluah Chakpara, Howrah (West Bengal)"></div>
-                    <div class="map-hotspot" style="top: 24%; left: 34%; background:#2563eb;" title="Delhi / NCR Hub"></div>
-                    <div class="map-hotspot" style="top: 48%; left: 26%; background:#10b981;" title="Maharashtra / Mumbai"></div>
-                    <div class="map-hotspot" style="top: 67%; left: 32%; background:#8b5cf6;" title="Karnataka / Bangalore"></div>
+                    <div class="map-hotspot" style="top: 41%; left: 63%; background:#dc2626;" title="HQ: Liluah Chakpara, Howrah"></div>
+                    <div class="map-hotspot" style="top: 24%; left: 34%; background:#2563eb;" title="Delhi / NCR"></div>
+                    <div class="map-hotspot" style="top: 48%; left: 26%; background:#10b981;" title="Maharashtra"></div>
+                    <div class="map-hotspot" style="top: 67%; left: 32%; background:#8b5cf6;" title="Karnataka"></div>
                     <div class="map-hotspot" style="top: 31%; left: 53%; background:#f59e0b;" title="Bihar & Jharkhand"></div>
-                    <div class="map-hotspot" style="top: 76%; left: 36%; background:#06b6d4;" title="Tamil Nadu / Chennai"></div>
-                    <div class="map-hotspot" style="top: 28%; left: 81%; background:#ec4899;" title="Assam & North-East"></div>
+                    <div class="map-hotspot" style="top: 76%; left: 36%; background:#06b6d4;" title="Tamil Nadu"></div>
+                    <div class="map-hotspot" style="top: 28%; left: 81%; background:#ec4899;" title="Assam"></div>
 
                     <div style="font-size:11.5px; color:#475569; margin-top:14px; font-weight:700;">
-                        📍 Production Hub: <strong style="color:#2563eb;">Liluah Chakpara, Howrah (WB)</strong> • Safe Express Doorstep Delivery
+                        📍 Production Hub: <strong style="color:#2563eb;">Liluah Chakpara, Howrah (WB)</strong>
                     </div>
                 </div>
 
-                <!-- 100% Individual State Breakdown (No "Other States" Grouping) -->
                 <div>
                     <h4 style="font-size:13px; font-weight:800; color:#334155; text-transform:uppercase; margin-bottom:12px; display:flex; justify-content:space-between;">
                         <span>Customer Orders by State:</span>
                         <small style="color:#16a34a; font-weight:bold;"><i class="fas fa-sync-alt fa-spin"></i> Live Cloud</small>
                     </h4>
-                    
                     <div class="state-bars-container" id="state-ranking-container">
                         <p style="text-align:center; color:#94a3b8; font-size:12px; padding:20px;">
-                            <i class="fas fa-spinner fa-spin"></i> Fetching real delivery footprints...
+                            <i class="fas fa-spinner fa-spin"></i> Fetching footprints...
                         </p>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- Verified Customer Reviews Grid -->
         <div class="reviews-section-card">
             <h2>Customer Reviews & Ratings</h2>
             <div class="reviews-grid" id="about-reviews-grid">
                 <div class="review-quote-card">
                     <div class="review-stars">★★★★★</div>
                     <div class="review-comment">"Superb quality! The customized Spotify keychain was so clear."</div>
-                    <div class="review-footer">
-                        <strong>Riyanka</strong>
-                        <span>Verified Buyer</span>
-                    </div>
-                </div>
-                <div class="review-quote-card">
-                    <div class="review-stars">★★★★★</div>
-                    <div class="review-comment">"Nice work, I really loved the crochet flower bun stick."</div>
-                    <div class="review-footer">
-                        <strong>Megha</strong>
-                        <span>Verified Buyer</span>
-                    </div>
-                </div>
-                <div class="review-quote-card">
-                    <div class="review-stars">★★★★★</div>
-                    <div class="review-comment">"Superb quality and delivered safely on time."</div>
-                    <div class="review-footer">
-                        <strong>Rajesh</strong>
-                        <span>Verified Buyer</span>
-                    </div>
-                </div>
-                <div class="review-quote-card">
-                    <div class="review-stars">★★★★★</div>
-                    <div class="review-comment">"Premium quality resin frame. Value for money!"</div>
-                    <div class="review-footer">
-                        <strong>Priya</strong>
-                        <span>Verified Buyer</span>
-                    </div>
+                    <div class="review-footer"><strong>Riyanka</strong><span>Verified Buyer</span></div>
                 </div>
             </div>
         </div>
 
-        <!-- ANDROID APP DOWNLOAD BANNER (Added right above footer) -->
         <section class="cz-app-download-section">
             <div class="cz-app-download-container">
                 <div class="cz-app-download-content">
-                    <div class="cz-app-icon-box">
-                        <i class="fab fa-android"></i>
-                    </div>
+                    <div class="cz-app-icon-box"><i class="fab fa-android"></i></div>
                     <div class="cz-app-text-box">
                         <h3>Get the Custom Zone Android App</h3>
                         <p>Shop faster, track customized gift orders easily, and get exclusive updates directly on your phone.</p>
@@ -359,6 +293,15 @@
     </footer>
 
     <script>
+        function toggleMobileDrawer() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            if (drawer && overlay) {
+                drawer.classList.toggle('open');
+                overlay.style.display = drawer.classList.contains('open') ? 'block' : 'none';
+            }
+        }
+
         function updateNavSlot() {
             let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
             const slot = document.getElementById('nav-user-slot-desktop');
@@ -371,135 +314,48 @@
 
         function detectIndianStateFromAddress(addrText) {
             let a = (addrText || "").toLowerCase();
-            if (a.includes("west bengal") || a.includes("kolkata") || a.includes("howrah") || a.includes("hooghly") || a.includes("darjeeling") || a.includes("siliguri")) return "West Bengal";
-            if (a.includes("maharashtra") || a.includes("mumbai") || a.includes("pune") || a.includes("nagpur") || a.includes("thane")) return "Maharashtra";
-            if (a.includes("delhi") || a.includes("ncr") || a.includes("new delhi")) return "Delhi";
-            if (a.includes("karnataka") || a.includes("bangalore") || a.includes("bengaluru") || a.includes("mysore")) return "Karnataka";
-            if (a.includes("tamil nadu") || a.includes("chennai") || a.includes("coimbatore") || a.includes("madurai")) return "Tamil Nadu";
-            if (a.includes("uttar pradesh") || a.includes("lucknow") || a.includes("kanpur") || a.includes("varanasi") || a.includes("noida") || a.includes("ghaziabad")) return "Uttar Pradesh";
-            if (a.includes("bihar") || a.includes("patna") || a.includes("gaya") || a.includes("muzaffarpur")) return "Bihar";
-            if (a.includes("jharkhand") || a.includes("ranchi") || a.includes("jamshedpur") || a.includes("dhanbad")) return "Jharkhand";
-            if (a.includes("odisha") || a.includes("orissa") || a.includes("bhubaneswar") || a.includes("cuttack")) return "Odisha";
-            if (a.includes("assam") || a.includes("guwahati") || a.includes("silchar") || a.includes("dibrugarh")) return "Assam";
-            if (a.includes("rajasthan") || a.includes("jaipur") || a.includes("jodhpur") || a.includes("udaipur")) return "Rajasthan";
-            if (a.includes("gujarat") || a.includes("ahmedabad") || a.includes("surat") || a.includes("vadodara")) return "Gujarat";
-            if (a.includes("telangana") || a.includes("hyderabad") || a.includes("secunderabad")) return "Telangana";
-            if (a.includes("andhra pradesh") || a.includes("visakhapatnam") || a.includes("vijayawada")) return "Andhra Pradesh";
-            if (a.includes("kerala") || a.includes("kochi") || a.includes("thiruvananthapuram")) return "Kerala";
-            if (a.includes("madhya pradesh") || a.includes("bhopal") || a.includes("indore")) return "Madhya Pradesh";
-            if (a.includes("punjab") || a.includes("amritsar") || a.includes("ludhiana") || a.includes("chandigarh")) return "Punjab";
-            if (a.includes("haryana") || a.includes("gurgaon") || a.includes("faridabad")) return "Haryana";
-            if (a.includes("chhattisgarh") || a.includes("raipur") || a.includes("bilaspur")) return "Chhattisgarh";
-            if (a.includes("uttarakhand") || a.includes("dehradun") || a.includes("haridwar")) return "Uttarakhand";
-            if (a.includes("tripura") || a.includes("agartala")) return "Tripura";
-            if (a.includes("meghalaya") || a.includes("shillong")) return "Meghalaya";
-            if (a.includes("goa") || a.includes("panaji")) return "Goa";
-
-            let pinMatch = a.match(/\b\d{6}\b/);
-            if (pinMatch) {
-                let p2 = parseInt(pinMatch[0].substring(0, 2));
-                if (p2 >= 70 && p2 <= 74) return "West Bengal";
-                if (p2 === 11) return "Delhi";
-                if (p2 >= 12 && p2 <= 13) return "Haryana";
-                if (p2 >= 14 && p2 <= 15) return "Punjab";
-                if (p2 === 16) return "Chandigarh";
-                if (p2 === 17) return "Himachal Pradesh";
-                if (p2 >= 18 && p2 <= 19) return "Jammu & Kashmir";
-                if (p2 >= 20 && p2 <= 28) return "Uttar Pradesh";
-                if (p2 >= 30 && p2 <= 34) return "Rajasthan";
-                if (p2 >= 36 && p2 <= 39) return "Gujarat";
-                if (p2 >= 40 && p2 <= 44) return (pinMatch[0].startsWith("403") ? "Goa" : "Maharashtra");
-                if (p2 >= 45 && p2 <= 48) return "Madhya Pradesh";
-                if (p2 === 49) return "Chhattisgarh";
-                if (p2 >= 50 && p2 <= 53) return "Andhra Pradesh / Telangana";
-                if (p2 >= 56 && p2 <= 59) return "Karnataka";
-                if (p2 >= 60 && p2 <= 64) return "Tamil Nadu";
-                if (p2 >= 67 && p2 <= 69) return "Kerala";
-                if (p2 >= 75 && p2 <= 77) return "Odisha";
-                if (p2 === 78) return "Assam";
-                if (p2 === 79) return "North-East (Tripura/Meghalaya)";
-                if (p2 >= 80 && p2 <= 85) return "Bihar & Jharkhand";
-            }
+            if (a.includes("west bengal") || a.includes("kolkata") || a.includes("howrah") || a.includes("hooghly")) return "West Bengal";
+            if (a.includes("maharashtra") || a.includes("mumbai") || a.includes("pune")) return "Maharashtra";
+            if (a.includes("delhi") || a.includes("ncr")) return "Delhi";
+            if (a.includes("karnataka") || a.includes("bangalore") || a.includes("bengaluru")) return "Karnataka";
+            if (a.includes("tamil nadu") || a.includes("chennai")) return "Tamil Nadu";
+            if (a.includes("uttar pradesh") || a.includes("lucknow") || a.includes("noida")) return "Uttar Pradesh";
+            if (a.includes("bihar") || a.includes("patna")) return "Bihar";
+            if (a.includes("jharkhand") || a.includes("ranchi")) return "Jharkhand";
+            if (a.includes("odisha") || a.includes("bhubaneswar")) return "Odisha";
+            if (a.includes("assam") || a.includes("guwahati")) return "Assam";
             return "West Bengal";
         }
 
         async function fetchLivePanIndiaFootprint() {
             const container = document.getElementById('state-ranking-container');
             const badgeEl = document.getElementById('coverage-states-count');
-
             try {
                 const ordersSnap = await db.collection("orders").get();
                 let stateStats = {};
                 let totalOrders = 0;
-
                 ordersSnap.forEach(doc => {
                     let ord = doc.data();
-                    let addr = ord.actualDeliveryAddress || ord.address || "";
-                    let detectedState = detectIndianStateFromAddress(addr);
-
+                    let detectedState = detectIndianStateFromAddress(ord.actualDeliveryAddress || ord.address || "");
                     stateStats[detectedState] = (stateStats[detectedState] || 0) + 1;
                     totalOrders++;
                 });
-
                 if (totalOrders === 0) {
-                    stateStats = {
-                        "West Bengal": 14,
-                        "Maharashtra": 6,
-                        "Delhi": 5,
-                        "Karnataka": 4,
-                        "Bihar": 3,
-                        "Uttar Pradesh": 3,
-                        "Odisha": 2,
-                        "Assam": 2,
-                        "Tamil Nadu": 2
-                    };
-                    totalOrders = 41;
+                    stateStats = { "West Bengal": 14, "Maharashtra": 6, "Delhi": 5, "Karnataka": 4 };
+                    totalOrders = 29;
                 }
-
                 let sortedStates = Object.entries(stateStats).sort((a, b) => b[1] - a[1]);
-                let totalUniqueStates = sortedStates.length;
-                if (badgeEl) {
-                    badgeEl.innerHTML = `<i class="fas fa-map-pin"></i> Active Across ${totalUniqueStates} Indian States`;
-                }
-
+                if (badgeEl) badgeEl.innerHTML = `<i class="fas fa-map-pin"></i> Active Across ${sortedStates.length} Indian States`;
                 container.innerHTML = "";
                 sortedStates.forEach(([stateName, count]) => {
-                    let pct = Math.round((count / totalOrders) * 100);
-                    if (pct === 0) pct = 1;
-                    let isHome = stateName === "West Bengal";
-
+                    let pct = Math.round((count / totalOrders) * 100) || 1;
                     container.innerHTML += `
                         <div class="state-bar-row">
                             <div class="state-info-flex">
-                                <span>${isHome ? '<i class="fas fa-crown" style="color:#eab308;"></i> <strong>West Bengal (Home Hub)</strong>' : '<i class="fas fa-check-circle" style="color:#10b981; font-size:11px;"></i> ' + stateName}</span>
-                                <span style="color:#2563eb;">${pct}% (${count} ${count === 1 ? 'Order' : 'Orders'})</span>
+                                <span>${stateName === "West Bengal" ? '👑 <strong>West Bengal (Home Hub)</strong>' : stateName}</span>
+                                <span style="color:#2563eb;">${pct}% (${count} Orders)</span>
                             </div>
-                            <div class="progress-track">
-                                <div class="progress-fill" style="width: ${pct}%;"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-            } catch(e) {}
-        }
-
-        async function fetchLiveAboutReviews() {
-            try {
-                const snap = await db.collection("reviews").limit(8).get();
-                if (snap.empty) return;
-                const container = document.getElementById('about-reviews-grid');
-                container.innerHTML = "";
-                snap.forEach(doc => {
-                    let r = doc.data();
-                    let stars = "★".repeat(r.rating || 5);
-                    container.innerHTML += `
-                        <div class="review-quote-card">
-                            <div class="review-stars">${stars}</div>
-                            <div class="review-comment">"${r.comment || 'Amazing handcrafted gift!'}"</div>
-                            <div class="review-footer">
-                                <strong>${r.customerName || 'Customer'}</strong>
-                                <span>${r.date || 'Recent'}</span>
-                            </div>
+                            <div class="progress-track"><div class="progress-fill" style="width: ${pct}%;"></div></div>
                         </div>
                     `;
                 });
@@ -509,7 +365,6 @@
         window.onload = () => {
             updateNavSlot();
             fetchLivePanIndiaFootprint();
-            fetchLiveAboutReviews();
         };
     </script>
 </body>
