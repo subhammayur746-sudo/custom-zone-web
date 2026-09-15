@@ -232,7 +232,17 @@
         <div class="admin-card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog (<span id="total-products-count">0</span>)</h3>
-                <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name / category / vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:220px; background:#fff;">
+                
+                <!-- Status Filter & Search Bar Combo -->
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <select id="status-filter-select" onchange="filterAdminProducts()" style="padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:700; color:#1e293b; background:#fff; outline:none; cursor:pointer;">
+                        <option value="all">🔍 All Status (Active & Inactive)</option>
+                        <option value="active">🟢 Active Products Only</option>
+                        <option value="inactive">🔴 Inactive Products Only</option>
+                    </select>
+
+                    <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search name / category / vendor..." style="padding:8px 14px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:220px; background:#fff;">
+                </div>
             </div>
 
             <div class="table-responsive-container">
@@ -307,19 +317,6 @@
                     v.id = doc.id;
                     allVendorsCache.push(v);
                     select.innerHTML += `<option value="${v.name}">${v.name} (${v.phone || 'No WA'})</option>`;
-                });
-            } catch(e) {}
-        }
-
-        async function logSystemAction(action, targetId) {
-            try {
-                let currentUser = JSON.parse(localStorage.getItem('cz_logged_in_user')) || loggedInUser || {};
-                await db.collection("audit_logs").add({
-                    actor: currentUser.name || currentUser.username || "Team Member",
-                    role: currentUser.role || "staff",
-                    action: action,
-                    targetId: targetId || "Product",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch(e) {}
         }
@@ -648,9 +645,7 @@
                 });
 
                 document.getElementById('total-products-count').innerText = allProductsCache.length;
-                filteredProductsCache = [...allProductsCache];
-                currentProductPage = 1;
-                renderPaginatedProducts();
+                filterAdminProducts();
 
             } catch(e) {
                 tbody.innerHTML = "<tr><td colspan='6' style='color:#e74c3c; text-align:center; padding:15px;'>Error loading inventory.</td></tr>";
@@ -663,7 +658,7 @@
                 await db.collection("products").doc(productId).update({ isActive: newStatus });
                 let p = allProductsCache.find(x => x.id === productId);
                 if (p) p.isActive = newStatus;
-                renderPaginatedProducts();
+                filterAdminProducts();
             } catch(e) {
                 alert("Failed to update status.");
             }
@@ -675,7 +670,7 @@
 
             let totalItems = filteredProductsCache.length;
             if (totalItems === 0) {
-                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No products matching your search.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No products match your filter criteria.</td></tr>";
                 renderPaginationControls(0);
                 return;
             }
@@ -760,13 +755,26 @@
             renderPaginatedProducts();
         }
 
+        // COMBINED STATUS FILTER & SEARCH FUNCTION
         function filterAdminProducts() {
+            let statusFilter = document.getElementById('status-filter-select').value;
             let term = document.getElementById('search-prod-input').value.toLowerCase().trim();
-            filteredProductsCache = allProductsCache.filter(p => 
-                p.name.toLowerCase().includes(term) || 
-                (p.vendorName && p.vendorName.toLowerCase().includes(term)) || 
-                (p.subCategory && p.subCategory.toLowerCase().includes(term))
-            );
+
+            filteredProductsCache = allProductsCache.filter(p => {
+                let isActive = p.isActive !== false;
+
+                // Status dropdown condition
+                if (statusFilter === 'active' && !isActive) return false;
+                if (statusFilter === 'inactive' && isActive) return false;
+
+                // Search term condition
+                let matchName = p.name.toLowerCase().includes(term);
+                let matchVendor = (p.vendorName && p.vendorName.toLowerCase().includes(term));
+                let matchCat = (p.subCategory && p.subCategory.toLowerCase().includes(term)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(term));
+
+                return matchName || matchVendor || matchCat;
+            });
+
             currentProductPage = 1;
             renderPaginatedProducts();
         }
@@ -883,7 +891,6 @@
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
-        // BULLETPROOF SAVING ENGINE WITH TIMEOUT PROTECTION
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
