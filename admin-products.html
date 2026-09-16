@@ -233,22 +233,18 @@
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px;">
                 <h3 style="margin:0; border:none; padding:0;"><i class="fas fa-boxes"></i> Live Product Catalog (<span id="total-products-count">0</span>)</h3>
                 
-                <!-- Filters Combo: Status Filter, Vendor Filter & Search Bar -->
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <!-- Status Filter -->
                     <select id="status-filter-select" onchange="filterAdminProducts()" style="padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:700; color:#1e293b; background:#fff; outline:none; cursor:pointer;">
                         <option value="all">🔍 All Status</option>
                         <option value="active">🟢 Active</option>
                         <option value="inactive">🔴 Inactive</option>
                     </select>
 
-                    <!-- Vendor Filter Dropdown -->
                     <select id="vendor-filter-select" onchange="filterAdminProducts()" style="padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:700; color:#1e293b; background:#fff; outline:none; cursor:pointer;">
                         <option value="all">🏢 All Vendors / In-House</option>
                         <option value="In-House">In-House / Direct</option>
                     </select>
 
-                    <!-- Search Input -->
                     <input type="text" id="search-prod-input" onkeyup="filterAdminProducts()" placeholder="🔍 Search product name..." style="padding:8px 12px; border:1px solid #ccc; border-radius:4px; font-size:12px; min-width:180px; background:#fff;">
                 </div>
             </div>
@@ -770,7 +766,6 @@
             renderPaginatedProducts();
         }
 
-        // COMBINED STATUS, VENDOR & SEARCH FILTER FUNCTION
         function filterAdminProducts() {
             let statusFilter = document.getElementById('status-filter-select').value;
             let vendorFilter = document.getElementById('vendor-filter-select').value;
@@ -781,11 +776,9 @@
                 let pVendor = (p.vendorName || "").trim();
                 if (!pVendor) pVendor = "In-House";
 
-                // Status filter
                 if (statusFilter === 'active' && !isActive) return false;
                 if (statusFilter === 'inactive' && isActive) return false;
 
-                // Vendor filter
                 if (vendorFilter !== 'all') {
                     if (vendorFilter === 'In-House') {
                         if (p.vendorName && p.vendorName !== "" && p.vendorName !== "In-House") return false;
@@ -794,7 +787,6 @@
                     }
                 }
 
-                // Search term
                 let matchName = p.name.toLowerCase().includes(term);
                 let matchCat = (p.subCategory && p.subCategory.toLowerCase().includes(term)) || (p.mainCategory && p.mainCategory.toLowerCase().includes(term));
 
@@ -917,6 +909,7 @@
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
+        // 100% FIXED & SAFE SAVER (REPLACED SERVER TIMESTAMP TO PREVENT DESKTOP HANG)
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
@@ -1002,7 +995,7 @@
                 hasQtyPricing: isQtyPricingEnabled && qtyTiers.length > 0,
                 qtyTiers: qtyTiers,
                 isActive: true,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: new Date().toISOString()
             };
 
             const btn = document.getElementById('btn-save-prod');
@@ -1014,6 +1007,7 @@
                     await db.collection("products").doc(id).set(prodPayload, { merge: true });
                     alert("✅ Product updated successfully!");
                 } else {
+                    prodPayload.createdAt = new Date().toISOString();
                     await db.collection("products").add(prodPayload);
                     alert("✅ New product added successfully!");
                 }
