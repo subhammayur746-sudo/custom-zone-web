@@ -8,124 +8,52 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase CDN -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: #eef3f8; min-height: 100vh; display: flex; flex-direction: column; color: #1e293b; }
-
-        .about-page-container { max-width: 1040px; margin: 30px auto; padding: 0 16px; width: 100%; flex: 1; }
-        .page-heading { text-align: center; margin-bottom: 25px; }
-        .page-heading h1 { color: #1e3a8a; font-size: 26px; font-weight: 800; }
-        .page-heading p { color: #64748b; font-size: 13px; margin-top: 4px; }
-
-        .story-card {
-            background: #ffffff;
-            padding: 30px 24px;
-            border-radius: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+        .reviews-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .review-card-item {
+            background: #fff;
             border: 1px solid #e2e8f0;
-            margin-bottom: 28px;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        .story-card h3 { color: #1e293b; font-size: 19px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .story-card p { font-size: 13.5px; line-height: 1.7; color: #475569; margin-bottom: 12px; }
-
-        /* REALISTIC DETAILED INDIA MAP & STATE ANALYTICS */
-        .map-section-card {
-            background: #ffffff;
-            padding: 26px;
-            border-radius: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-            margin-bottom: 30px;
+        .pagination-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 25px;
         }
-        .map-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px; }
-        .map-header h2 { font-size: 18px; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px; margin: 0; }
-        .map-stats-badge { background: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 12px; padding: 5px 14px; border-radius: 20px; border: 1px solid #bfdbfe; }
-
-        .map-grid-layout { display: grid; grid-template-columns: 1.15fr 1fr; gap: 24px; align-items: center; }
-        
-        .map-svg-wrap {
-            position: relative;
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 20px 14px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-            overflow: hidden;
-        }
-        
-        .india-svg-box {
-            width: 100%;
-            max-width: 400px;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-            filter: drop-shadow(0 6px 12px rgba(30, 58, 138, 0.08));
-        }
-
-        .state-shape {
-            fill: #f1f5f9;
-            stroke: #94a3b8;
-            stroke-width: 1.2;
-            transition: 0.25s ease;
-        }
-        .state-shape:hover {
-            fill: #dbeafe;
-            stroke: #2563eb;
-            stroke-width: 1.8;
+        .pag-btn {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 12.5px;
+            font-weight: 700;
             cursor: pointer;
         }
-        .state-shape.hub-state {
-            fill: #bfdbfe;
-            stroke: #1d4ed8;
-            stroke-width: 2;
+        .pag-btn.active {
+            background: #2563eb;
+            color: #fff;
+            border-color: #2563eb;
         }
-
-        .map-hotspot {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            cursor: pointer;
-            z-index: 10;
-        }
-        .map-hotspot::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            border-radius: 50%; background: inherit;
-            animation: pulseWave 2s infinite;
-        }
-        @keyframes pulseWave {
-            0% { transform: scale(1); opacity: 0.9; }
-            70% { transform: scale(3.2); opacity: 0; }
-            100% { transform: scale(1); opacity: 0; }
-        }
-
-        .state-bars-container { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; padding-right: 6px; }
-        .state-bar-row { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 8px; transition: 0.2s; }
-        .state-bar-row:hover { border-color: #93c5fd; background: #ffffff; }
-        .state-info-flex { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
-        .progress-track { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); border-radius: 4px; transition: width 0.8s; }
-
-        .reviews-section-card { margin-top: 10px; }
-        .reviews-section-card h2 { text-align: center; color: #1e3a8a; font-size: 22px; font-weight: 800; margin-bottom: 20px; }
-        .reviews-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-        .review-quote-card { background: #fff; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .review-stars { color: #f59e0b; font-size: 13px; margin-bottom: 6px; }
-        .review-comment { font-size: 12.5px; color: #334155; font-style: italic; line-height: 1.5; margin-bottom: 12px; min-height: 36px; }
-        .review-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px; font-size: 11px; color: #64748b; }
-
-        @media (max-width: 768px) {
-            .map-grid-layout { grid-template-columns: 1fr; }
-            .reviews-grid { grid-template-columns: repeat(2, 1fr); }
-            .story-card { padding: 20px 16px; }
+        .pag-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -150,7 +78,7 @@
         </nav>
         <div class="nav-actions">
             <span id="nav-user-slot-desktop">
-                <a href="profile.html" id="nav-user-link" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="profile.html" style="color:var(--text-primary); font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> Profile</a>
             </span>
             <a href="cart.html" class="cart-icon-btn">
                 <i class="fas fa-shopping-cart"></i>
@@ -178,114 +106,23 @@
         </div>
     </div>
 
-    <div class="about-page-container">
-        
-        <div class="page-heading">
-            <h1>About Custom Zone</h1>
-            <p>Crafted With Passion • Delivered Across Every Corner of India</p>
-        </div>
+    <div class="container" style="max-width:1050px; margin: 30px auto; padding: 0 16px;">
+        <div class="section-title">About Custom Zone</div>
+        <p style="text-align:center; color:var(--text-muted); font-size:13.5px; margin-bottom:25px;">You Imagine. We Customize. Crafting personal emotions into memorable keepsakes from Liluah Chakpara, Howrah.</p>
 
-        <div class="story-card">
-            <h3>Crafting Memories with Precision & Love ❤️</h3>
-            <p>
-                Welcome to <strong>Custom Zone</strong>, your premier destination for handcrafted and customized gifts. Based in <strong>Liluah Chakpara, Howrah</strong>, we specialize in bringing personal touches to everyday keepsakes—from Spotify keychains and engraved wooden photo frames to resin crafts, personalized shirts, and hampers.
-            </p>
-            <p>
-                Every item is crafted with 100% precision, subjected to strict quality checks, and securely packaged to reach directly to your doorstep. We believe gifts are not merely products; they represent emotional bonds, celebrations, and enduring memories.
-            </p>
-        </div>
-
-        <div class="map-section-card">
-            <div class="map-header">
-                <h2><i class="fas fa-map-marked-alt" style="color:#2563eb;"></i> Pan-India Customer Footprint</h2>
-                <div class="map-stats-badge" id="coverage-states-count">
-                    <i class="fas fa-satellite-dish"></i> Calculating Live Presence...
-                </div>
+        <!-- Customer Reviews Grid Section -->
+        <div style="background: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--card-border); margin-top:20px;">
+            <h3 style="color: var(--blue-primary); font-size: 18px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-star" style="color:#eab308;"></i> Customer Reviews & Ratings
+            </h3>
+            
+            <div class="reviews-grid-container" id="reviews-grid-slot">
+                <p style="text-align:center; color:var(--text-muted); grid-column: 1 / -1; padding:20px;">Loading customer reviews...</p>
             </div>
 
-            <div class="map-grid-layout">
-                <div class="map-svg-wrap">
-                    <svg class="india-svg-box" viewBox="0 0 650 720" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g id="india-states-layer">
-                            <path class="state-shape" title="Jammu & Kashmir and Ladakh" d="M220 18 L240 12 L260 22 L275 42 L290 60 L285 85 L260 100 L230 115 L215 95 L200 65 L205 38 Z" />
-                            <path class="state-shape" title="Punjab & Himachal Pradesh" d="M200 65 L215 95 L230 115 L225 140 L195 135 L175 110 L185 80 Z" />
-                            <path class="state-shape" title="Uttarakhand" d="M230 115 L260 100 L285 118 L275 145 L245 142 L225 140 Z" />
-                            <path class="state-shape" title="Delhi NCR & Haryana" d="M195 135 L225 140 L220 170 L185 165 L180 145 Z" />
-                            <path class="state-shape" title="Rajasthan" d="M115 170 L180 145 L185 165 L210 185 L190 230 L140 240 L100 215 L105 185 Z" />
-                            <path class="state-shape" title="Gujarat" d="M35 245 L90 235 L125 240 L135 270 L115 305 L75 300 L55 275 L30 260 Z" />
-                            <path class="state-shape" title="Uttar Pradesh" d="M220 142 L275 145 L345 155 L340 195 L290 215 L225 200 L210 185 L220 170 Z" />
-                            <path class="state-shape" title="Bihar" d="M345 155 L405 165 L395 210 L340 210 L340 195 Z" />
-                            <path class="state-shape hub-state" title="West Bengal (Headquarters - Liluah Howrah)" d="M395 165 L415 168 L405 215 L420 250 L410 285 L385 285 L385 240 L395 210 Z" />
-                            <path class="state-shape" title="Jharkhand" d="M340 210 L395 210 L385 250 L345 255 L335 230 Z" />
-                            <path class="state-shape" title="Odisha" d="M345 255 L385 250 L410 285 L380 340 L340 330 L335 285 Z" />
-                            <path class="state-shape" title="Madhya Pradesh" d="M140 240 L190 230 L225 200 L290 215 L305 255 L255 285 L185 280 L145 260 Z" />
-                            <path class="state-shape" title="Chhattisgarh" d="M305 255 L335 230 L345 255 L335 320 L300 325 L290 285 Z" />
-                            <path class="state-shape" title="Maharashtra" d="M125 270 L185 280 L255 285 L260 340 L210 375 L155 350 L140 300 Z" />
-                            <path class="state-shape" title="Telangana & Andhra Pradesh" d="M255 285 L290 285 L335 320 L315 390 L265 440 L245 385 L260 340 Z" />
-                            <path class="state-shape" title="Karnataka & Goa" d="M155 350 L210 375 L245 385 L235 470 L185 460 L165 400 Z" />
-                            <path class="state-shape" title="Kerala" d="M185 460 L215 480 L205 570 L180 540 Z" />
-                            <path class="state-shape" title="Tamil Nadu" d="M215 480 L265 440 L255 530 L220 590 L205 570 Z" />
-                            <path class="state-shape" title="Assam & North-Eastern States" d="M415 168 L440 150 L500 145 L545 160 L575 185 L540 215 L490 220 L445 205 L420 185 Z" />
-                        </g>
-                    </svg>
-
-                    <div class="map-hotspot" style="top: 41%; left: 63%; background:#dc2626;" title="HQ: Liluah Chakpara, Howrah"></div>
-                    <div class="map-hotspot" style="top: 24%; left: 34%; background:#2563eb;" title="Delhi / NCR"></div>
-                    <div class="map-hotspot" style="top: 48%; left: 26%; background:#10b981;" title="Maharashtra"></div>
-                    <div class="map-hotspot" style="top: 67%; left: 32%; background:#8b5cf6;" title="Karnataka"></div>
-                    <div class="map-hotspot" style="top: 31%; left: 53%; background:#f59e0b;" title="Bihar & Jharkhand"></div>
-                    <div class="map-hotspot" style="top: 76%; left: 36%; background:#06b6d4;" title="Tamil Nadu"></div>
-                    <div class="map-hotspot" style="top: 28%; left: 81%; background:#ec4899;" title="Assam"></div>
-
-                    <div style="font-size:11.5px; color:#475569; margin-top:14px; font-weight:700;">
-                        📍 Production Hub: <strong style="color:#2563eb;">Liluah Chakpara, Howrah (WB)</strong>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 style="font-size:13px; font-weight:800; color:#334155; text-transform:uppercase; margin-bottom:12px; display:flex; justify-content:space-between;">
-                        <span>Customer Orders by State:</span>
-                        <small style="color:#16a34a; font-weight:bold;"><i class="fas fa-sync-alt fa-spin"></i> Live Cloud</small>
-                    </h4>
-                    <div class="state-bars-container" id="state-ranking-container">
-                        <p style="text-align:center; color:#94a3b8; font-size:12px; padding:20px;">
-                            <i class="fas fa-spinner fa-spin"></i> Fetching footprints...
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <!-- Pagination Bar -->
+            <div class="pagination-bar" id="reviews-pagination-bar"></div>
         </div>
-
-        <div class="reviews-section-card">
-            <h2>Customer Reviews & Ratings</h2>
-            <div class="reviews-grid" id="about-reviews-grid">
-                <div class="review-quote-card">
-                    <div class="review-stars">★★★★★</div>
-                    <div class="review-comment">"Superb quality! The customized Spotify keychain was so clear."</div>
-                    <div class="review-footer"><strong>Riyanka</strong><span>Verified Buyer</span></div>
-                </div>
-            </div>
-        </div>
-
-        <section class="cz-app-download-section">
-            <div class="cz-app-download-container">
-                <div class="cz-app-download-content">
-                    <div class="cz-app-icon-box"><i class="fab fa-android"></i></div>
-                    <div class="cz-app-text-box">
-                        <h3>Get the Custom Zone Android App</h3>
-                        <p>Shop faster, track customized gift orders easily, and get exclusive updates directly on your phone.</p>
-                        <span class="cz-trust-badge"><i class="fas fa-shield-alt"></i> 100% Secure & Virus Free Direct Download</span>
-                    </div>
-                </div>
-                <div class="cz-app-action-box">
-                    <a href="downloads/customzone.apk" download="customzone.apk" class="cz-apk-download-btn">
-                        <i class="fas fa-download"></i> Download Official APK
-                    </a>
-                    <span class="cz-apk-size">APK Size: ~15MB</span>
-                </div>
-            </div>
-        </section>
-
     </div>
 
     <footer class="footer">
@@ -293,6 +130,10 @@
     </footer>
 
     <script>
+        let allReviewsCache = [];
+        const REVIEWS_PER_PAGE = 8; // 4 columns x 2 rows
+        let currentReviewPage = 1;
+
         function toggleMobileDrawer() {
             const drawer = document.getElementById('mobile-drawer');
             const overlay = document.getElementById('mobile-drawer-overlay');
@@ -302,69 +143,99 @@
             }
         }
 
-        function updateNavSlot() {
-            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-            const slot = document.getElementById('nav-user-slot-desktop');
-            if (customer && slot) {
-                slot.innerHTML = `<a href="profile.html" style="color:#1e293b; font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
-            }
-            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
-            document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
-        }
-
-        function detectIndianStateFromAddress(addrText) {
-            let a = (addrText || "").toLowerCase();
-            if (a.includes("west bengal") || a.includes("kolkata") || a.includes("howrah") || a.includes("hooghly")) return "West Bengal";
-            if (a.includes("maharashtra") || a.includes("mumbai") || a.includes("pune")) return "Maharashtra";
-            if (a.includes("delhi") || a.includes("ncr")) return "Delhi";
-            if (a.includes("karnataka") || a.includes("bangalore") || a.includes("bengaluru")) return "Karnataka";
-            if (a.includes("tamil nadu") || a.includes("chennai")) return "Tamil Nadu";
-            if (a.includes("uttar pradesh") || a.includes("lucknow") || a.includes("noida")) return "Uttar Pradesh";
-            if (a.includes("bihar") || a.includes("patna")) return "Bihar";
-            if (a.includes("jharkhand") || a.includes("ranchi")) return "Jharkhand";
-            if (a.includes("odisha") || a.includes("bhubaneswar")) return "Odisha";
-            if (a.includes("assam") || a.includes("guwahati")) return "Assam";
-            return "West Bengal";
-        }
-
-        async function fetchLivePanIndiaFootprint() {
-            const container = document.getElementById('state-ranking-container');
-            const badgeEl = document.getElementById('coverage-states-count');
+        async function fetchPublicReviews() {
+            const slot = document.getElementById('reviews-grid-slot');
             try {
-                const ordersSnap = await db.collection("orders").get();
-                let stateStats = {};
-                let totalOrders = 0;
-                ordersSnap.forEach(doc => {
-                    let ord = doc.data();
-                    let detectedState = detectIndianStateFromAddress(ord.actualDeliveryAddress || ord.address || "");
-                    stateStats[detectedState] = (stateStats[detectedState] || 0) + 1;
-                    totalOrders++;
-                });
-                if (totalOrders === 0) {
-                    stateStats = { "West Bengal": 14, "Maharashtra": 6, "Delhi": 5, "Karnataka": 4 };
-                    totalOrders = 29;
+                const snap = await db.collection("reviews").get();
+                allReviewsCache = [];
+
+                if (snap.empty) {
+                    slot.innerHTML = `<p style="text-align:center; color:var(--text-muted); grid-column: 1 / -1; padding:20px;">No reviews found yet.</p>`;
+                    document.getElementById('reviews-pagination-bar').innerHTML = "";
+                    return;
                 }
-                let sortedStates = Object.entries(stateStats).sort((a, b) => b[1] - a[1]);
-                if (badgeEl) badgeEl.innerHTML = `<i class="fas fa-map-pin"></i> Active Across ${sortedStates.length} Indian States`;
-                container.innerHTML = "";
-                sortedStates.forEach(([stateName, count]) => {
-                    let pct = Math.round((count / totalOrders) * 100) || 1;
-                    container.innerHTML += `
-                        <div class="state-bar-row">
-                            <div class="state-info-flex">
-                                <span>${stateName === "West Bengal" ? '👑 <strong>West Bengal (Home Hub)</strong>' : stateName}</span>
-                                <span style="color:#2563eb;">${pct}% (${count} Orders)</span>
-                            </div>
-                            <div class="progress-track"><div class="progress-fill" style="width: ${pct}%;"></div></div>
-                        </div>
-                    `;
+
+                snap.forEach(doc => {
+                    let r = doc.data();
+                    allReviewsCache.push(r);
                 });
-            } catch(e) {}
+
+                allReviewsCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                currentReviewPage = 1;
+                renderReviewsPage();
+
+            } catch(e) {
+                slot.innerHTML = `<p style="text-align:center; color:red; grid-column: 1 / -1;">Error loading reviews.</p>`;
+            }
+        }
+
+        function renderReviewsPage() {
+            const slot = document.getElementById('reviews-grid-slot');
+            slot.innerHTML = "";
+
+            let totalItems = allReviewsCache.length;
+            if (totalItems === 0) return;
+
+            let startIndex = (currentReviewPage - 1) * REVIEWS_PER_PAGE;
+            let endIndex = Math.min(startIndex + REVIEWS_PER_PAGE, totalItems);
+            let pageSlice = allReviewsCache.slice(startIndex, endIndex);
+
+            pageSlice.forEach(r => {
+                let stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
+                slot.innerHTML += `
+                    <div class="review-card-item">
+                        <div>
+                            <div style="color:#eab308; font-size:13px; margin-bottom:6px;">${stars}</div>
+                            <p style="font-size:12.5px; color:#334155; line-height:1.4; margin-bottom:10px;">"${r.comment || r.review || 'Great product!'}"</p>
+                        </div>
+                        <div style="border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                            <strong style="color:#0f172a;">${r.name || r.customerName || 'Verified Buyer'}</strong>
+                            <span style="color:#16a34a; font-weight:700;"><i class="fas fa-check-circle"></i> Verified</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            renderReviewPaginationControls(totalItems);
+        }
+
+        function renderReviewPaginationControls(totalItems) {
+            const bar = document.getElementById('reviews-pagination-bar');
+            let totalPages = Math.ceil(totalItems / REVIEWS_PER_PAGE);
+
+            if (totalPages <= 1) {
+                bar.innerHTML = "";
+                return;
+            }
+
+            let html = `<button class="pag-btn" onclick="goToReviewPage(${currentReviewPage - 1})" ${currentReviewPage === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="pag-btn ${i === currentReviewPage ? 'active' : ''}" onclick="goToReviewPage(${i})">${i}</button>`;
+            }
+
+            html += `<button class="pag-btn" onclick="goToReviewPage(${currentReviewPage + 1})" ${currentReviewPage === totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
+            bar.innerHTML = html;
+        }
+
+        function goToReviewPage(p) {
+            let totalPages = Math.ceil(allReviewsCache.length / REVIEWS_PER_PAGE);
+            if (p < 1 || p > totalPages) return;
+            currentReviewPage = p;
+            renderReviewsPage();
+            window.scrollTo({ top: 200, behavior: 'smooth' });
         }
 
         window.onload = () => {
-            updateNavSlot();
-            fetchLivePanIndiaFootprint();
+            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+            const slot = document.getElementById('nav-user-slot-desktop');
+            if (customer && slot) {
+                slot.innerHTML = `<a href="profile.html" style="color:var(--text-primary); font-size:13px; font-weight:700; text-decoration:none;"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
+            }
+            let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
+            document.querySelectorAll('.cart-count').forEach(el => el.innerText = cart.length);
+
+            fetchPublicReviews();
         };
     </script>
 </body>
