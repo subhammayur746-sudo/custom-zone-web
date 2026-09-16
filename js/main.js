@@ -872,7 +872,7 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-// BULLETPROOF AUTH SUBMIT WITH TIMEOUT & LOADING LOCK FIX
+// BULLETPROOF AUTH SUBMIT WITH CASE-INSENSITIVE NAME MATCH & TIMEOUT GUARD
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -925,7 +925,11 @@ async function handleCustomerAuthSubmit() {
 
             const customerData = docSnap.data();
             
-            if (customerData.name.trim().toLowerCase() !== name.toLowerCase()) {
+            // Case-insensitive & trimmed name comparison to prevent mismatch
+            const dbName = (customerData.name || "").trim().toLowerCase();
+            const inputName = name.toLowerCase();
+
+            if (dbName !== inputName) {
                 if(err) { err.style.display = "block"; err.innerText = "Invalid phone number or name combination."; }
                 if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
                 return;
@@ -999,7 +1003,7 @@ async function handleCustomerAuthSubmit() {
         }
     } finally {
         if(btn && !btn.disabled) {
-            // keep state clean
+            // Keep button usable if state is clear
         }
     }
 }
@@ -1046,22 +1050,4 @@ function displayPopup(data) {
     setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
 }
 
-function checkPromoPopup() {
-    try {
-        db.collection("settings").doc("promo").get().then(doc => {
-            if (doc.exists) displayPopup(doc.data());
-        });
-    } catch (e) {}
-}
-
-function closePopup() {
-    const popup = document.getElementById('promo-popup');
-    if (popup) popup.classList.remove('show-popup');
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    updateNavUserSlot();
-    updateCartCount();
-    fetchLiveProducts();
-    checkPromoPopup();
-});
+checkPromoPopup();
