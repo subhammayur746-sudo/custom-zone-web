@@ -17,7 +17,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 16px;
-            margin-top: 20px;
+            margin-top: 15px;
         }
         .review-card-item {
             background: #fff;
@@ -106,13 +106,40 @@
         </div>
     </div>
 
-    <div class="container" style="max-width:1050px; margin: 30px auto; padding: 0 16px;">
+    <div class="container" style="max-width:900px; margin: 25px auto; padding: 0 16px;">
         <div class="section-title">About Custom Zone</div>
-        <p style="text-align:center; color:var(--text-muted); font-size:13.5px; margin-bottom:25px;">You Imagine. We Customize. Crafting personal emotions into memorable keepsakes from Liluah Chakpara, Howrah.</p>
+        <p style="text-align:center; color:var(--text-muted); font-size:13.5px; margin-bottom:20px;">You Imagine. We Customize. Crafting personal emotions into memorable keepsakes.</p>
 
-        <!-- Customer Reviews Grid Section -->
-        <div style="background: var(--card-bg); padding: 24px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--card-border); margin-top:20px;">
-            <h3 style="color: var(--blue-primary); font-size: 18px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <!-- Store Map & Hub Section -->
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--card-border); margin-bottom: 22px;">
+            <h3 style="color: var(--blue-primary); font-size: 16px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-map-marked-alt"></i> Production Hub & Studio Location
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Our creative workshop is located in the heart of Howrah, ensuring fast dispatch and pristine quality for every handcrafted gift item.</p>
+            
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; text-align:center;">
+                <i class="fas fa-map-marker-alt" style="font-size:24px; color:#ef4444; margin-bottom:6px;"></i>
+                <div style="font-weight:700; color:#0f172a; font-size:14px;">Custom Zone Studio</div>
+                <div style="font-size:12.5px; color:#475569; margin-top:2px;">Liluah Chakpara, Howrah, West Bengal - 711204</div>
+            </div>
+        </div>
+
+        <!-- Android App Download Banner -->
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 22px; border-radius: 12px; box-shadow: var(--shadow-soft); margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 18px; font-weight: 800; display:flex; align-items:center; gap:8px;">
+                    <i class="fab fa-android" style="color:#22c55e; font-size:22px;"></i> Get the Custom Zone Android App
+                </h3>
+                <p style="margin: 0; font-size: 12.5px; color: #94a3b8;">Shop faster, track customized gift orders easily, and get exclusive updates directly on your phone.</p>
+            </div>
+            <a href="apk/customzone.apk" download style="background: #22c55e; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(34,197,94,0.3);">
+                <i class="fas fa-download"></i> Download Official APK
+            </a>
+        </div>
+
+        <!-- Customer Reviews & Ratings Grid Section -->
+        <div style="background: var(--card-bg); padding: 22px; border-radius: 12px; box-shadow: var(--shadow-soft); border: 1px solid var(--card-border);">
+            <h3 style="color: var(--blue-primary); font-size: 17px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                 <i class="fas fa-star" style="color:#eab308;"></i> Customer Reviews & Ratings
             </h3>
             
@@ -223,7 +250,7 @@
             if (p < 1 || p > totalPages) return;
             currentReviewPage = p;
             renderReviewsPage();
-            window.scrollTo({ top: 200, behavior: 'smooth' });
+            window.scrollTo({ top: 300, behavior: 'smooth' });
         }
 
         window.onload = () => {
