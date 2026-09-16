@@ -160,7 +160,6 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// Render Products Grid
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -732,7 +731,7 @@ async function loadProductSpecificReviews(productId) {
         });
 
     } catch (e) {
-        container.innerHTML = "<p style='color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
+        container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
     }
 }
 
@@ -872,7 +871,7 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-// ULTIMATE BULLETPROOF LOGIN & SIGNUP HANDLER (DIRECT DOCUMENT READ BY PHONE)
+// BULLETPROOF LOGIN & SIGNUP HANDLER (SAFE ASYNC WITHOUT SERVER TIMESTAMP CRASH)
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -900,7 +899,6 @@ async function handleCustomerAuthSubmit() {
     }
 
     try {
-        // Direct document reference using phone number as doc ID (as shown in your Firebase console)
         const customerRef = db.collection("customers").doc(phone);
         const docSnap = await customerRef.get();
 
@@ -915,11 +913,9 @@ async function handleCustomerAuthSubmit() {
             }
 
             const customerData = docSnap.data();
-            
-            // Successfully logged in without strict name blocking, just update last login
-            await customerRef.update({ 
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
-            }).catch(() => {});
+
+            // Safe update without blocking login flow
+            customerRef.set({ lastLogin: new Date().toISOString() }, { merge: true }).catch(() => {});
 
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
             closeAuthModal();
@@ -927,7 +923,6 @@ async function handleCustomerAuthSubmit() {
             alert(`🎉 Welcome back, ${customerData.name || name}!`);
 
         } else {
-            // Sign Up Mode
             if (docSnap.exists) {
                 if(err) { 
                     err.style.display = "block"; 
@@ -954,8 +949,8 @@ async function handleCustomerAuthSubmit() {
                 phone: phone,
                 savedAddress: address,
                 isActive: true,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
             };
 
             await customerRef.set(newCustomerData);
@@ -968,7 +963,7 @@ async function handleCustomerAuthSubmit() {
 
         if (pendingAction) {
             if (pendingAction.type === 'cart') {
-                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || modelOrNull(pendingAction.variant), pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
+                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
             } else if (pendingAction.type === 'buy_now') {
                 handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
                 window.location.href = "cart.html";
@@ -988,8 +983,6 @@ async function handleCustomerAuthSubmit() {
         }
     }
 }
-
-function modelOrNull(val) { return val || null; }
 
 function updateNavUserSlot() {
     const desktopSlot = document.getElementById('nav-user-slot-desktop');
