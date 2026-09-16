@@ -175,7 +175,6 @@ function renderHomeProducts(products) {
         return;
     }
 
-    // 12 Items Pagination Slice
     let startIndex = (currentHomePage - 1) * HOME_PRODUCTS_PER_PAGE;
     let endIndex = Math.min(startIndex + HOME_PRODUCTS_PER_PAGE, totalItems);
     let pageItems = products.slice(startIndex, endIndex);
@@ -237,7 +236,6 @@ function renderHomeProducts(products) {
                     </button>
                 </div>
                 
-                <!-- Direct Image Click Triggers Full Zoom Screen -->
                 <div class="product-card-img-wrap" onclick="event.stopPropagation(); directImageZoom('${mainImg}')" title="Click to Zoom Image">
                     <img src="${mainImg}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
                 </div>
@@ -261,7 +259,6 @@ function renderHomeProducts(products) {
     renderHomePaginationBar(totalItems);
 }
 
-// HOME DYNAMIC PAGINATION TOOLBAR
 function renderHomePaginationBar(totalItems) {
     let bar = document.getElementById('home-pagination-container');
     const container = document.getElementById('product-list');
@@ -283,7 +280,6 @@ function renderHomePaginationBar(totalItems) {
     let totalPages = Math.ceil(totalItems / HOME_PRODUCTS_PER_PAGE);
     let html = "";
 
-    // Prev Button
     html += `
         <button onclick="goToHomePage(${currentHomePage - 1})" ${currentHomePage === 1 ? 'disabled' : ''} 
                 style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === 1 ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === 1 ? '0.5' : '1'};">
@@ -291,7 +287,6 @@ function renderHomePaginationBar(totalItems) {
         </button>
     `;
 
-    // Page Buttons
     let startPage = Math.max(1, currentHomePage - 2);
     let endPage = Math.min(totalPages, currentHomePage + 2);
 
@@ -305,7 +300,6 @@ function renderHomePaginationBar(totalItems) {
         `;
     }
 
-    // Next Button
     html += `
         <button onclick="goToHomePage(${currentHomePage + 1})" ${currentHomePage === totalPages ? 'disabled' : ''} 
                 style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === totalPages ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === totalPages ? '0.5' : '1'};">
@@ -322,7 +316,6 @@ function goToHomePage(page) {
     currentHomePage = page;
     renderHomeProducts(currentHomeFilteredProducts);
     
-    // Smooth scroll to top of product list
     const pList = document.getElementById('product-list');
     if (pList) pList.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -362,7 +355,7 @@ function filterHomeProducts() {
         return matchName && matchMainCat && matchSubCat && matchBudget;
     });
 
-    currentHomePage = 1; // Reset to page 1 on search or filter
+    currentHomePage = 1;
     renderHomeProducts(filtered);
 }
 
@@ -409,7 +402,6 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     }
 }
 
-// LINKED BULK PRICING FORMULA
 function recalculateLinkedPrice(product) {
     let baseVariantPrice = currentSelectedVariant 
         ? parseInt(currentSelectedVariant.price) 
@@ -439,7 +431,6 @@ function recalculateLinkedPrice(product) {
     updateModalPriceBox(product, currentApplicablePrice, finalMRP);
 }
 
-// PRODUCT DETAILS MODAL (WITH PERFECT AUTO-FIT IMAGES)
 function openProductDetailsModal(productId) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
@@ -476,7 +467,6 @@ function openProductDetailsModal(productId) {
     const customContainer = document.getElementById('pdm-custom-field-container');
     if (customContainer) customContainer.innerHTML = "";
 
-    // 1. Optional Sizes
     if (product.hasSizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         currentSelectedSize = product.sizes[0];
         let sizeHtml = `
@@ -496,7 +486,6 @@ function openProductDetailsModal(productId) {
         customContainer.innerHTML += sizeHtml;
     }
 
-    // 2. Color/Design Variants
     if (product.hasVariants && Array.isArray(product.variants) && product.variants.length > 0) {
         currentSelectedVariant = product.variants[0];
         let variantHtml = `
@@ -526,11 +515,9 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    // 3. Dynamic Bulk Package Area
     customContainer.innerHTML += `<div id="pdm-bulk-qty-wrapper"></div>`;
     renderApplicableBulkPackages(product);
 
-    // 4. Custom Inputs
     if (product.customType === "name") {
         customContainer.innerHTML += `
             <div style="margin-top:10px;">
@@ -749,128 +736,6 @@ async function loadProductSpecificReviews(productId) {
     }
 }
 
-function toggleAddReviewForm() {
-    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-    if (!customer) {
-        openAuthModal();
-        return;
-    }
-    const box = document.getElementById('product-write-review-box');
-    if (box) {
-        box.style.display = box.style.display === "none" ? "block" : "none";
-        setProductStarRating(5);
-    }
-}
-
-function setProductStarRating(stars) {
-    selectedReviewStar = stars;
-    const picker = document.getElementById('pdm-star-picker');
-    if (!picker) return;
-    let spans = picker.querySelectorAll('span');
-    spans.forEach((s, idx) => {
-        if (idx < stars) s.classList.add('active-star');
-        else s.classList.remove('active-star');
-    });
-}
-
-function previewReviewImage(input) {
-    const file = input.files[0];
-    const previewBox = document.getElementById('review-photo-preview-box');
-    const previewImg = document.getElementById('review-photo-preview-img');
-
-    if (!file) {
-        uploadedReviewBase64 = "";
-        if (previewBox) previewBox.style.display = "none";
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const maxDimension = 600;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height && width > maxDimension) {
-                height = Math.round((height * maxDimension) / width);
-                width = maxDimension;
-            } else if (height > maxDimension) {
-                width = Math.round((width * maxDimension) / height);
-                height = maxDimension;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            uploadedReviewBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            if (previewImg) previewImg.src = uploadedReviewBase64;
-            if (previewBox) previewBox.style.display = "block";
-        };
-    };
-    reader.readAsDataURL(file);
-}
-
-async function submitProductReviewCloud() {
-    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-    if (!customer) { openAuthModal(); return; }
-
-    const textEl = document.getElementById('pdm-review-text');
-    const text = textEl ? textEl.value.trim() : "";
-    const btn = document.getElementById('btn-sub-prod-rev');
-
-    if (!text) { alert("Please write a short review before submitting."); return; }
-
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "Publishing...";
-    }
-
-    let curProd = liveProducts.find(p => p.id === currentOpenProductId);
-    let prodName = curProd ? curProd.name : "Custom Product";
-
-    try {
-        await db.collection("reviews").add({
-            productId: currentOpenProductId,
-            productName: prodName,
-            customerName: customer.name || "Valued Customer",
-            customerPhone: customer.phone || "",
-            rating: selectedReviewStar,
-            comment: text,
-            photoUrl: uploadedReviewBase64 || "",
-            date: new Date().toLocaleDateString('en-GB'),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        alert("🎉 Thank you! Your review & real photo have been posted.");
-        if (textEl) textEl.value = "";
-        const fileInput = document.getElementById('pdm-review-file');
-        if (fileInput) fileInput.value = "";
-        const previewBox = document.getElementById('review-photo-preview-box');
-        if (previewBox) previewBox.style.display = "none";
-        uploadedReviewBase64 = "";
-        const writeBox = document.getElementById('product-write-review-box');
-        if (writeBox) writeBox.style.display = "none";
-        
-        await fetchLiveProducts();
-        if (currentOpenProductId) {
-            openProductDetailsModal(currentOpenProductId);
-        }
-
-    } catch (e) {
-        alert("Failed to submit review.");
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = "Submit Review";
-        }
-    }
-}
-
 function checkUrlProductParam() {
     const urlParams = new URLSearchParams(window.location.search);
     const prodId = urlParams.get('product');
@@ -879,7 +744,6 @@ function checkUrlProductParam() {
     }
 }
 
-// STRICT AUTH GATE & FULL SPECIFICATION CAPTURE
 function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null, selectedSize = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     
@@ -1008,6 +872,7 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
+// BULLETPROOF AUTH SUBMIT WITH TIMEOUT & LOADING LOCK FIX
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -1020,40 +885,49 @@ async function handleCustomerAuthSubmit() {
     const address = addressInput ? addressInput.value.trim() : "";
 
     if (phone.length !== 10) {
-        err.style.display = "block";
-        err.innerText = "Please enter a valid 10-digit WhatsApp phone number.";
+        if(err) { err.style.display = "block"; err.innerText = "Please enter a valid 10-digit WhatsApp phone number."; }
         return;
     }
 
     if (!name) {
-        err.style.display = "block";
-        err.innerText = "Please enter your Full Name.";
+        if(err) { err.style.display = "block"; err.innerText = "Please enter your Full Name."; }
         return;
     }
 
-    btn.disabled = true;
-    btn.innerText = "Verifying...";
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Verifying...";
+    }
+
+    let isFinished = false;
+    let safetyTimer = setTimeout(() => {
+        if (!isFinished && btn) {
+            isFinished = true;
+            btn.disabled = false;
+            btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
+            if(err) { err.style.display = "block"; err.innerText = "Connection timeout. Please check your internet and try again."; }
+        }
+    }, 12000);
 
     try {
         const customerRef = db.collection("customers").doc(phone);
         const docSnap = await customerRef.get();
 
+        isFinished = true;
+        clearTimeout(safetyTimer);
+
         if (currentAuthMode === 'login') {
             if (!docSnap.exists) {
-                err.style.display = "block";
-                err.innerText = "Account not found. Please click 'Sign Up' to register.";
-                btn.disabled = false;
-                btn.innerText = "Login / Proceed";
+                if(err) { err.style.display = "block"; err.innerText = "Account not found. Please click 'Sign Up' to register."; }
+                if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
                 return;
             }
 
             const customerData = docSnap.data();
             
             if (customerData.name.trim().toLowerCase() !== name.toLowerCase()) {
-                err.style.display = "block";
-                err.innerText = "Invalid phone number or name combination.";
-                btn.disabled = false;
-                btn.innerText = "Login / Proceed";
+                if(err) { err.style.display = "block"; err.innerText = "Invalid phone number or name combination."; }
+                if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
                 return;
             }
 
@@ -1067,22 +941,18 @@ async function handleCustomerAuthSubmit() {
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert(`🎉 Welcome back, ${customerData.name}! (Customer ID: ${customerData.customerId})`);
+            alert(`🎉 Welcome back, ${customerData.name}!`);
 
         } else {
             if (docSnap.exists) {
-                err.style.display = "block";
-                err.innerText = "This phone number is already registered. Please log in.";
-                btn.disabled = false;
-                btn.innerText = "Create Account";
+                if(err) { err.style.display = "block"; err.innerText = "This phone number is already registered. Please log in."; }
+                if(btn) { btn.disabled = false; btn.innerText = "Create Account"; }
                 return;
             }
 
             if (!address) {
-                err.style.display = "block";
-                err.innerText = "Complete delivery address is required for registration.";
-                btn.disabled = false;
-                btn.innerText = "Create Account";
+                if(err) { err.style.display = "block"; err.innerText = "Complete delivery address is required for registration."; }
+                if(btn) { btn.disabled = false; btn.innerText = "Create Account"; }
                 return;
             }
 
@@ -1119,12 +989,18 @@ async function handleCustomerAuthSubmit() {
         }
 
     } catch (e) {
+        isFinished = true;
+        clearTimeout(safetyTimer);
         console.error(e);
-        err.style.display = "block";
-        err.innerText = "Server connection error. Please try again.";
+        if(err) { err.style.display = "block"; err.innerText = "Server connection error. Please try again."; }
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
+        }
     } finally {
-        btn.disabled = false;
-        btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
+        if(btn && !btn.disabled) {
+            // keep state clean
+        }
     }
 }
 
