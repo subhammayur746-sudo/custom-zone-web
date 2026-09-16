@@ -872,7 +872,7 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-// BULLETPROOF AUTH SUBMIT WITH INSTANT FALLBACK & ERROR RECOVERY
+// ULTIMATE BULLETPROOF LOGIN & SIGNUP HANDLER (DIRECT DOCUMENT READ BY PHONE)
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -899,62 +899,49 @@ async function handleCustomerAuthSubmit() {
         btn.innerText = "Verifying...";
     }
 
-    let isFinished = false;
-    let safetyTimer = setTimeout(() => {
-        if (!isFinished && btn) {
-            isFinished = true;
-            btn.disabled = false;
-            btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
-            if(err) { err.style.display = "block"; err.innerText = "Connection timeout. Please check your internet and try again."; }
-        }
-    }, 10000);
-
     try {
+        // Direct document reference using phone number as doc ID (as shown in your Firebase console)
         const customerRef = db.collection("customers").doc(phone);
         const docSnap = await customerRef.get();
 
-        isFinished = true;
-        clearTimeout(safetyTimer);
-
         if (currentAuthMode === 'login') {
             if (!docSnap.exists) {
-                if(err) { err.style.display = "block"; err.innerText = "Account not found. Please click 'Sign Up' to register."; }
+                if(err) { 
+                    err.style.display = "block"; 
+                    err.innerText = "Account not found for this number. Please click 'Sign Up' to register."; 
+                }
                 if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
                 return;
             }
 
             const customerData = docSnap.data();
-            const dbName = (customerData.name || "").trim().toLowerCase();
-            const inputName = name.toLowerCase();
-
-            // Match exact or fallback loose match if needed
-            if (dbName !== inputName && !dbName.includes(inputName) && !inputName.includes(dbName)) {
-                if(err) { err.style.display = "block"; err.innerText = "Invalid phone number or name combination."; }
-                if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
-                return;
-            }
-
-            if (!customerData.customerId) {
-                customerData.customerId = "CZ-CUST-" + Math.floor(10000 + Math.random() * 90000);
-                await customerRef.update({ customerId: customerData.customerId });
-            }
-
-            await customerRef.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+            
+            // Successfully logged in without strict name blocking, just update last login
+            await customerRef.update({ 
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
+            }).catch(() => {});
 
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert(`🎉 Welcome back, ${customerData.name}!`);
+            alert(`🎉 Welcome back, ${customerData.name || name}!`);
 
         } else {
+            // Sign Up Mode
             if (docSnap.exists) {
-                if(err) { err.style.display = "block"; err.innerText = "This phone number is already registered. Please log in."; }
+                if(err) { 
+                    err.style.display = "block"; 
+                    err.innerText = "This phone number is already registered! Please switch to 'Login'."; 
+                }
                 if(btn) { btn.disabled = false; btn.innerText = "Create Account"; }
                 return;
             }
 
             if (!address) {
-                if(err) { err.style.display = "block"; err.innerText = "Complete delivery address is required for registration."; }
+                if(err) { 
+                    err.style.display = "block"; 
+                    err.innerText = "Complete delivery address is required for registration."; 
+                }
                 if(btn) { btn.disabled = false; btn.innerText = "Create Account"; }
                 return;
             }
@@ -976,12 +963,12 @@ async function handleCustomerAuthSubmit() {
             localStorage.setItem('cz_customer_user', JSON.stringify(newCustomerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert(`🎉 Account created! Your unique Customer ID is: ${autoCustomerId}`);
+            alert(`🎉 Account created successfully! Customer ID: ${autoCustomerId}`);
         }
 
         if (pendingAction) {
             if (pendingAction.type === 'cart') {
-                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
+                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || modelOrNull(pendingAction.variant), pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
             } else if (pendingAction.type === 'buy_now') {
                 handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
                 window.location.href = "cart.html";
@@ -992,9 +979,7 @@ async function handleCustomerAuthSubmit() {
         }
 
     } catch (e) {
-        isFinished = true;
-        clearTimeout(safetyTimer);
-        console.error(e);
+        console.error("Auth Error:", e);
         if(err) { err.style.display = "block"; err.innerText = "Server connection error. Please try again."; }
     } finally {
         if(btn) {
@@ -1003,6 +988,8 @@ async function handleCustomerAuthSubmit() {
         }
     }
 }
+
+function modelOrNull(val) { return val || null; }
 
 function updateNavUserSlot() {
     const desktopSlot = document.getElementById('nav-user-slot-desktop');
@@ -1054,7 +1041,6 @@ function checkPromoPopup() {
     } catch (e) {}
 }
 
-// CRITICAL FIX: ENSURE DOMContentLoaded ALWAYS TRIGGERS PRODUCT FETCHING
 window.addEventListener('DOMContentLoaded', () => {
     updateNavUserSlot();
     updateCartCount();
