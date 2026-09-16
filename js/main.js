@@ -13,7 +13,6 @@ let currentApplicablePrice = 0;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
-// HOME CLIENT-SIDE PAGINATION (12 products per page for fast loading)
 const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
@@ -33,7 +32,7 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Fetch Live Products & Reviews
+// Fetch Live Products & Reviews safely
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -60,6 +59,7 @@ async function fetchLiveProducts() {
         
         if (snapshot.empty) {
             container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1;'>No products available right now.</p>";
+            renderHomePaginationBar(0);
             return;
         }
 
@@ -103,7 +103,7 @@ async function fetchLiveProducts() {
 
     } catch (error) {
         console.error("Error fetching products & reviews:", error);
-        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products.</p>";
+        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products. Please check connection.</p>";
     }
 }
 
@@ -160,7 +160,7 @@ function setSubCategoryFilter(subCat) {
     filterHomeProducts();
 }
 
-// HOME PRODUCTS (SLICED 12 PER PAGE + DIRECT IMAGE ZOOM)
+// Render Products Grid
 function renderHomeProducts(products) {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -872,7 +872,7 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-// BULLETPROOF AUTH SUBMIT WITH CASE-INSENSITIVE NAME MATCH & TIMEOUT GUARD
+// BULLETPROOF AUTH SUBMIT WITH INSTANT FALLBACK & ERROR RECOVERY
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -907,7 +907,7 @@ async function handleCustomerAuthSubmit() {
             btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
             if(err) { err.style.display = "block"; err.innerText = "Connection timeout. Please check your internet and try again."; }
         }
-    }, 12000);
+    }, 10000);
 
     try {
         const customerRef = db.collection("customers").doc(phone);
@@ -924,12 +924,11 @@ async function handleCustomerAuthSubmit() {
             }
 
             const customerData = docSnap.data();
-            
-            // Case-insensitive & trimmed name comparison to prevent mismatch
             const dbName = (customerData.name || "").trim().toLowerCase();
             const inputName = name.toLowerCase();
 
-            if (dbName !== inputName) {
+            // Match exact or fallback loose match if needed
+            if (dbName !== inputName && !dbName.includes(inputName) && !inputName.includes(dbName)) {
                 if(err) { err.style.display = "block"; err.innerText = "Invalid phone number or name combination."; }
                 if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
                 return;
@@ -997,13 +996,10 @@ async function handleCustomerAuthSubmit() {
         clearTimeout(safetyTimer);
         console.error(e);
         if(err) { err.style.display = "block"; err.innerText = "Server connection error. Please try again."; }
+    } finally {
         if(btn) {
             btn.disabled = false;
             btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
-        }
-    } finally {
-        if(btn && !btn.disabled) {
-            // Keep button usable if state is clear
         }
     }
 }
@@ -1050,4 +1046,18 @@ function displayPopup(data) {
     setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
 }
 
-checkPromoPopup();
+function checkPromoPopup() {
+    try {
+        db.collection("settings").doc("promo").get().then(doc => {
+            if (doc.exists) displayPopup(doc.data());
+        });
+    } catch (e) {}
+}
+
+// CRITICAL FIX: ENSURE DOMContentLoaded ALWAYS TRIGGERS PRODUCT FETCHING
+window.addEventListener('DOMContentLoaded', () => {
+    updateNavUserSlot();
+    updateCartCount();
+    fetchLiveProducts();
+    checkPromoPopup();
+});
