@@ -32,22 +32,6 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .billing-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 25px; }
-        .billing-hub-card {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 18px 20px;
-            border: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            text-decoration: none;
-            transition: 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-        }
-        .billing-hub-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
-        .billing-hub-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
         .stat-card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
         .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
@@ -60,17 +44,37 @@
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
         .notif-bell-btn {
-            position: relative; background: #ffffff; border: 1px solid #cbd5e1; padding: 8px 12px;
-            border-radius: 8px; cursor: pointer; color: #2c3e50; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #2c3e50;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
         }
         .notif-badge {
-            position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff;
-            font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 10px; display: none;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: none;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
         }
 
         .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; }
         .audit-scroll-container { max-height: 240px; overflow-y: auto; padding-right: 4px; }
         .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
+        .audit-item-row:last-child { border-bottom: none; }
         .audit-actor-badge { background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
@@ -85,7 +89,9 @@
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 15px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .billing-hub-grid { grid-template-columns: 1fr; gap: 10px; }
+            .stat-card { padding: 12px; }
+            .stat-icon-wrap { width: 40px; height: 40px; font-size: 18px; }
+            .stat-info h3 { font-size: 18px; }
         }
     </style>
 </head>
@@ -106,9 +112,7 @@
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
-        <a href="admin-customer-bills.html" id="nav-customer-bills"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
-        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -119,7 +123,7 @@
     <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
             <div>
-                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Accounting Hub</h2>
+                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Order Progress</h2>
                 <small style="color:#64748b;">Logged in as: <strong id="logged-user-name" style="color:#28469E;">Admin</strong> (<span id="logged-user-role">Role</span>)</small>
             </div>
             
@@ -129,72 +133,20 @@
                     <span class="notif-badge" id="admin-pending-badge">0</span>
                 </a>
 
-                <button id="btn-refresh-stats" onclick="loadDashboardStatsFast()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
-                    <i class="fas fa-sync-alt" id="refresh-spinner"></i> Instant Refresh
+                <button id="btn-refresh-stats" onclick="loadDashboardStatsSafe()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+                    <i class="fas fa-sync-alt" id="refresh-spinner"></i> Refresh Stats
                 </button>
             </div>
         </div>
 
-        <!-- CENTRAL STAMP & SIGNATURE UPLOAD HUB -->
-        <div class="admin-card" style="background:#f8fafc; border:1px dashed #cbd5e1;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
-                <div>
-                    <h3 style="margin:0; font-size:15px; color:#1e293b; border:none; padding:0;"><i class="fas fa-stamp" style="color:#3730a3;"></i> Central Company Stamp & Authorized Signature</h3>
-                    <small style="color:#64748b;">Upload your official stamp and signature once. It will automatically apply to all invoices, slips & POs.</small>
-                </div>
-                <div>
-                    <button onclick="document.getElementById('central-stamp-file-input').click()" style="background:#3730a3; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
-                        <i class="fas fa-cloud-upload-alt"></i> Upload Stamp & Sign Image
-                    </button>
-                    <input type="file" id="central-stamp-file-input" accept="image/*" onchange="handleCentralStampUpload(this)" style="display:none;">
-                </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:15px; background:#fff; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
-                <div style="width:120px; height:65px; border:1.5px dashed #cbd5e1; border-radius:4px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fafbfc;" id="central-stamp-preview-box">
-                    <span style="font-size:10.5px; color:#94a3b8; font-weight:600;">No Image</span>
-                </div>
-                <div style="flex:1; font-size:12px; color:#475569;" id="central-stamp-status-text">
-                    Status: <strong style="color:#d97706;">Not uploaded yet.</strong> Upload a transparent PNG or scanned stamp/signature image.
-                </div>
-            </div>
-        </div>
-
-        <!-- Billing Hub Cards -->
-        <div class="billing-hub-grid">
-            <a href="admin-invoice.html" class="billing-hub-card" style="border-left: 4px solid #2563eb;">
-                <div>
-                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Create Retail Invoice</h4>
-                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Generate manual tax invoice for customer</p>
-                </div>
-                <div class="billing-hub-icon" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-receipt"></i></div>
-            </a>
-
-            <a href="admin-customer-bills.html" class="billing-hub-card" style="border-left: 4px solid #16a34a;">
-                <div>
-                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Customer Sales Ledger</h4>
-                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Customer invoices & A4 PDF generator</p>
-                </div>
-                <div class="billing-hub-icon" style="background:#f0fdf4; color:#16a34a;"><i class="fas fa-file-invoice-dollar"></i></div>
-            </a>
-
-            <a href="admin-vendor-bills.html" class="billing-hub-card" style="border-left: 4px solid #4338ca;">
-                <div>
-                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Vendor PO & Ledger</h4>
-                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Sequential CZ-VN bills & supplier deals</p>
-                </div>
-                <div class="billing-hub-icon" style="background:#eef2ff; color:#4338ca;"><i class="fas fa-truck-loading"></i></div>
-            </a>
-        </div>
-
-        <!-- Metric Stat Cards -->
         <div class="stats-grid">
             <div class="stat-card" style="border-left:4px solid #059669;">
                 <div class="stat-icon-wrap" style="background:#d1fae5; color:#059669;"><i class="fas fa-boxes"></i></div>
-                <div class="stat-info"><h3 id="stat-active-products">...</h3><p>Active Products</p></div>
+                <div class="stat-info"><h3 id="stat-active-products">0</h3><p>Active Products</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #64748b;">
                 <div class="stat-icon-wrap" style="background:#f1f5f9; color:#64748b;"><i class="fas fa-eye-slash"></i></div>
-                <div class="stat-info"><h3 id="stat-inactive-products">...</h3><p>Inactive Products</p></div>
+                <div class="stat-info"><h3 id="stat-inactive-products">0</h3><p>Inactive Products</p></div>
             </div>
 
             <div class="stat-card" id="card-revenue" style="display:none; border-left:4px solid #16a34a;">
@@ -203,31 +155,31 @@
             </div>
             <div class="stat-card" style="border-left:4px solid #28469E;">
                 <div class="stat-icon-wrap" style="background:#e0e7ff; color:#28469E;"><i class="fas fa-shopping-basket"></i></div>
-                <div class="stat-info"><h3 id="stat-total-orders">...</h3><p>Total Confirmed</p></div>
+                <div class="stat-info"><h3 id="stat-total-orders">0</h3><p>Total Confirmed</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #d97706;">
                 <div class="stat-icon-wrap" style="background:#fef3c7; color:#d97706;"><i class="fas fa-clock"></i></div>
-                <div class="stat-info"><h3 id="stat-pending">...</h3><p>Pending Payments</p></div>
+                <div class="stat-info"><h3 id="stat-pending">0</h3><p>Pending Payments</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #3b82f6;">
                 <div class="stat-icon-wrap" style="background:#dbeafe; color:#3b82f6;"><i class="fas fa-cogs"></i></div>
-                <div class="stat-info"><h3 id="stat-processing">...</h3><p>Processing</p></div>
+                <div class="stat-info"><h3 id="stat-processing">0</h3><p>Processing</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #8b5cf6;">
                 <div class="stat-icon-wrap" style="background:#ede9fe; color:#8b5cf6;"><i class="fas fa-box-open"></i></div>
-                <div class="stat-info"><h3 id="stat-packed">...</h3><p>Packed</p></div>
+                <div class="stat-info"><h3 id="stat-packed">0</h3><p>Packed</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #06b6d4;">
                 <div class="stat-icon-wrap" style="background:#cffafe; color:#06b6d4;"><i class="fas fa-shipping-fast"></i></div>
-                <div class="stat-info"><h3 id="stat-shipped">...</h3><p>Shipped</p></div>
+                <div class="stat-info"><h3 id="stat-shipped">0</h3><p>Shipped</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #10b981;">
                 <div class="stat-icon-wrap" style="background:#d1fae5; color:#10b981;"><i class="fas fa-check-double"></i></div>
-                <div class="stat-info"><h3 id="stat-delivered">...</h3><p>Delivered</p></div>
+                <div class="stat-info"><h3 id="stat-delivered">0</h3><p>Delivered</p></div>
             </div>
             <div class="stat-card" style="border-left:4px solid #ef4444;">
                 <div class="stat-icon-wrap" style="background:#fee2e2; color:#ef4444;"><i class="fas fa-times-circle"></i></div>
-                <div class="stat-info"><h3 id="stat-cancelled">...</h3><p>Cancelled</p></div>
+                <div class="stat-info"><h3 id="stat-cancelled">0</h3><p>Cancelled</p></div>
             </div>
         </div>
 
@@ -328,23 +280,6 @@
             window.location.href = "admin-login.html";
         }
 
-        // GLOBAL BULLETPROOF SYSTEM ACTION LOGGER
-        async function logSystemAction(action, targetId) {
-            try {
-                let actorName = loggedInAdmin.name || loggedInAdmin.username || "Admin";
-                let actorRole = loggedInAdmin.role || "admin";
-                await db.collection("audit_logs").add({
-                    actor: actorName,
-                    role: actorRole,
-                    action: action,
-                    targetId: targetId || "General",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch(e) {
-                console.error("Audit log sync error:", e);
-            }
-        }
-
         function applyNavPermissions() {
             document.getElementById('logged-user-name').innerText = loggedInAdmin.name || loggedInAdmin.username || "Admin";
             document.getElementById('logged-user-role').innerText = isMainAdmin() ? "Super Admin" : "Staff Member";
@@ -361,126 +296,114 @@
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
                 if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
                 if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
-                if (!perms.includes('vendor_bills')) document.getElementById('nav-vendor-bills').style.display = 'none';
-                if (!perms.includes('customer_bills')) document.getElementById('nav-customer-bills').style.display = 'none';
                 document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
         }
 
-        async function loadCentralStampPreview() {
-            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
-            const box = document.getElementById('central-stamp-preview-box');
-            const txt = document.getElementById('central-stamp-status-text');
-
-            if (savedStamp) {
-                box.innerHTML = `<img src="${savedStamp}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
-                txt.innerHTML = `Status: <strong style="color:#16a34a;">Active & Synced</strong>. Applied automatically to all invoices and POs.`;
-            }
-        }
-
-        function handleCentralStampUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const maxDim = 400;
-                    let w = img.width;
-                    let h = img.height;
-                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
-                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
-
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-
-                    const base64Img = canvas.toDataURL('image/png', 0.85);
-                    localStorage.setItem('cz_central_stamp_sign', base64Img);
-                    loadCentralStampPreview();
-                    logSystemAction("Updated Central Company Stamp & Signature", "Dashboard");
-                    alert("✅ Central company stamp & signature updated successfully!");
-                };
-            };
-            reader.readAsDataURL(file);
-            input.value = "";
-        }
-
-        async function loadDashboardStatsFast() {
-            loadCentralStampPreview();
+        // SAFE INDIVIDUAL ASYNC LOADERS (PREVENTS TIMEOUT FREEZE)
+        async function loadDashboardStatsSafe() {
             const spinner = document.getElementById('refresh-spinner');
             if (spinner) spinner.classList.add('fa-spin');
 
             try {
-                const [prodSnap, ordersSnap, pendingSnap, auditSnap] = await Promise.all([
-                    db.collection("products").get(),
-                    db.collection("orders").get(),
-                    db.collection("pending_payments").where("paymentStatus", "==", "Pending").get(),
-                    db.collection("audit_logs").limit(50).get()
-                ]);
+                // 1. Products Load
+                db.collection("products").get().then(prodSnap => {
+                    let activeCount = 0, inactiveCount = 0;
+                    prodSnap.forEach(doc => {
+                        let p = doc.data();
+                        if (p.isActive !== false) activeCount++;
+                        else inactiveCount++;
+                    });
+                    document.getElementById('stat-active-products').innerText = activeCount;
+                    document.getElementById('stat-inactive-products').innerText = inactiveCount;
+                }).catch(() => {});
 
-                let activeProdCount = 0;
-                let inactiveProdCount = 0;
-                prodSnap.forEach(doc => {
-                    let p = doc.data();
-                    if (p.isActive !== false) activeProdCount++;
-                    else inactiveProdCount++;
-                });
-                document.getElementById('stat-active-products').innerText = activeProdCount;
-                document.getElementById('stat-inactive-products').innerText = inactiveProdCount;
+                // 2. Orders Load
+                db.collection("orders").get().then(ordersSnap => {
+                    let total = 0, proc = 0, packed = 0, shipped = 0, delivered = 0, cancelled = 0, rev = 0;
+                    let recent = [];
 
-                let totalConfirmed = 0, processingCount = 0, packedCount = 0, shippedCount = 0, deliveredCount = 0, cancelledCount = 0, deliveredRevenue = 0;
-                let recentOrders = [];
+                    ordersSnap.forEach(doc => {
+                        let ord = doc.data();
+                        ord.docId = doc.id;
+                        total++;
+                        let st = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
+                        if (st === "delivered") { delivered++; rev += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0); }
+                        else if (st === "shipped") shipped++;
+                        else if (st === "packed") packed++;
+                        else if (st === "cancelled") cancelled++;
+                        else proc++;
+                        recent.push(ord);
+                    });
 
-                ordersSnap.forEach(doc => {
-                    let ord = doc.data();
-                    ord.docId = doc.id;
-                    totalConfirmed++;
+                    document.getElementById('stat-total-orders').innerText = total;
+                    document.getElementById('stat-processing').innerText = proc;
+                    document.getElementById('stat-packed').innerText = packed;
+                    document.getElementById('stat-shipped').innerText = shipped;
+                    document.getElementById('stat-delivered').innerText = delivered;
+                    document.getElementById('stat-cancelled').innerText = cancelled;
+                    if (isMainAdmin()) {
+                        document.getElementById('stat-revenue').innerText = `₹${rev.toLocaleString('en-IN')}`;
+                    }
 
-                    let rawStatus = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
-                    if (rawStatus === "delivered") {
-                        deliveredCount++;
-                        deliveredRevenue += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0);
-                    } else if (rawStatus === "shipped") shippedCount++;
-                    else if (rawStatus === "packed") packedCount++;
-                    else if (rawStatus === "cancelled") cancelledCount++;
-                    else processingCount++;
+                    recent.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
+                    renderRecentOrders(recent.slice(0, 8));
+                }).catch(() => {});
 
-                    recentOrders.push(ord);
-                });
+                // 3. Pending Payments Load
+                db.collection("pending_payments").where("paymentStatus", "==", "Pending").get().then(pendSnap => {
+                    let size = pendSnap.size;
+                    document.getElementById('stat-pending').innerText = size;
+                    let badge = document.getElementById('admin-pending-badge');
+                    if (size > 0) {
+                        badge.innerText = size;
+                        badge.style.display = "inline-block";
+                    } else {
+                        badge.style.display = "none";
+                    }
+                }).catch(() => {});
 
-                const pendingSize = pendingSnap.size;
-                const notifBadge = document.getElementById('admin-pending-badge');
-                if (pendingSize > 0) {
-                    notifBadge.innerText = pendingSize;
-                    notifBadge.style.display = "inline-block";
-                } else {
-                    notifBadge.style.display = "none";
-                }
+                // 4. Audit Logs Load
+                db.collection("audit_logs").get().then(auditSnap => {
+                    const box = document.getElementById('audit-log-items-box');
+                    if (auditSnap.empty) {
+                        box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No team actions recorded yet.</p>";
+                        return;
+                    }
+                    let logs = [];
+                    auditSnap.forEach(doc => logs.push(doc.data()));
+                    logs.sort((a, b) => {
+                        let tA = a.timestamp ? (a.timestamp.seconds || a.timestamp._seconds || 0) : 0;
+                        let tB = b.timestamp ? (b.timestamp.seconds || b.timestamp._seconds || 0) : 0;
+                        return tB - tA;
+                    });
 
-                document.getElementById('stat-total-orders').innerText = totalConfirmed;
-                document.getElementById('stat-pending').innerText = pendingSize;
-                document.getElementById('stat-processing').innerText = processingCount;
-                document.getElementById('stat-packed').innerText = packedCount;
-                document.getElementById('stat-shipped').innerText = shippedCount;
-                document.getElementById('stat-delivered').innerText = deliveredCount;
-                document.getElementById('stat-cancelled').innerText = cancelledCount;
-
-                if (isMainAdmin()) {
-                    document.getElementById('stat-revenue').innerText = `₹${deliveredRevenue.toLocaleString('en-IN')}`;
-                }
-
-                recentOrders.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || b.timestamp?.seconds || 0));
-                renderRecentOrders(recentOrders.slice(0, 8));
-                renderFastTopAuditLogs(auditSnap);
+                    let topLogs = logs.slice(0, 8);
+                    let html = "";
+                    topLogs.forEach(l => {
+                        let d = l.timestamp?.toDate ? l.timestamp.toDate() : new Date();
+                        let dateStr = d.toLocaleDateString('en-GB');
+                        let timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                        let priceTag = l.oldPrice ? `<span style="background:#fee2e2; color:#dc2626; font-size:10.5px; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:bold;">₹${l.oldPrice} ➔ ₹${l.newPrice}</span>` : '';
+                        
+                        html += `
+                            <div class="audit-item-row">
+                                <div>
+                                    <span class="audit-actor-badge">${l.actor || 'User'} (${l.role || 'staff'})</span>
+                                    <span style="font-weight:600; color:#1e293b;">${l.action || 'Updated'}</span> 
+                                    <strong style="color:#2563eb;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
+                                    ${priceTag}
+                                </div>
+                                <span style="font-size:11px; color:#64748b; white-space:nowrap;"><i class="far fa-clock"></i> ${dateStr} ${timeStr}</span>
+                            </div>
+                        `;
+                    });
+                    box.innerHTML = html;
+                }).catch(() => {});
 
             } catch(e) {
-                console.error("Fast dashboard loader error:", e);
+                console.error("Dashboard error:", e);
             } finally {
                 if (spinner) spinner.classList.remove('fa-spin');
             }
@@ -508,44 +431,6 @@
                     </tr>
                 `;
             });
-        }
-
-        function renderFastTopAuditLogs(auditSnap) {
-            const box = document.getElementById('audit-log-items-box');
-            if (auditSnap.empty) {
-                box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No team actions recorded yet.</p>";
-                return;
-            }
-            let logs = [];
-            auditSnap.forEach(doc => logs.push(doc.data()));
-
-            logs.sort((a, b) => {
-                let tA = a.timestamp ? (a.timestamp.seconds || a.timestamp._seconds || 0) : 0;
-                let tB = b.timestamp ? (b.timestamp.seconds || b.timestamp._seconds || 0) : 0;
-                return tB - tA;
-            });
-
-            let topLogs = logs.slice(0, 8);
-            let html = "";
-            topLogs.forEach(l => {
-                let d = l.timestamp?.toDate ? l.timestamp.toDate() : new Date();
-                let dateStr = d.toLocaleDateString('en-GB');
-                let timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
-                let priceTag = l.oldPrice ? `<span style="background:#fee2e2; color:#dc2626; font-size:10.5px; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:bold;">₹${l.oldPrice} ➔ ₹${l.newPrice}</span>` : '';
-                
-                html += `
-                    <div class="audit-item-row">
-                        <div>
-                            <span class="audit-actor-badge">${l.actor || 'User'} (${l.role || 'staff'})</span>
-                            <span style="font-weight:600; color:#1e293b;">${l.action || 'Updated'}</span> 
-                            <strong style="color:#2563eb;">${l.targetId ? `[${l.targetId}]` : ''}</strong>
-                            ${priceTag}
-                        </div>
-                        <span style="font-size:11px; color:#64748b; white-space:nowrap;"><i class="far fa-clock"></i> ${dateStr} ${timeStr}</span>
-                    </div>
-                `;
-            });
-            box.innerHTML = html;
         }
 
         async function openFullAuditModal() {
@@ -667,7 +552,7 @@
                 alert("✓ Audit log archive cleared successfully. Database memory released.");
                 fullAuditHistoryCache = [];
                 renderFullAuditTable([]);
-                loadDashboardStatsFast();
+                loadDashboardStatsSafe();
             } catch(err) {
                 alert("Failed to clear logs.");
             }
@@ -675,7 +560,7 @@
 
         window.onload = () => {
             applyNavPermissions();
-            loadDashboardStatsFast();
+            loadDashboardStatsSafe();
         };
     </script>
 </body>
