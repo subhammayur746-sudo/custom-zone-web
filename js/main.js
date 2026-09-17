@@ -17,6 +17,7 @@ const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
 
+// GLOBAL MAINTENANCE & CACHE BYPASS CHECK ON EVERY PAGE LOAD
 async function checkSiteMaintenanceMode() {
     try {
         let doc = await db.collection("settings").doc("maintenance").get();
@@ -29,6 +30,7 @@ async function checkSiteMaintenanceMode() {
     } catch(e) {}
 }
 
+// Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -43,6 +45,7 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
+// Fetch Live Products & Reviews safely
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -121,11 +124,11 @@ function renderCategoryPills() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
 
-    let html = `<button class="cat-pill-btn ${selectedMainCategory === 'all' ? 'active' : ''}" onclick="setMainCategoryFilter('all', this)">All</button>`;
+    let html = '<button class="cat-pill-btn ' + (selectedMainCategory === 'all' ? 'active' : '') + '" onclick="setMainCategoryFilter(\'all\', this)">All</button>';
 
     for (let mainCat in categoryMap) {
         let isActive = selectedMainCategory.toLowerCase() === mainCat.toLowerCase();
-        html += `<button class="cat-pill-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">${mainCat}</button>`;
+        html += '<button class="cat-pill-btn ' + (isActive ? 'active' : '') + '" onclick="setMainCategoryFilter(\'' + mainCat + '\', this)">' + mainCat + '</button>';
     }
 
     nav.innerHTML = html;
@@ -148,9 +151,9 @@ function renderSubCategoryRow() {
         return;
     }
 
-    let html = `<span class="subcat-pill ${selectedSubCategory === 'all' ? 'active' : ''}" onclick="setSubCategoryFilter('all')">All ${selectedMainCategory}</span>`;
+    let html = '<span class="subcat-pill ' + (selectedSubCategory === 'all' ? 'active' : '') + '" onclick="setSubCategoryFilter(\'all\')">All ' + selectedMainCategory + '</span>';
     subCats.forEach(sub => {
-        html += `<span class="subcat-pill ${selectedSubCategory === sub ? 'active' : ''}" onclick="setSubCategoryFilter('${sub}')">${sub}</span>`;
+        html += '<span class="subcat-pill ' + (selectedSubCategory === sub ? 'active' : '') + '" onclick="setSubCategoryFilter(\'' + sub + '\')">' + sub + '</span>';
     });
 
     subRow.innerHTML = html;
@@ -223,15 +226,9 @@ function renderHomeProducts(products) {
 
         let priceHtml = "";
         if (hasDiscount) {
-            priceHtml = `
-                <div class="price-display-wrapper">
-                    <span class="original-price-strike">₹${actualPrice}</span>
-                    <span class="sale-price-highlight">${displayPriceText}</span>
-                </div>
-                <div><span class="discount-badge-pill">🔥 ${discountPct}% OFF</span></div>
-            `;
+            priceHtml = '<div class="price-display-wrapper"><span class="original-price-strike">₹' + actualPrice + '</span><span class="sale-price-highlight">' + displayPriceText + '</span></div><div><span class="discount-badge-pill">🔥 ' + discountPct + '% OFF</span></div>';
         } else {
-            priceHtml = `<p class="sale-price-highlight" style="margin-bottom:8px;">${displayPriceText}</p>`;
+            priceHtml = '<p class="sale-price-highlight" style="margin-bottom:8px;">' + displayPriceText + '</p>';
         }
 
         container.innerHTML += `
@@ -289,32 +286,17 @@ function renderHomePaginationBar(totalItems) {
     let totalPages = Math.ceil(totalItems / HOME_PRODUCTS_PER_PAGE);
     let html = "";
 
-    html += `
-        <button onclick="goToHomePage(${currentHomePage - 1})" ${currentHomePage === 1 ? 'disabled' : ''} 
-                style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === 1 ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === 1 ? '0.5' : '1'};">
-            &laquo; Prev
-        </button>
-    `;
+    html += '<button onclick="goToHomePage(' + (currentHomePage - 1) + ')" ' + (currentHomePage === 1 ? 'disabled' : '') + ' style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:' + (currentHomePage === 1 ? 'not-allowed' : 'pointer') + '; opacity:' + (currentHomePage === 1 ? '0.5' : '1') + ';">&laquo; Prev</button>';
 
     let startPage = Math.max(1, currentHomePage - 2);
     let endPage = Math.min(totalPages, currentHomePage + 2);
 
     for (let i = startPage; i <= endPage; i++) {
         let isAct = i === currentHomePage;
-        html += `
-            <button onclick="goToHomePage(${i})" 
-                    style="background:${isAct ? '#28469E' : '#fff'}; color:${isAct ? '#fff' : '#1e293b'}; border:1px solid ${isAct ? '#28469E' : '#cbd5e1'}; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
-                ${i}
-            </button>
-        `;
+        html += '<button onclick="goToHomePage(' + i + ')" style="background:' + (isAct ? '#28469E' : '#fff') + '; color:' + (isAct ? '#fff' : '#1e293b') + '; border:1px solid ' + (isAct ? '#28469E' : '#cbd5e1') + '; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">' + i + '</button>';
     }
 
-    html += `
-        <button onclick="goToHomePage(${currentHomePage + 1})" ${currentHomePage === totalPages ? 'disabled' : ''} 
-                style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === totalPages ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === totalPages ? '0.5' : '1'};">
-            Next &raquo;
-        </button>
-    `;
+    html += '<button onclick="goToHomePage(' + (currentHomePage + 1) + ')" ' + (currentHomePage === totalPages ? 'disabled' : '') + ' style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:' + (currentHomePage === totalPages ? 'not-allowed' : 'pointer') + '; opacity:' + (currentHomePage === totalPages ? '0.5' : '1') + ';">Next &raquo;</button>';
 
     bar.innerHTML = html;
 }
@@ -399,15 +381,9 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
 
     if (hasDiscount) {
-        priceContainer.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
-                <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
-                <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
-            </div>
-        `;
+        priceContainer.innerHTML = '<div style="display:flex; align-items:center; gap:10px;"><span class="original-price-strike" style="font-size:16px;">₹' + actualPrice + '</span><span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">' + sellingPrice + '</span></span><span class="discount-badge-pill" style="margin-bottom:0;">🔥 ' + discountPct + '% OFF</span></div>';
     } else {
-        priceContainer.innerHTML = `<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></div>`;
+        priceContainer.innerHTML = '<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">' + sellingPrice + '</span></div>';
     }
 }
 
@@ -478,43 +454,23 @@ function openProductDetailsModal(productId) {
 
     if (product.hasSizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         currentSelectedSize = product.sizes[0];
-        let sizeHtml = `
-            <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
-                <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;">
-                    <i class="fas fa-ruler-combined"></i> Select Size / Dimension:
-                </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    ${product.sizes.map((s, idx) => `
-                        <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductSize('${s.name.replace(/'/g, "\\'")}', ${s.extraPrice || 0}, this)">
-                            ${s.name}${s.extraPrice > 0 ? ' (+₹' + s.extraPrice + ')' : ''}
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
+        let sizeHtml = '<div class="pdm-variant-wrapper" style="margin-bottom:12px;"><div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-ruler-combined"></i> Select Size / Dimension:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">';
+        product.sizes.forEach((s, idx) => {
+            sizeHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductSize(\'' + s.name + '\', ' + (s.extraPrice || 0) + ', this)">' + s.name + (s.extraPrice > 0 ? ' (+₹' + s.extraPrice + ')' : '') + '</button>';
+        });
+        sizeHtml += '</div></div>';
         customContainer.innerHTML += sizeHtml;
     }
 
     if (product.hasVariants && Array.isArray(product.variants) && product.variants.length > 0) {
         currentSelectedVariant = product.variants[0];
-        let variantHtml = `
-            <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
-                <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;">
-                    <i class="fas fa-palette"></i> Select Color / Design:
-                </div>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                    ${product.variants.map((v, idx) => {
-                        let vImages = v.images || (v.image ? [v.image] : []);
-                        let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
-                        return `
-                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}', '${imgJson}', this)">
-                                ${v.name} • ₹${v.price}
-                            </button>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
+        let variantHtml = '<div class="pdm-variant-wrapper" style="margin-bottom:12px;"><div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-palette"></i> Select Color / Design:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">';
+        product.variants.forEach((v, idx) => {
+            let vImages = v.images || (v.image ? [v.image] : []);
+            let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
+            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariant(\'' + v.name + '\', ' + v.price + ', \'' + (v.actualPrice || '') + '\', \'' + imgJson + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
+        });
+        variantHtml += '</div></div>';
         customContainer.innerHTML += variantHtml;
 
         let firstVarImgs = currentSelectedVariant.images || (currentSelectedVariant.image ? [currentSelectedVariant.image] : []);
@@ -528,20 +484,9 @@ function openProductDetailsModal(productId) {
     renderApplicableBulkPackages(product);
 
     if (product.customType === "name") {
-        customContainer.innerHTML += `
-            <div style="margin-top:10px;">
-                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label>
-                <input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);">
-            </div>
-        `;
+        customContainer.innerHTML += '<div style="margin-top:10px;"><label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label><input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);"></div>';
     } else if (product.customType === "pic") {
-        customContainer.innerHTML += `
-            <div style="margin-top:10px;">
-                <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
-                    📷 Photo Customization: Share your photo on WhatsApp after checkout!
-                </p>
-            </div>
-        `;
+        customContainer.innerHTML += '<div style="margin-top:10px;"><p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">📷 Photo Customization: Share your photo on WhatsApp after checkout!</p></div>';
     }
 
     recalculateLinkedPrice(product);
@@ -610,24 +555,12 @@ function renderApplicableBulkPackages(product) {
     }
 
     let sorted = [...matchedTiers].sort((a, b) => a.minQty - b.minQty);
-    wrapper.innerHTML = `
-        <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span>
-                <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span>
-            </div>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === 1 ? 'active' : ''}" onclick="onSelectBulkQty(1, this)">
-                    1 PC (Standard)
-                </button>
-                ${sorted.map(t => `
-                    <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === t.minQty ? 'active' : ''}" onclick="onSelectBulkQty(${t.minQty}, this)">
-                        ${t.minQty} PCS Package
-                    </button>
-                `).join('')}
-            </div>
-        </div>
-    `;
+    let html = '<div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span><span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span></div><div style="display:flex; gap:6px; flex-wrap:wrap;"><button type="button" class="pdm-qty-pill-btn ' + (currentSelectedQty === 1 ? 'active' : '') + '" onclick="onSelectBulkQty(1, this)">1 PC (Standard)</button>';
+    sorted.forEach(t => {
+        html += '<button type="button" class="pdm-qty-pill-btn ' + (currentSelectedQty === t.minQty ? 'active' : '') + '" onclick="onSelectBulkQty(' + t.minQty + ', this)">' + t.minQty + ' PCS Package</button>';
+    });
+    html += '</div></div>';
+    wrapper.innerHTML = html;
 }
 
 function renderModalGallery(imgs) {
@@ -637,11 +570,7 @@ function renderModalGallery(imgs) {
     thumbsContainer.innerHTML = "";
     if (imgs && imgs.length > 1) {
         imgs.forEach(img => {
-            thumbsContainer.innerHTML += `
-                <img src="${img}" onerror="this.src='${fallbackImg}'" 
-                     style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" 
-                     onclick="document.getElementById('pdm-main-img').src='${img}'">
-            `;
+            thumbsContainer.innerHTML += '<img src="' + img + '" onerror="this.src=\'' + fallbackImg + '\'" style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" onclick="document.getElementById(\'pdm-main-img\').src=\'' + img + '\'">';
         });
     }
 }
@@ -655,12 +584,15 @@ function onSelectProductSize(sizeName, extraPrice, btnEl) {
     if (product) recalculateLinkedPrice(product);
 }
 
-function onSelectProductVariant(varName, price, actualPrice, images, btnEl) {
+function onSelectProductVariant(varName, price, actualPrice, imagesJsonStr, btnEl) {
+    let parsedImgs = [];
+    try { parsedImgs = JSON.parse(imagesJsonStr); } catch(e) {}
+
     currentSelectedVariant = {
         name: varName,
         price: parseInt(price),
         actualPrice: actualPrice ? parseInt(actualPrice) : null,
-        images: Array.isArray(images) ? images : (images ? [images] : [])
+        images: parsedImgs
     };
     btnEl.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btnEl.classList.add('active');
@@ -704,10 +636,7 @@ async function loadProductSpecificReviews(productId) {
     container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>Loading reviews...</p>";
 
     try {
-        const snapshot = await db.collection("reviews")
-            .where("productId", "==", productId)
-            .get();
-
+        const snapshot = await db.collection("reviews").where("productId", "==", productId).get();
         if (snapshot.empty) {
             container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>No reviews yet for this product.</p>";
             return;
@@ -725,19 +654,9 @@ async function loadProductSpecificReviews(productId) {
         container.innerHTML = "";
         reviews.forEach(r => {
             let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
-            let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="directImageZoom('${r.photoUrl}')" alt="Customer Real Pic">` : "";
+            let photoHtml = r.photoUrl ? '<img src="' + r.photoUrl + '" class="review-photo" onclick="directImageZoom(\'' + r.photoUrl + '\')" alt="Customer Real Pic">' : "";
 
-            container.innerHTML += `
-                <div class="review-card-item">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <strong style="color:var(--blue-primary); font-size:13px;">${r.customerName || 'Customer'}</strong>
-                        <span style="color:#f39c12; font-size:12px;">${stars}</span>
-                    </div>
-                    <p style="margin:0; font-size:12px; color:var(--text-primary);">${r.comment || ''}</p>
-                    ${photoHtml}
-                    <div style="font-size:10px; color:#595959; margin-top:5px;">${r.date || 'Recent'}</div>
-                </div>
-            `;
+            container.innerHTML += '<div class="review-card-item"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><strong style="color:var(--blue-primary); font-size:13px;">' + (r.customerName || 'Customer') + '</strong><span style="color:#f39c12; font-size:12px;">' + stars + '</span></div><p style="margin:0; font-size:12px; color:var(--text-primary);">' + (r.comment || '') + '</p>' + photoHtml + '<div style="font-size:10px; color:#595959; margin-top:5px;">' + (r.date || 'Recent') + '</div></div>';
         });
 
     } catch (e) {
@@ -839,9 +758,7 @@ async function toggleWishlistCloud(productId) {
 
     try {
         await db.collection("customers").doc(customer.phone).update({ wishlist: wishlist });
-    } catch(e) {
-        console.error("Wishlist sync error", e);
-    }
+    } catch(e) {}
 
     renderHomeProducts(liveProducts);
 }
