@@ -38,6 +38,11 @@
         .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #2c3e50; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff; color: #2c3e50; font-size: 13px; }
         .btn-admin { background: #27ae60; color: #fff; padding: 11px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        
+        .upload-dropzone { border: 2px dashed #bdc3c7; background: #fafbfc; padding: 15px; border-radius: 6px; text-align: center; cursor: pointer; }
+        .preview-thumbs-wrapper { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .thumb-preview-box { position: relative; width: 70px; height: 70px; border-radius: 4px; overflow: hidden; border: 1px solid #ddd; }
+        .thumb-preview-box img { width: 100%; height: 100%; object-fit: cover; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -84,7 +89,7 @@
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
                 <div>
                     <h3 style="color:#b45309; margin:0 0 5px 0; border:none; padding:0;"><i class="fas fa-tools"></i> Website Maintenance Mode</h3>
-                    <p style="font-size:12.5px; color:#78350f; margin:0;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice instead of incomplete orders.</p>
+                    <p style="font-size:12.5px; color:#78350f; margin:0;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice.</p>
                 </div>
                 <div>
                     <select id="maintenance-toggle" style="padding:10px 16px; border-radius:6px; font-size:13.5px; font-weight:800; border:2px solid #f59e0b; background:#fff; color:#92400e; cursor:pointer; outline:none;">
@@ -93,8 +98,9 @@
                     </select>
                 </div>
             </div>
-            <div style="margin-top:15px; text-align:right;">
-                <button class="btn-admin" style="background:#d97706;" onclick="saveMaintenanceSetting()">Save Maintenance Status</button>
+            <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
+                <span id="maintenance-save-status" style="font-size:12px; font-weight:bold; color:#16a34a;"></span>
+                <button class="btn-admin" id="btn-save-maint" style="background:#d97706;" onclick="saveMaintenanceSetting()">Save Maintenance Status</button>
             </div>
         </div>
 
@@ -110,19 +116,30 @@
                 <textarea id="promo-desc" rows="3" placeholder="Get flat 15% off on all custom gifts..."></textarea>
             </div>
             <div class="form-group">
+                <label><i class="fas fa-image"></i> Promo Banner / Image (Direct Upload):</label>
+                <div class="upload-dropzone" onclick="document.getElementById('promo-file-input').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:#3498db; margin-bottom:4px;"></i>
+                    <p style="margin:0; font-size:12px; font-weight:600; color:#2c3e50;">Click here to select banner image</p>
+                </div>
+                <input type="file" id="promo-file-input" accept="image/*" onchange="handlePromoImageUpload(this)" style="display:none;">
+                <div class="preview-thumbs-wrapper" id="promo-image-preview-container"></div>
+            </div>
+            <div class="form-group">
                 <label>Status</label>
                 <select id="promo-enabled">
                     <option value="true">Enabled</option>
                     <option value="false">Disabled</option>
                 </select>
             </div>
-            <button class="btn-admin" onclick="savePromoSettings()">Save Promo Settings</button>
+            <button class="btn-admin" id="btn-save-promo" onclick="savePromoSettings()">Save Promo Settings</button>
         </div>
     </div>
 
     <script>
         let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInUser) window.location.href = "admin-login.html";
+
+        let uploadedPromoImgBase64 = "";
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -149,17 +166,76 @@
                     document.getElementById('promo-title').value = d.title || "";
                     document.getElementById('promo-desc').value = d.description || "";
                     document.getElementById('promo-enabled').value = String(d.enabled || false);
+                    if (d.imageUrl) {
+                        uploadedPromoImgBase64 = d.imageUrl;
+                        renderPromoImagePreview();
+                    }
                 }
             } catch(e) {}
         }
 
+        function handlePromoImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 800;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    uploadedPromoImgBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    renderPromoImagePreview();
+                };
+            };
+            reader.readAsDataURL(file);
+            input.value = "";
+        }
+
+        function renderPromoImagePreview() {
+            const container = document.getElementById('promo-image-preview-container');
+            if (!container) return;
+            if (uploadedPromoImgBase64) {
+                container.innerHTML = `
+                    <div class="thumb-preview-box">
+                        <img src="${uploadedPromoImgBase64}">
+                        <button type="button" onclick="uploadedPromoImgBase64=''; renderPromoImagePreview();" style="position:absolute; top:2px; right:2px; background:red; color:#fff; border:none; width:16px; height:16px; border-radius:50%; font-size:9px; cursor:pointer;">✕</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = "";
+            }
+        }
+
         async function saveMaintenanceSetting() {
             let status = document.getElementById('maintenance-toggle').value === "true";
+            let statusText = document.getElementById('maintenance-save-status');
+            const btn = document.getElementById('btn-save-maint');
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
             try {
                 await db.collection("settings").doc("maintenance").set({ enabled: status });
-                alert(status ? "🔴 Maintenance Mode ENABLED! Customers will now see the maintenance notice." : "🟢 Site is now LIVE and fully accessible.");
+                statusText.innerText = "✓ Maintenance status saved successfully!";
+                setTimeout(() => { statusText.innerText = ""; }, 4000);
+                alert(status ? "🔴 Maintenance Mode ENABLED!" : "🟢 Site is now LIVE!");
             } catch(e) {
-                alert("Failed to update status.");
+                alert("Failed to update status: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Maintenance Status";
             }
         }
 
@@ -167,17 +243,24 @@
             let title = document.getElementById('promo-title').value.trim();
             let desc = document.getElementById('promo-desc').value.trim();
             let enabled = document.getElementById('promo-enabled').value === "true";
+            const btn = document.getElementById('btn-save-promo');
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
 
             try {
                 await db.collection("settings").doc("promo").set({
                     title: title,
                     description: desc,
                     enabled: enabled,
-                    imageUrl: ""
+                    imageUrl: uploadedPromoImgBase64 || ""
                 });
-                alert("✅ Promo settings saved!");
+                alert("✅ Promo settings saved successfully!");
             } catch(e) {
-                alert("Failed to save promo.");
+                alert("Failed to save promo: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Promo Settings";
             }
         }
 
