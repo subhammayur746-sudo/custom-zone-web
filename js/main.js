@@ -510,7 +510,7 @@ function openProductDetailsModal(productId) {
                         let vImages = v.images || (v.image ? [v.image] : []);
                         let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
                         return `
-                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice || ''}', ${imgJson}, this)">
+                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}',${imgJson}, this)">
                                 ${v.name} • ₹${v.price}
                             </button>
                         `;
@@ -1033,6 +1033,21 @@ function displayPopup(data) {
         imgEl.style.display = "block";
     }
 
+    // Fixed close & explore button listeners safely attached
+    const closeBtn = popup.querySelector('.close-popup-btn') || popup.querySelector('.fa-times');
+    if (closeBtn) {
+        closeBtn.onclick = closePopup;
+    }
+
+    const exploreBtn = popup.querySelector('#promo-explore-btn') || popup.querySelector('.btn-promo-action');
+    if (exploreBtn) {
+        exploreBtn.onclick = () => {
+            closePopup();
+            const pList = document.getElementById('product-list');
+            if (pList) pList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+    }
+
     setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
 }
 
@@ -1042,6 +1057,11 @@ function checkPromoPopup() {
             if (doc.exists) displayPopup(doc.data());
         });
     } catch (e) {}
+}
+
+function closePopup() {
+    const popup = document.getElementById('promo-popup');
+    if (popup) popup.classList.remove('show-popup');
 }
 
 window.addEventListener('DOMContentLoaded', () => {
