@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Store Settings - Custom Zone Admin</title>
+    <title>Store Settings & Maintenance - Custom Zone Admin</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,34 +13,38 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
-
-        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
+        body { display: flex; margin: 0; background: #f4f7f6; color: #2c3e50; flex-direction: column; min-height: 100vh; }
+        .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; transition: 0.3s ease; overflow-y: auto; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
-        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
-        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; margin: 0; font-weight: 800; }
+        .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
-
-        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         
+        .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
         .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
         .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .admin-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
-        .set-input { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        .admin-card { background: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
+        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #2c3e50; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff; color: #2c3e50; font-size: 13px; }
+        .btn-admin { background: #27ae60; color: #fff; padding: 11px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 14px; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
-            .main-content { margin-left: 0; width: 100%; padding: 15px; }
+            .main-content { margin-left: 0; width: 100%; padding: 12px; }
             .admin-card { padding: 15px; }
         }
     </style>
@@ -58,79 +62,67 @@
             <h2>CZ Admin</h2>
             <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
         </div>
-        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
-        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" class="active" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff Access</a>
-        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-customer-bills.html"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
+        <a href="admin-reviews.html"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" class="active"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html"><i class="fas fa-users"></i> Staff & Vendors</a>
+        <a href="#" onclick="logout()" style="background:#c0392b; color:white; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Store Banners & Delivery Settings</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px;">Store Settings & Maintenance Mode</h2>
 
-        <div class="admin-card">
-            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
-                <i class="fas fa-stopwatch"></i> Cart Flash Offer Countdown Settings
-            </h3>
-            
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
+        <!-- MAINTENANCE MODE TOGGLE CARD -->
+        <div class="admin-card" style="border: 2px dashed #f59e0b; background: #fffbeb;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
                 <div>
-                    <label style="font-size:12px; font-weight:bold;">Offer Benefit Text *</label>
-                    <input type="text" id="flash-benefit" class="set-input" placeholder="e.g. FREE Premium Gift Wrapping!">
+                    <h3 style="color:#b45309; margin:0 0 5px 0; border:none; padding:0;"><i class="fas fa-tools"></i> Website Maintenance Mode</h3>
+                    <p style="font-size:12.5px; color:#78350f; margin:0;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice instead of incomplete orders.</p>
                 </div>
                 <div>
-                    <label style="font-size:12px; font-weight:bold;">Timer Duration (Minutes) *</label>
-                    <input type="number" id="flash-duration" class="set-input" value="5" min="1">
+                    <select id="maintenance-toggle" style="padding:10px 16px; border-radius:6px; font-size:13.5px; font-weight:800; border:2px solid #f59e0b; background:#fff; color:#92400e; cursor:pointer; outline:none;">
+                        <option value="false">🟢 Site is LIVE (Normal)</option>
+                        <option value="true">🔴 Maintenance Mode (OFFLINE)</option>
+                    </select>
                 </div>
             </div>
-
-            <div style="margin-bottom:15px;">
-                <label style="font-size:13px; font-weight:bold; cursor:pointer;">
-                    <input type="checkbox" id="flash-enabled" checked> Enable Cart Flash Offer Timer
-                </label>
+            <div style="margin-top:15px; text-align:right;">
+                <button class="btn-admin" style="background:#d97706;" onclick="saveMaintenanceSetting()">Save Maintenance Status</button>
             </div>
-
-            <button onclick="saveFlashOfferSettings()" style="background:#27ae60; color:#fff; border:none; padding:10px 22px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                Save Flash Offer
-            </button>
         </div>
 
+        <!-- PROMO BANNER / POPUP SETTINGS -->
         <div class="admin-card">
-            <h3 style="margin-top:0; color:#2c3e50; border-bottom:2px solid #eee; padding-bottom:8px; font-size: 15px;">
-                <i class="fas fa-shipping-fast"></i> Delivery Charges Settings
-            </h3>
-
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:15px;">
-                <div>
-                    <label style="font-size:12px; font-weight:bold;">Standard Delivery Charge (₹) *</label>
-                    <input type="number" id="del-fee" class="set-input" value="0" min="0">
-                </div>
-                <div>
-                    <label style="font-size:12px; font-weight:bold;">Free Delivery on Orders Above (₹) *</label>
-                    <input type="number" id="del-free-above" class="set-input" value="499" min="0">
-                </div>
+            <h3><i class="fas fa-bullhorn"></i> Store Promo Popup & Banner</h3>
+            <div class="form-group">
+                <label>Popup Title</label>
+                <input type="text" id="promo-title" placeholder="e.g., Special Festive Offer!">
             </div>
-
-            <button onclick="saveDeliverySettings()" style="background:#28469E; color:#fff; border:none; padding:10px 22px; border-radius:4px; font-weight:bold; cursor:pointer;">
-                Save Delivery Rules
-            </button>
+            <div class="form-group">
+                <label>Popup Description</label>
+                <textarea id="promo-desc" rows="3" placeholder="Get flat 15% off on all custom gifts..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="promo-enabled">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                </select>
+            </div>
+            <button class="btn-admin" onclick="savePromoSettings()">Save Promo Settings</button>
         </div>
     </div>
 
     <script>
-        let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-
-        if (!loggedInAdmin) {
-            window.location.href = "admin-login.html";
-        } else if (loggedInAdmin.role === 'staff') {
-            alert("❌ Access Denied: Staff cannot access Store Settings!");
-            window.location.href = "admin-dashboard.html";
-        }
+        let loggedInUser = JSON.parse(localStorage.getItem('cz_logged_in_user'));
+        if (!loggedInUser) window.location.href = "admin-login.html";
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -139,45 +131,54 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
+        function logout() { 
+            localStorage.removeItem('cz_logged_in_user'); 
+            window.location.href = "admin-login.html"; 
+        }
+
         async function loadStoreSettings() {
             try {
-                const flashDoc = await db.collection("settings").doc("flash_offer").get();
-                if (flashDoc.exists) {
-                    const data = flashDoc.data();
-                    document.getElementById('flash-benefit').value = data.benefit || "FREE Premium Gift Wrapping!";
-                    document.getElementById('flash-duration').value = data.duration || 5;
-                    document.getElementById('flash-enabled').checked = data.enabled !== false;
+                let doc = await db.collection("settings").doc("maintenance").get();
+                if (doc.exists) {
+                    document.getElementById('maintenance-toggle').value = String(doc.data().enabled || false);
                 }
 
-                const delDoc = await db.collection("settings").doc("delivery").get();
-                if (delDoc.exists) {
-                    const data = delDoc.data();
-                    document.getElementById('del-fee').value = data.fee || 0;
-                    document.getElementById('del-free-above').value = data.freeAbove || 499;
+                let pDoc = await db.collection("settings").doc("promo").get();
+                if (pDoc.exists) {
+                    let d = pDoc.data();
+                    document.getElementById('promo-title').value = d.title || "";
+                    document.getElementById('promo-desc').value = d.description || "";
+                    document.getElementById('promo-enabled').value = String(d.enabled || false);
                 }
             } catch(e) {}
         }
 
-        async function saveFlashOfferSettings() {
+        async function saveMaintenanceSetting() {
+            let status = document.getElementById('maintenance-toggle').value === "true";
             try {
-                await db.collection("settings").doc("flash_offer").set({
-                    benefit: document.getElementById('flash-benefit').value.trim(),
-                    duration: parseInt(document.getElementById('flash-duration').value) || 5,
-                    enabled: document.getElementById('flash-enabled').checked,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert("✅ Flash offer updated!");
-            } catch(e) { alert("Failed to update."); }
+                await db.collection("settings").doc("maintenance").set({ enabled: status });
+                alert(status ? "🔴 Maintenance Mode ENABLED! Customers will now see the maintenance notice." : "🟢 Site is now LIVE and fully accessible.");
+            } catch(e) {
+                alert("Failed to update status.");
+            }
         }
 
-        async function saveDeliverySettings() {
-            const fee = parseInt(document.getElementById('del-fee').value) || 0;
-            const freeAbove = parseInt(document.getElementById('del-free-above').value) || 0;
+        async function savePromoSettings() {
+            let title = document.getElementById('promo-title').value.trim();
+            let desc = document.getElementById('promo-desc').value.trim();
+            let enabled = document.getElementById('promo-enabled').value === "true";
+
             try {
-                await db.collection("settings").doc("delivery").set({ fee, freeAbove, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                localStorage.setItem('cz_delivery_settings', JSON.stringify({ fee, freeAbove }));
-                alert("✅ Delivery charges updated!");
-            } catch(e) { alert("Failed to update."); }
+                await db.collection("settings").doc("promo").set({
+                    title: title,
+                    description: desc,
+                    enabled: enabled,
+                    imageUrl: ""
+                });
+                alert("✅ Promo settings saved!");
+            } catch(e) {
+                alert("Failed to save promo.");
+            }
         }
 
         window.onload = loadStoreSettings;

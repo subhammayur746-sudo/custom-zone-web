@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under Maintenance - Custom Zone</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .maintenance-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .gear-icon-box {
+            font-size: 60px;
+            color: #38bdf8;
+            margin-bottom: 20px;
+            animation: spinGear 4s linear infinite;
+        }
+        @keyframes spinGear {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 { font-size: 24px; font-weight: 800; margin-bottom: 10px; color: #f8fafc; }
+        p { font-size: 13.5px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; }
+        .badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .reload-btn {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .reload-btn:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+
+    <div class="maintenance-card">
+        <div class="gear-icon-box">
+            <i class="fas fa-cogs"></i>
+        </div>
+        <span class="badge"><i class="fas.fa-tools"></i> Scheduled Upgrades</span>
+        <h1>We're Upgrading Custom Zone</h1>
+        <p>Our store is currently undergoing routine maintenance and database optimization to bring you an even better personalized shopping experience. We'll be back online shortly!</p>
+        <button onclick="window.location.reload()" class="reload-btn">
+            <i class="fas fa-sync-alt"></i> Check Status
+        </button>
+    </div>
+
+</body>
+</html>

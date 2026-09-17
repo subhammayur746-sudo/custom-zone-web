@@ -17,6 +17,19 @@ const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
 
+// GLOBAL MAINTENANCE & CACHE BYPASS CHECK ON EVERY PAGE LOAD
+async function checkSiteMaintenanceMode() {
+    try {
+        let doc = await db.collection("settings").doc("maintenance").get();
+        if (doc.exists && doc.data().enabled === true) {
+            let path = window.location.pathname;
+            if (!path.includes("maintenance.html") && !path.includes("admin-")) {
+                window.location.href = "maintenance.html";
+            }
+        }
+    } catch(e) {}
+}
+
 // Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
@@ -476,7 +489,7 @@ function openProductDetailsModal(productId) {
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     ${product.sizes.map((s, idx) => `
                         <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductSize('${s.name.replace(/'/g, "\\'")}', ${s.extraPrice || 0}, this)">
-                            ${s.name} ${s.extraPrice > 0 ? `(+₹${s.extraPrice})` : ''}
+                            ${s.name}${s.extraPrice > 0 ? `(+₹${s.extraPrice})` : ''}
                         </button>
                     `).join('')}
                 </div>
@@ -497,7 +510,7 @@ function openProductDetailsModal(productId) {
                         let vImages = v.images || (v.image ? [v.image] : []);
                         let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
                         return `
-                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice || ''}', ${imgJson}, this)">
+                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}',${imgJson}, this)">
                                 ${v.name} • ₹${v.price}
                             </button>
                         `;
@@ -731,7 +744,7 @@ async function loadProductSpecificReviews(productId) {
         });
 
     } catch (e) {
-        container.innerHTML = "<p style='text-align:center; color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
+        container.innerHTML = "<p style='color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
     }
 }
 
@@ -871,7 +884,6 @@ function closeAuthModal() {
     if (modal) modal.classList.remove('show-modal');
 }
 
-// BULLETPROOF LOGIN & SIGNUP HANDLER (SAFE ASYNC WITHOUT SERVER TIMESTAMP CRASH)
 async function handleCustomerAuthSubmit() {
     const phoneInput = document.getElementById('auth-user-phone');
     const nameInput = document.getElementById('auth-user-name');
@@ -913,8 +925,6 @@ async function handleCustomerAuthSubmit() {
             }
 
             const customerData = docSnap.data();
-
-            // Safe update without blocking login flow
             customerRef.set({ lastLogin: new Date().toISOString() }, { merge: true }).catch(() => {});
 
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
@@ -1035,6 +1045,7 @@ function checkPromoPopup() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    checkSiteMaintenanceMode();
     updateNavUserSlot();
     updateCartCount();
     fetchLiveProducts();
