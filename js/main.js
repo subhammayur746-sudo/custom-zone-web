@@ -510,7 +510,7 @@ function openProductDetailsModal(productId) {
                         let vImages = v.images || (v.image ? [v.image] : []);
                         let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
                         return `
-                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}',${imgJson}, this)">
+                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice || ''}', ${imgJson}, this)">
                                 ${v.name} • ₹${v.price}
                             </button>
                         `;
