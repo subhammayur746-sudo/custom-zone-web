@@ -13,33 +13,33 @@
     <script src="js/firebase-config.js"></script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { display: flex; margin: 0; background: #f4f7f6; min-height: 100vh; flex-direction: column; }
 
         .sidebar { width: 250px; background: #2c3e50; color: #fff; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; transition: 0.3s ease; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #34495e; display: flex; align-items: center; justify-content: space-between; }
-        .sidebar-header h2 { color: #e74c3c; margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-header h2 { color: #e74c3c; font-size: 22px; font-weight: 800; margin: 0; }
         .sidebar-close-btn { display: none; background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
         
-        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 14px; border-left: 4px solid transparent; transition: 0.2s; }
+        .sidebar a { display: block; color: #bdc3c7; padding: 14px 22px; text-decoration: none; font-size: 13.5px; border-left: 4px solid transparent; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background: #34495e; color: #fff; border-left-color: #27ae60; }
         .sidebar a i { margin-right: 12px; width: 18px; text-align: center; }
 
         .main-content { margin-left: 250px; padding: 25px; width: calc(100% - 250px); box-sizing: border-box; transition: 0.3s ease; }
+        
         .mobile-admin-bar { display: none; background: #2c3e50; color: #fff; padding: 12px 18px; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; }
         .mobile-admin-bar h3 { margin: 0; color: #e74c3c; font-size: 18px; font-weight: 800; }
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee; margin-bottom: 25px; }
-        .admin-card h3 { margin-bottom: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; }
-
+        .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #2c3e50; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff; color: #2c3e50; font-size: 13px; }
-        
-        .upload-dropzone { border: 2px dashed #bdc3c7; background: #fafbfc; padding: 15px; border-radius: 6px; text-align: center; cursor: pointer; }
-        .btn-admin { background: #27ae60; color: #fff; padding: 11px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .form-group label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #f8fafc; color: #0f172a; }
+
+        .upload-box { border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; background: #f8fafc; cursor: pointer; transition: 0.2s; }
+        .upload-box:hover { border-color: #2563eb; background: #f1f5f9; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -63,72 +63,84 @@
             <h2>CZ Admin</h2>
             <button class="sidebar-close-btn" onclick="toggleSidebarMenu()">&times;</button>
         </div>
-        <a href="admin-dashboard.html" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
-        <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
-        <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
-        <a href="admin-customer-bills.html" id="nav-customer-bills"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
-        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
-        <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
-        <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
-        <a href="admin-ads.html" class="active" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
-        <a href="admin-users.html" id="nav-users"><i class="fas fa-users"></i> Staff & Vendors</a>
-        <a href="#" onclick="adminLogout()" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="admin-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="admin-orders.html"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
+        <a href="admin-products.html"><i class="fas fa-box"></i> Manage Products</a>
+        <a href="admin-customers.html"><i class="fas fa-user-friends"></i> Customer Directory</a>
+        <a href="admin-invoice.html"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-customer-bills.html"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
+        <a href="admin-reviews.html"><i class="fas fa-star"></i> Manage Reviews</a>
+        <a href="admin-coupons.html"><i class="fas fa-tags"></i> Discount & Vouchers</a>
+        <a href="admin-ads.html" class="active"><i class="fas fa-bullhorn"></i> Store Settings</a>
+        <a href="admin-users.html"><i class="fas fa-users"></i> Staff & Vendors</a>
+        <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content">
-        <h2 style="color: #2c3e50; margin-bottom: 20px;">Store Settings & Maintenance Mode</h2>
+        <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Store Settings & Maintenance Mode</h2>
 
-        <!-- MAINTENANCE MODE CARD -->
-        <div class="admin-card" style="border: 2px dashed #d97706; background:#fffbeb;">
-            <h3 style="color:#b45309; border-bottom:1px solid #fde68a;"><i class="fas fa-tools"></i> Website Maintenance Mode</h3>
-            <p style="font-size:12.5px; color:#92400e; margin-bottom:12px;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice.</p>
+        <!-- Maintenance Mode Card -->
+        <div class="admin-card" style="border: 2px dashed #f59e0b; background: #fffbeb;">
+            <h3 style="color: #b45309; margin-bottom: 10px;"><i class="fas fa-tools"></i> Website Maintenance Mode</h3>
+            <p style="font-size: 12.5px; color: #78350f; margin-bottom: 15px;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice.</p>
             
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <select id="maintenance-status-select" style="max-width:260px; padding:10px; font-weight:bold; font-size:13px; border:1px solid #f59e0b; border-radius:6px;">
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <select id="maint-status-select" style="max-width:280px; padding:9px; border-radius:6px; border:1px solid #cbd5e1; font-weight:bold;">
                     <option value="live">🟢 Site is LIVE (Normal)</option>
-                    <option value="maintenance">🔴 Site is Under Maintenance</option>
+                    <option value="maintenance">🔴 Maintenance Mode (ON)</option>
                 </select>
-                <button onclick="saveMaintenanceStatus()" style="background:#d97706; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:13px;">
+                <button onclick="saveMaintenanceStatus()" style="background:#d97706; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:700; cursor:pointer;">
                     <i class="fas fa-save"></i> Save Maintenance Status
                 </button>
             </div>
         </div>
 
-        <!-- STORE PROMO POPUP CARD -->
+        <!-- Store Promo Popup & Banner Card -->
         <div class="admin-card">
-            <h3><i class="fas fa-bullhorn"></i> Store Promo Popup & Banner</h3>
-            
+            <h3 style="color: #2c3e50; margin-bottom: 15px;"><i class="fas fa-bullhorn"></i> Store Promo Popup & Banner Settings</h3>
+
             <div class="form-group">
-                <label>Popup Title</label>
-                <input type="text" id="promo-title" placeholder="e.g., Special Festive Discount!">
+                <label>Popup Status (Enable / Disable):</label>
+                <select id="promo-status-select" style="max-width:280px; font-weight:bold;">
+                    <option value="enabled">🟢 Enabled (Show Popup on Home)</option>
+                    <option value="disabled">🔴 Disabled (Hidden)</option>
+                </select>
             </div>
 
             <div class="form-group">
-                <label>Popup Description</label>
-                <textarea id="promo-desc" rows="3" placeholder="Enter promotional offer details..."></textarea>
+                <label>Popup Title:</label>
+                <input type="text" id="promo-title" placeholder="e.g., Make Every Gift Uniquely Yours!">
+            </div>
+
+            <div class="form-group">
+                <label>Popup Description:</label>
+                <textarea id="promo-desc" rows="3" placeholder="Enter offers, discounts, or announcements..."></textarea>
             </div>
 
             <div class="form-group">
                 <label>Promo Banner / Image (Direct Upload):</label>
-                <div class="upload-dropzone" onclick="document.getElementById('promo-file-input').click()">
-                    <i class="fas fa-cloud-upload-alt" style="font-size:26px; color:#3498db; margin-bottom:6px;"></i>
-                    <p style="margin:0; font-size:13px; font-weight:600; color:#2c3e50;">Click here to select banner image</p>
+                <div class="upload-box" onclick="document.getElementById('promo-file-input').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 28px; color: #2563eb; margin-bottom: 6px;"></i>
+                    <p style="font-size: 13px; color: #334155; font-weight: 600;" id="upload-label-text">Click here to select banner image</p>
+                    <input type="file" id="promo-file-input" accept="image/*" style="display:none;" onchange="handlePromoImageUpload(event)">
                 </div>
-                <input type="file" id="promo-file-input" accept="image/*" onchange="handlePromoImageUpload(this)" style="display:none;">
-                <div id="promo-img-preview-box" style="margin-top:10px; max-width:180px; display:none;">
-                    <img id="promo-img-tag" style="width:100%; height:auto; border-radius:6px; border:1px solid #ccc;">
+                <div id="promo-preview-wrap" style="margin-top: 10px; display:none; text-align:center;">
+                    <img id="promo-img-preview" src="" alt="Preview" style="max-height: 120px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 </div>
             </div>
 
-            <button class="btn-admin" onclick="savePromoPopupSettings()">Save Promo Settings</button>
+            <button onclick="savePromoSettings()" style="background:#16a34a; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:700; cursor:pointer;" id="btn-save-promo">
+                <i class="fas fa-save"></i> Save Promo Settings
+            </button>
         </div>
     </div>
 
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInAdmin) window.location.href = "admin-login.html";
+
+        let uploadedPromoBase64 = "";
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -137,120 +149,88 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
-        function adminLogout() {
-            localStorage.removeItem('cz_logged_in_user');
-            window.location.href = "admin-login.html";
-        }
-
-        async function logSystemAction(action, targetId) {
-            try {
-                let actorName = loggedInAdmin.name || loggedInAdmin.username || "Admin";
-                await db.collection("audit_logs").add({
-                    actor: actorName,
-                    role: loggedInAdmin.role || "admin",
-                    action: action,
-                    targetId: targetId || "Settings",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch(e) {}
-        }
-
-        async function fetchStoreSettings() {
-            try {
-                // 1. Maintenance Status
-                let mDoc = await db.collection("settings").doc("maintenance").get();
-                if (mDoc.exists) {
-                    let isMaint = mDoc.data().enabled === true;
-                    document.getElementById('maintenance-status-select').value = isMaint ? "maintenance" : "live";
-                }
-
-                // 2. Promo Popup
-                let pDoc = await db.collection("settings").doc("promo").get();
-                if (pDoc.exists) {
-                    let d = pDoc.data();
-                    document.getElementById('promo-title').value = d.title || "";
-                    document.getElementById('promo-desc').value = d.description || "";
-                    if (d.imageUrl) {
-                        document.getElementById('promo-img-tag').src = d.imageUrl;
-                        document.getElementById('promo-img-preview-box').style.display = "block";
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // FIXED MAINTENANCE SAVE (100% RELIABLE LIVE/OFFLINE SWITCH)
-        async function saveMaintenanceStatus() {
-            const val = document.getElementById('maintenance-status-select').value;
-            const isMaintenance = (val === "maintenance");
-
-            try {
-                await db.collection("settings").doc("maintenance").set({
-                    enabled: isMaintenance,
-                    updatedAt: new Date().toISOString()
-                }, { merge: true });
-
-                await logSystemAction(isMaintenance ? "Enabled Website Maintenance Mode" : "Disabled Maintenance (Site LIVE)", "Settings");
-                alert(isMaintenance ? "🔴 Site is now under Maintenance mode." : "🟢 Site is now LIVE and fully accessible!");
-                fetchStoreSettings();
-            } catch(e) {
-                alert("Failed to update maintenance status.");
-            }
-        }
-
-        let uploadedPromoBase64 = "";
-        function handlePromoImageUpload(input) {
-            const file = input.files[0];
+        function handlePromoImageUpload(event) {
+            const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const maxDim = 600;
-                    let w = img.width;
-                    let h = img.height;
-                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
-                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
-
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, w, h);
-
-                    uploadedPromoBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    document.getElementById('promo-img-tag').src = uploadedPromoBase64;
-                    document.getElementById('promo-img-preview-box').style.display = "block";
-                };
+                uploadedPromoBase64 = e.target.result;
+                document.getElementById('promo-img-preview').src = uploadedPromoBase64;
+                document.getElementById('promo-preview-wrap').style.display = 'block';
+                document.getElementById('upload-label-text').innerText = "Image Selected Successfully!";
             };
             reader.readAsDataURL(file);
-            input.value = "";
         }
 
-        async function savePromoPopupSettings() {
-            const title = document.getElementById('promo-title').value.trim();
-            const desc = document.getElementById('promo-desc').value.trim();
-            const existingImg = document.getElementById('promo-img-tag').src;
-
+        async function loadExistingSettings() {
             try {
-                let payload = {
-                    title: title,
-                    description: desc,
-                    imageUrl: uploadedPromoBase64 || (existingImg.startsWith('data:') || existingImg.startsWith('http') ? existingImg : ""),
-                    enabled: true,
-                    updatedAt: new Date().toISOString()
-                };
+                // Load Maintenance Status
+                let maintDoc = await db.collection("settings").doc("maintenance").get();
+                if (maintDoc.exists) {
+                    let isMaint = maintDoc.data().enabled === true;
+                    document.getElementById('maint-status-select').value = isMaint ? "maintenance" : "live";
+                }
 
-                await db.collection("settings").doc("promo").set(payload, { merge: true });
-                await logSystemAction("Updated Store Promo Popup", "Settings");
-                alert("✅ Promo settings saved successfully!");
+                // Load Promo Settings
+                let promoDoc = await db.collection("settings").doc("promo").get();
+                if (promoDoc.exists) {
+                    let p = promoDoc.data();
+                    document.getElementById('promo-status-select').value = (p.enabled === false) ? "disabled" : "enabled";
+                    document.getElementById('promo-title').value = p.title || "";
+                    document.getElementById('promo-desc').value = p.description || "";
+                    if (p.imageUrl) {
+                        uploadedPromoBase64 = p.imageUrl;
+                        document.getElementById('promo-img-preview').src = uploadedPromoBase64;
+                        document.getElementById('promo-preview-wrap').style.display = 'block';
+                        document.getElementById('upload-label-text').innerText = "Existing Banner Loaded";
+                    }
+                }
             } catch(e) {
-                alert("Failed to save promo settings.");
+                console.error("Error loading settings:", e);
             }
         }
 
-        window.onload = fetchStoreSettings;
+        async function saveMaintenanceStatus() {
+            let val = document.getElementById('maint-status-select').value;
+            let isEnabled = (val === 'maintenance');
+            try {
+                await db.collection("settings").doc("maintenance").set({ enabled: isEnabled }, { merge: true });
+                alert("✅ Website Maintenance Mode status updated successfully!");
+            } catch(e) {
+                alert("Failed to save maintenance status.");
+            }
+        }
+
+        async function savePromoSettings() {
+            let statusVal = document.getElementById('promo-status-select').value;
+            let title = document.getElementById('promo-title').value.trim();
+            let desc = document.getElementById('promo-desc').value.trim();
+
+            const btn = document.getElementById('btn-save-promo');
+            btn.disabled = true;
+            btn.innerText = "Saving Settings...";
+
+            try {
+                let payload = {
+                    enabled: (statusVal === 'enabled'),
+                    title: title,
+                    description: desc,
+                    imageUrl: uploadedPromoBase64,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                await db.collection("settings").doc("promo").set(payload, { merge: true });
+                alert("✅ Store Promo settings saved successfully!");
+            } catch(e) {
+                alert("Failed to save promo settings.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Promo Settings';
+            }
+        }
+
+        window.onload = loadExistingSettings;
     </script>
 </body>
 </html>
