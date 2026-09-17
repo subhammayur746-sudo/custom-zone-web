@@ -32,6 +32,22 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
+        .billing-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 25px; }
+        .billing-hub-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 18px 20px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .billing-hub-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+        .billing-hub-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 25px; }
         .stat-card { background: #fff; padding: 18px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; }
         .stat-icon-wrap { width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
@@ -44,37 +60,17 @@
         .admin-table td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
 
         .notif-bell-btn {
-            position: relative;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #2c3e50;
-            font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
+            position: relative; background: #ffffff; border: 1px solid #cbd5e1; padding: 8px 12px;
+            border-radius: 8px; cursor: pointer; color: #2c3e50; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
         }
         .notif-badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #ef4444;
-            color: #fff;
-            font-size: 10.5px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 10px;
-            display: none;
-            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
+            position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff;
+            font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 10px; display: none;
         }
 
         .audit-log-section { background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; margin-top: 25px; }
         .audit-scroll-container { max-height: 240px; overflow-y: auto; padding-right: 4px; }
         .audit-item-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; }
-        .audit-item-row:last-child { border-bottom: none; }
         .audit-actor-badge { background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; margin-right: 6px; }
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; padding: 15px; }
@@ -89,9 +85,7 @@
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 15px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-card { padding: 12px; }
-            .stat-icon-wrap { width: 40px; height: 40px; font-size: 18px; }
-            .stat-info h3 { font-size: 18px; }
+            .billing-hub-grid { grid-template-columns: 1fr; gap: 10px; }
         }
     </style>
 </head>
@@ -112,7 +106,9 @@
         <a href="admin-orders.html" id="nav-orders"><i class="fas fa-shopping-bag"></i> Manage Orders</a>
         <a href="admin-products.html" id="nav-products"><i class="fas fa-box"></i> Manage Products</a>
         <a href="admin-customers.html" id="nav-customers"><i class="fas fa-user-friends"></i> Customer Directory</a>
-        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-file-invoice-dollar"></i> Manual Invoice</a>
+        <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
+        <a href="admin-customer-bills.html" id="nav-customer-bills"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
+        <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -123,7 +119,7 @@
     <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
             <div>
-                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Order Progress</h2>
+                <h2 style="color:#2c3e50; margin:0; font-size:20px;">Store Overview & Accounting Hub</h2>
                 <small style="color:#64748b;">Logged in as: <strong id="logged-user-name" style="color:#28469E;">Admin</strong> (<span id="logged-user-role">Role</span>)</small>
             </div>
             
@@ -139,6 +135,58 @@
             </div>
         </div>
 
+        <!-- CENTRAL STAMP & SIGNATURE UPLOAD HUB -->
+        <div class="admin-card" style="background:#f8fafc; border:1px dashed #cbd5e1;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                <div>
+                    <h3 style="margin:0; font-size:15px; color:#1e293b; border:none; padding:0;"><i class="fas fa-stamp" style="color:#3730a3;"></i> Central Company Stamp & Authorized Signature</h3>
+                    <small style="color:#64748b;">Upload your official stamp and signature once. It will automatically apply to all invoices, slips & POs.</small>
+                </div>
+                <div>
+                    <button onclick="document.getElementById('central-stamp-file-input').click()" style="background:#3730a3; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Stamp & Sign Image
+                    </button>
+                    <input type="file" id="central-stamp-file-input" accept="image/*" onchange="handleCentralStampUpload(this)" style="display:none;">
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:15px; background:#fff; padding:12px; border-radius:6px; border:1px solid #e2e8f0;">
+                <div style="width:120px; height:65px; border:1.5px dashed #cbd5e1; border-radius:4px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fafbfc;" id="central-stamp-preview-box">
+                    <span style="font-size:10.5px; color:#94a3b8; font-weight:600;">No Image</span>
+                </div>
+                <div style="flex:1; font-size:12px; color:#475569;" id="central-stamp-status-text">
+                    Status: <strong style="color:#d97706;">Not uploaded yet.</strong> Upload a transparent PNG or scanned stamp/signature image.
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Hub Cards -->
+        <div class="billing-hub-grid">
+            <a href="admin-invoice.html" class="billing-hub-card" style="border-left: 4px solid #2563eb;">
+                <div>
+                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Create Retail Invoice</h4>
+                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Generate manual tax invoice for customer</p>
+                </div>
+                <div class="billing-hub-icon" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-receipt"></i></div>
+            </a>
+
+            <a href="admin-customer-bills.html" class="billing-hub-card" style="border-left: 4px solid #16a34a;">
+                <div>
+                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Customer Sales Ledger</h4>
+                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Customer invoices & A4 PDF generator</p>
+                </div>
+                <div class="billing-hub-icon" style="background:#f0fdf4; color:#16a34a;"><i class="fas fa-file-invoice-dollar"></i></div>
+            </a>
+
+            <a href="admin-vendor-bills.html" class="billing-hub-card" style="border-left: 4px solid #4338ca;">
+                <div>
+                    <h4 style="margin:0; color:#1e293b; font-size:14px; font-weight:800;">Vendor PO & Ledger</h4>
+                    <p style="margin:3px 0 0 0; font-size:11.5px; color:#64748b;">Sequential CZ-VN bills & supplier deals</p>
+                </div>
+                <div class="billing-hub-icon" style="background:#eef2ff; color:#4338ca;"><i class="fas fa-truck-loading"></i></div>
+            </a>
+        </div>
+
+        <!-- Metric Stat Cards -->
         <div class="stats-grid">
             <div class="stat-card" style="border-left:4px solid #059669;">
                 <div class="stat-icon-wrap" style="background:#d1fae5; color:#059669;"><i class="fas fa-boxes"></i></div>
@@ -280,6 +328,23 @@
             window.location.href = "admin-login.html";
         }
 
+        // GLOBAL BULLETPROOF SYSTEM ACTION LOGGER
+        async function logSystemAction(action, targetId) {
+            try {
+                let actorName = loggedInAdmin.name || loggedInAdmin.username || "Admin";
+                let actorRole = loggedInAdmin.role || "admin";
+                await db.collection("audit_logs").add({
+                    actor: actorName,
+                    role: actorRole,
+                    action: action,
+                    targetId: targetId || "General",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Audit log sync error:", e);
+            }
+        }
+
         function applyNavPermissions() {
             document.getElementById('logged-user-name').innerText = loggedInAdmin.name || loggedInAdmin.username || "Admin";
             document.getElementById('logged-user-role').innerText = isMainAdmin() ? "Super Admin" : "Staff Member";
@@ -296,81 +361,129 @@
                 if (!perms.includes('invoice')) document.getElementById('nav-invoice').style.display = 'none';
                 if (!perms.includes('reviews')) document.getElementById('nav-reviews').style.display = 'none';
                 if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
+                if (!perms.includes('vendor_bills')) document.getElementById('nav-vendor-bills').style.display = 'none';
+                if (!perms.includes('customer_bills')) document.getElementById('nav-customer-bills').style.display = 'none';
                 document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
         }
 
-        // SAFE INDIVIDUAL ASYNC LOADERS (PREVENTS TIMEOUT FREEZE)
+        async function loadCentralStampPreview() {
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            const box = document.getElementById('central-stamp-preview-box');
+            const txt = document.getElementById('central-stamp-status-text');
+
+            if (savedStamp) {
+                box.innerHTML = `<img src="${savedStamp}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+                txt.innerHTML = `Status: <strong style="color:#16a34a;">Active & Synced</strong>. Applied automatically to all invoices and POs.`;
+            }
+        }
+
+        function handleCentralStampUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 400;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const base64Img = canvas.toDataURL('image/png', 0.85);
+                    localStorage.setItem('cz_central_stamp_sign', base64Img);
+                    loadCentralStampPreview();
+                    logSystemAction("Updated Central Company Stamp & Signature", "Dashboard");
+                    alert("✅ Central company stamp & signature updated successfully!");
+                };
+            };
+            reader.readAsDataURL(file);
+            input.value = "";
+        }
+
+        // SAFE INDIVIDUAL ASYNC LOADERS WITH SEPARATE TRY-CATCH BLOCKS TO PREVENT TIMEOUT FREEZE
         async function loadDashboardStatsSafe() {
+            loadCentralStampPreview();
             const spinner = document.getElementById('refresh-spinner');
             if (spinner) spinner.classList.add('fa-spin');
 
+            // 1. Load Products safely
             try {
-                // 1. Products Load
-                db.collection("products").get().then(prodSnap => {
-                    let activeCount = 0, inactiveCount = 0;
-                    prodSnap.forEach(doc => {
-                        let p = doc.data();
-                        if (p.isActive !== false) activeCount++;
-                        else inactiveCount++;
-                    });
-                    document.getElementById('stat-active-products').innerText = activeCount;
-                    document.getElementById('stat-inactive-products').innerText = inactiveCount;
-                }).catch(() => {});
+                const prodSnap = await db.collection("products").get();
+                let activeCount = 0, inactiveCount = 0;
+                prodSnap.forEach(doc => {
+                    let p = doc.data();
+                    if (p.isActive !== false) activeCount++;
+                    else inactiveCount++;
+                });
+                document.getElementById('stat-active-products').innerText = activeCount;
+                document.getElementById('stat-inactive-products').innerText = inactiveCount;
+            } catch(e) {}
 
-                // 2. Orders Load
-                db.collection("orders").get().then(ordersSnap => {
-                    let total = 0, proc = 0, packed = 0, shipped = 0, delivered = 0, cancelled = 0, rev = 0;
-                    let recent = [];
+            // 2. Load Orders safely
+            try {
+                const ordersSnap = await db.collection("orders").get();
+                let total = 0, proc = 0, packed = 0, shipped = 0, delivered = 0, cancelled = 0, rev = 0;
+                let recent = [];
 
-                    ordersSnap.forEach(doc => {
-                        let ord = doc.data();
-                        ord.docId = doc.id;
-                        total++;
-                        let st = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
-                        if (st === "delivered") { delivered++; rev += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0); }
-                        else if (st === "shipped") shipped++;
-                        else if (st === "packed") packed++;
-                        else if (st === "cancelled") cancelled++;
-                        else proc++;
-                        recent.push(ord);
-                    });
+                ordersSnap.forEach(doc => {
+                    let ord = doc.data();
+                    ord.docId = doc.id;
+                    total++;
+                    let st = (ord.orderStatus || ord.status || "Processing").trim().toLowerCase();
+                    if (st === "delivered") { delivered++; rev += (parseInt(ord.totalAmount) || parseInt(ord.total) || 0); }
+                    else if (st === "shipped") shipped++;
+                    else if (st === "packed") packed++;
+                    else if (st === "cancelled") cancelled++;
+                    else proc++;
+                    recent.push(ord);
+                });
 
-                    document.getElementById('stat-total-orders').innerText = total;
-                    document.getElementById('stat-processing').innerText = proc;
-                    document.getElementById('stat-packed').innerText = packed;
-                    document.getElementById('stat-shipped').innerText = shipped;
-                    document.getElementById('stat-delivered').innerText = delivered;
-                    document.getElementById('stat-cancelled').innerText = cancelled;
-                    if (isMainAdmin()) {
-                        document.getElementById('stat-revenue').innerText = `₹${rev.toLocaleString('en-IN')}`;
-                    }
+                document.getElementById('stat-total-orders').innerText = total;
+                document.getElementById('stat-processing').innerText = proc;
+                document.getElementById('stat-packed').innerText = packed;
+                document.getElementById('stat-shipped').innerText = shipped;
+                document.getElementById('stat-delivered').innerText = delivered;
+                document.getElementById('stat-cancelled').innerText = cancelled;
+                if (isMainAdmin()) {
+                    document.getElementById('stat-revenue').innerText = `₹${rev.toLocaleString('en-IN')}`;
+                }
 
-                    recent.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
-                    renderRecentOrders(recent.slice(0, 8));
-                }).catch(() => {});
+                recent.sort((a, b) => (b.verifiedAt?.seconds || b.timestamp?.seconds || 0) - (a.verifiedAt?.seconds || a.timestamp?.seconds || 0));
+                renderRecentOrders(recent.slice(0, 8));
+            } catch(e) {}
 
-                // 3. Pending Payments Load
-                db.collection("pending_payments").where("paymentStatus", "==", "Pending").get().then(pendSnap => {
-                    let size = pendSnap.size;
-                    document.getElementById('stat-pending').innerText = size;
-                    let badge = document.getElementById('admin-pending-badge');
-                    if (size > 0) {
-                        badge.innerText = size;
-                        badge.style.display = "inline-block";
-                    } else {
-                        badge.style.display = "none";
-                    }
-                }).catch(() => {});
+            // 3. Load Pending Payments safely
+            try {
+                const pendSnap = await db.collection("pending_payments").where("paymentStatus", "==", "Pending").get();
+                let size = pendSnap.size;
+                document.getElementById('stat-pending').innerText = size;
+                let badge = document.getElementById('admin-pending-badge');
+                if (size > 0) {
+                    badge.innerText = size;
+                    badge.style.display = "inline-block";
+                } else {
+                    badge.style.display = "none";
+                }
+            } catch(e) {}
 
-                // 4. Audit Logs Load
-                db.collection("audit_logs").get().then(auditSnap => {
-                    const box = document.getElementById('audit-log-items-box');
-                    if (auditSnap.empty) {
-                        box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No team actions recorded yet.</p>";
-                        return;
-                    }
+            // 4. Load Audit Logs safely
+            try {
+                const auditSnap = await db.collection("audit_logs").limit(50).get();
+                const box = document.getElementById('audit-log-items-box');
+                if (auditSnap.empty) {
+                    box.innerHTML = "<p style='text-align:center; color:#94a3b8; font-size:11.5px; margin:4px 0;'>No team actions recorded yet.</p>";
+                } else {
                     let logs = [];
                     auditSnap.forEach(doc => logs.push(doc.data()));
                     logs.sort((a, b) => {
@@ -400,13 +513,10 @@
                         `;
                     });
                     box.innerHTML = html;
-                }).catch(() => {});
+                }
+            } catch(e) {}
 
-            } catch(e) {
-                console.error("Dashboard error:", e);
-            } finally {
-                if (spinner) spinner.classList.remove('fa-spin');
-            }
+            if (spinner) spinner.classList.remove('fa-spin');
         }
 
         function renderRecentOrders(orders) {
