@@ -17,7 +17,6 @@ const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
 
-// GLOBAL MAINTENANCE & CACHE BYPASS CHECK ON EVERY PAGE LOAD
 async function checkSiteMaintenanceMode() {
     try {
         let doc = await db.collection("settings").doc("maintenance").get();
@@ -30,7 +29,6 @@ async function checkSiteMaintenanceMode() {
     } catch(e) {}
 }
 
-// Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -45,7 +43,6 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Fetch Live Products & Reviews safely
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -213,12 +210,12 @@ function renderHomeProducts(products) {
         if (hasVariants) {
             let variantPrices = prod.variants.map(v => parseInt(v.price) || sellingPrice).filter(p => p > 0);
             effectiveSellingPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : sellingPrice;
-            displayPriceText = `₹${effectiveSellingPrice}+`;
+            displayPriceText = "₹" + effectiveSellingPrice + "+";
 
             let variantActuals = prod.variants.map(v => parseInt(v.actualPrice) || actualPrice).filter(p => p > 0);
             if (variantActuals.length > 0) actualPrice = Math.max(...variantActuals);
         } else {
-            displayPriceText = `₹${sellingPrice}`;
+            displayPriceText = "₹" + sellingPrice;
         }
 
         let hasDiscount = actualPrice > 0 && effectiveSellingPrice > 0 && effectiveSellingPrice < actualPrice;
@@ -376,8 +373,8 @@ function shareDirectProduct(productId, event) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
 
-    let shareUrl = `${window.location.origin}/index.html?product=${productId}`;
-    let shareText = `Check out this customized "${product.name}" on Custom Zone! 🎁✨\n${shareUrl}`;
+    let shareUrl = window.location.origin + "/index.html?product=" + productId;
+    let shareText = "Check out this customized \"" + product.name + "\" on Custom Zone! 🎁✨\n" + shareUrl;
 
     if (navigator.share) {
         navigator.share({
@@ -386,7 +383,7 @@ function shareDirectProduct(productId, event) {
             url: shareUrl
         }).catch(() => {});
     } else {
-        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+        const waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText);
         window.open(waUrl, "_blank");
     }
 }
@@ -471,7 +468,7 @@ function openProductDetailsModal(productId) {
         mainImgEl.style.cursor = "zoom-in";
     }
 
-    if (badgeEl) badgeEl.innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
+    if (badgeEl) badgeEl.innerText = product.mainCategory + " • " + (product.subCategory || 'Handmade');
     if (titleEl) titleEl.innerText = product.name;
 
     renderModalGallery(defaultImages);
@@ -489,7 +486,7 @@ function openProductDetailsModal(productId) {
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     ${product.sizes.map((s, idx) => `
                         <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductSize('${s.name.replace(/'/g, "\\'")}', ${s.extraPrice || 0}, this)">
-                            ${s.name}${s.extraPrice > 0 ? `(+₹${s.extraPrice})` : ''}
+                            ${s.name}${s.extraPrice > 0 ? ' (+₹' + s.extraPrice + ')' : ''}
                         </button>
                     `).join('')}
                 </div>
@@ -510,7 +507,7 @@ function openProductDetailsModal(productId) {
                         let vImages = v.images || (v.image ? [v.image] : []);
                         let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
                         return `
-                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}',${imgJson}, this)">
+                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}', '${imgJson}', this)">
                                 ${v.name} • ₹${v.price}
                             </button>
                         `;
@@ -527,7 +524,7 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    customContainer.innerHTML += `<div id="pdm-bulk-qty-wrapper"></div>`;
+    customContainer.innerHTML += '<div id="pdm-bulk-qty-wrapper"></div>';
     renderApplicableBulkPackages(product);
 
     if (product.customType === "name") {
@@ -551,8 +548,8 @@ function openProductDetailsModal(productId) {
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
-    if (starsEl) starsEl.innerText = `${ratingVal} ★`;
-    if (revCountEl) revCountEl.innerText = `(${reviewNum} ${reviewNum === 1 ? 'customer review' : 'customer reviews'})`;
+    if (starsEl) starsEl.innerText = ratingVal + " ★";
+    if (revCountEl) revCountEl.innerText = "(" + reviewNum + (reviewNum === 1 ? " customer review" : " customer reviews") + ")";
 
     const btnAdd = document.getElementById('pdm-btn-add');
     const btnBuy = document.getElementById('pdm-btn-buy');
@@ -788,8 +785,8 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
     }
 
     let specParts = [];
-    if (selectedSize && selectedSize.name) specParts.push(`Size: ${selectedSize.name}`);
-    if (selectedVariant && selectedVariant.name) specParts.push(`Color: ${selectedVariant.name}`);
+    if (selectedSize && selectedSize.name) specParts.push("Size: " + selectedSize.name);
+    if (selectedVariant && selectedVariant.name) specParts.push("Color: " + selectedVariant.name);
     let fullVariantName = specParts.join(' | ');
 
     let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
@@ -806,7 +803,7 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert(`✅ ${product.name} (${selectedQty} PCS - ₹${finalPackagePrice}) added to cart!`);
+    alert("✅ " + product.name + " (" + selectedQty + " PCS - ₹" + finalPackagePrice + ") added to cart!");
 }
 
 async function toggleWishlistCloud(productId) {
@@ -930,7 +927,7 @@ async function handleCustomerAuthSubmit() {
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert(`🎉 Welcome back, ${customerData.name || name}!`);
+            alert("🎉 Welcome back, " + (customerData.name || name) + "!");
 
         } else {
             if (docSnap.exists) {
@@ -968,7 +965,7 @@ async function handleCustomerAuthSubmit() {
             localStorage.setItem('cz_customer_user', JSON.stringify(newCustomerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert(`🎉 Account created successfully! Customer ID: ${autoCustomerId}`);
+            alert("🎉 Account created successfully! Customer ID: " + autoCustomerId);
         }
 
         if (pendingAction) {
@@ -1001,9 +998,9 @@ function updateNavUserSlot() {
 
     let html = "";
     if (customer) {
-        html = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
+        html = '<a href="profile.html"><i class="fas fa-user-circle"></i> ' + customer.name.split(" ")[0] + '</a>';
     } else {
-        html = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>`;
+        html = '<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>';
     }
 
     if (desktopSlot) desktopSlot.innerHTML = html;
@@ -1033,7 +1030,6 @@ function displayPopup(data) {
         imgEl.style.display = "block";
     }
 
-    // Fixed close & explore button listeners safely attached
     const closeBtn = popup.querySelector('.close-popup-btn') || popup.querySelector('.fa-times');
     if (closeBtn) {
         closeBtn.onclick = closePopup;
