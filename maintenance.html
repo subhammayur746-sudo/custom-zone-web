@@ -6,87 +6,105 @@
     <title>Under Maintenance - Custom Zone</title>
     <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow: hidden;
-            text-align: center;
-        }
+        body { background: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #f8fafc; padding: 20px; }
+        
         .maintenance-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1e293b;
+            border: 1px solid #334155;
             padding: 40px 30px;
-            border-radius: 20px;
-            max-width: 500px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 480px;
             width: 100%;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            animation: fadeIn 1s ease-in-out;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .gear-icon-box {
-            font-size: 60px;
-            color: #38bdf8;
-            margin-bottom: 20px;
-            animation: spinGear 4s linear infinite;
-        }
-        @keyframes spinGear {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        h1 { font-size: 24px; font-weight: 800; margin-bottom: 10px; color: #f8fafc; }
+        .gear-icon { font-size: 48px; color: #38bdf8; margin-bottom: 20px; animation: spinGear 6s linear infinite; }
+        @keyframes spinGear { 100% { transform: rotate(360deg); } }
+
+        h1 { font-size: 24px; font-weight: 800; color: #ffffff; margin-bottom: 10px; }
         p { font-size: 13.5px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; }
-        .badge {
-            background: rgba(56, 189, 248, 0.15);
-            color: #38bdf8;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-        .reload-btn {
-            background: #3b82f6;
-            color: #fff;
+        
+        .badge { background: #0284c7; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .btn-check {
+            background: #2563eb;
+            color: #ffffff;
             border: none;
-            padding: 10px 24px;
+            padding: 12px 24px;
             border-radius: 8px;
+            font-size: 13.5px;
             font-weight: 700;
-            font-size: 13px;
             cursor: pointer;
             transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             text-decoration: none;
-            display: inline-block;
         }
-        .reload-btn:hover { background: #2563eb; }
+        .btn-check:hover { background: #1d4ed8; }
     </style>
 </head>
 <body>
 
     <div class="maintenance-card">
-        <div class="gear-icon-box">
-            <i class="fas fa-cogs"></i>
-        </div>
-        <span class="badge"><i class="fas.fa-tools"></i> Scheduled Upgrades</span>
+        <div class="gear-icon"><i class="fas fa-cogs"></i></div>
+        <span class="badge">Scheduled Upgrades</span>
         <h1>We're Upgrading Custom Zone</h1>
         <p>Our store is currently undergoing routine maintenance and database optimization to bring you an even better personalized shopping experience. We'll be back online shortly!</p>
-        <button onclick="window.location.reload()" class="reload-btn">
-            <i class="fas fa-sync-alt"></i> Check Status
+        
+        <button class="btn-check" onclick="checkLiveStatusAgain()">
+            <i class="fas fa-sync-alt" id="check-spinner"></i> Check Status & Enter Site
         </button>
     </div>
 
+    <script>
+        // Automatic live status check on load and click
+        async function checkLiveStatusAgain() {
+            const btn = document.querySelector('.btn-check');
+            const spinner = document.getElementById('check-spinner');
+            spinner.classList.add('fa-spin');
+            btn.style.opacity = "0.8";
+
+            try {
+                let doc = await db.collection("settings").doc("maintenance").get();
+                if (doc.exists) {
+                    let isMaint = doc.data().enabled === true;
+                    if (!isMaint) {
+                        // Site is live now! Redirect to home
+                        window.location.href = "index.html";
+                        return;
+                    }
+                }
+                setTimeout(() => {
+                    alert("⚠️ Store is still under maintenance. Please check back in a few minutes.");
+                }, 500);
+            } catch(e) {
+                // Fallback redirect if offline or error
+                window.location.href = "index.html";
+            } finally {
+                spinner.classList.remove('fa-spin');
+                btn.style.opacity = "1";
+            }
+        }
+
+        // Background polling every 15 seconds to auto-redirect when admin makes site live
+        setInterval(async () => {
+            try {
+                let doc = await db.collection("settings").doc("maintenance").get();
+                if (doc.exists && doc.data().enabled !== true) {
+                    window.location.href = "index.html";
+                }
+            } catch(e) {}
+        }, 15000);
+    </script>
 </body>
 </html>
