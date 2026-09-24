@@ -47,7 +47,6 @@
 
         .btn-action-main { border: none; padding: 9px 18px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #fff; }
 
-        /* PERFECT A4 PRINT & PDF STYLES WITHOUT OVERFLOW */
         @media print {
             @page { size: A4 portrait; margin: 8mm 10mm; }
             html, body { background: #fff !important; color: #000 !important; font-size: 10pt !important; width: 100% !important; height: auto !important; }
@@ -219,17 +218,15 @@
                 </div>
             </div>
 
-            <!-- STAMP & SIGNATURE BLOCK (GUARANTEED DIGITAL SEAL) -->
+            <!-- CENTRAL STAMP & SIGNATURE AUTOMATIC SYNC BLOCK -->
             <div class="auth-sign-block" style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:25px; padding-top:12px; border-top:1px dashed #cbd5e1;">
                 <div style="font-size:10px; color:#64748b;">
                     <p style="margin:0; font-weight:700; color:#0f172a;">Thank you for your order!</p>
                     <p style="margin:0;">customzone.in</p>
                 </div>
-                <div style="text-align:center; min-width:150px;">
-                    <div style="height:55px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
-                        <div style="border:2px dashed #1e293b; padding:4px 10px; border-radius:6px; color:#1e293b; font-weight:800; font-size:11px; transform:rotate(-4deg); background:#f8fafc; display:inline-block;">
-                            CUSTOM ZONE<br><span style="font-size:9px; color:#16a34a;">✓ VERIFIED & PAID</span>
-                        </div>
+                <div style="text-align:center; min-width:160px;">
+                    <div style="height:55px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;" id="central-stamp-render-slot">
+                        <span style="font-size:9.5px; color:#94a3b8;">[Authorized Stamp]</span>
                     </div>
                     <div style="border-top:1px solid #94a3b8; padding-top:2px;">
                         <span style="font-size:10px; font-weight:700; color:#0f172a;">Authorized Signatory</span>
@@ -280,6 +277,15 @@
         }
 
         document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
+
+        // LOAD CENTRAL STAMP & SIGNATURE IMAGE FROM LOCALSTORAGE
+        function loadCentralStampOnInvoice() {
+            let savedStamp = localStorage.getItem('cz_central_stamp_sign');
+            const slot = document.getElementById('central-stamp-render-slot');
+            if (savedStamp && slot) {
+                slot.innerHTML = `<img src="${savedStamp}" style="max-height:55px; max-width:150px; object-fit:contain;">`;
+            }
+        }
 
         function previewItemImage(input) {
             const file = input.files[0];
@@ -333,6 +339,7 @@
         }
 
         window.onload = () => {
+            loadCentralStampOnInvoice();
             fetchVendorsForDropdown();
             const urlParams = new URLSearchParams(window.location.search);
             const orderId = urlParams.get('orderId');
