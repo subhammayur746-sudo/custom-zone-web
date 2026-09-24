@@ -33,37 +33,37 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .invoice-sheet { background: #ffffff; padding: 35px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 880px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
-        .inv-input { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; background: #f8fafc; color: #0f172a; }
+        .invoice-sheet { background: #ffffff; padding: 28px 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 800px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
+        .inv-input { width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12.5px; box-sizing: border-box; background: #f8fafc; color: #0f172a; }
         
         .inv-textarea {
-            width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; 
-            background: #f8fafc; color: #0f172a; resize: vertical; min-height: 38px; line-height: 1.4; word-break: break-word; white-space: pre-wrap;
+            width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12.5px; 
+            background: #f8fafc; color: #0f172a; resize: vertical; min-height: 32px; line-height: 1.3; word-break: break-word; white-space: pre-wrap;
         }
 
-        .inv-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-        .inv-table th { background: #f1f5f9; color: #475569; font-weight: 700; padding: 9px 10px; border-bottom: 2px solid #cbd5e1; text-align: left; font-size: 11.5px; text-transform: uppercase; }
-        .inv-table td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: middle; }
+        .inv-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        .inv-table th { background: #f1f5f9; color: #475569; font-weight: 700; padding: 8px; border-bottom: 2px solid #cbd5e1; text-align: left; font-size: 11px; text-transform: uppercase; }
+        .inv-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12.5px; vertical-align: middle; }
 
-        .btn-action-main { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #fff; }
+        .btn-action-main { border: none; padding: 9px 18px; border-radius: 6px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #fff; }
 
-        /* STRICTLY HIDE COST PRICE, VENDOR SELECT, & IMAGE UPLOAD BUTTONS ON CUSTOMER PRINT / PDF */
+        /* PERFECT A4 PRINT & PDF STYLES WITHOUT OVERFLOW */
         @media print {
-            @page { size: A4 portrait; margin: 10mm 14mm; }
-            html, body { background: #fff !important; color: #000 !important; font-size: 10.5pt !important; width: 100% !important; height: auto !important; }
+            @page { size: A4 portrait; margin: 8mm 10mm; }
+            html, body { background: #fff !important; color: #000 !important; font-size: 10pt !important; width: 100% !important; height: auto !important; }
             .sidebar, .no-print, .btn-remove-row, .mobile-admin-bar, .col-cost-price, .col-vendor-select, .col-img-upload { display: none !important; }
             .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
             .invoice-sheet { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
             
             .inv-input, .inv-textarea, .inv-select {
-                border: none !important; background: transparent !important; padding: 0 !important; font-size: 10.5pt !important; 
+                border: none !important; background: transparent !important; padding: 0 !important; font-size: 10pt !important; 
                 color: #000 !important; resize: none !important; overflow: visible !important; white-space: normal !important; word-break: break-word !important;
             }
             .inv-table { width: 100% !important; }
-            .inv-table th { background: #1e293b !important; color: #fff !important; padding: 6px 10px !important; }
-            .inv-table td { padding: 8px 10px !important; }
+            .inv-table th { background: #1e293b !important; color: #fff !important; padding: 5px 8px !important; }
+            .inv-table td { padding: 6px 8px !important; }
             .auth-sign-block { display: flex !important; }
-            .printable-item-img { display: inline-block !important; width: 42px !important; height: 42px !important; object-fit: cover !important; border-radius: 4px !important; margin-right: 8px !important; vertical-align: middle !important; border: 1px solid #cbd5e1 !important; }
+            .printable-item-img { display: inline-block !important; width: 36px !important; height: 36px !important; object-fit: cover !important; border-radius: 4px !important; margin-right: 6px !important; vertical-align: middle !important; border: 1px solid #cbd5e1 !important; }
         }
 
         @media (max-width: 768px) {
@@ -72,8 +72,8 @@
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
-            .invoice-sheet { padding: 18px 14px; }
-            .inv-table { min-width: 720px; }
+            .invoice-sheet { padding: 15px 10px; }
+            .inv-table { min-width: 650px; }
             .table-wrap-mobile { overflow-x: auto; width: 100%; }
         }
     </style>
@@ -108,39 +108,39 @@
     <div class="main-content">
         <div class="invoice-sheet" id="invoice-printable-area">
             
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:15px; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <img src="assets/images/logo.png" onerror="this.src='assets/images/logo2.png'" alt="Logo" style="width:55px; height:55px; object-fit:contain; border-radius:6px; display:inline-block;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="assets/images/logo.png" onerror="this.src='assets/images/logo2.png'" alt="Logo" style="width:50px; height:50px; object-fit:contain; border-radius:6px; display:inline-block;">
                     <div>
-                        <h1 style="font-size:22px; font-weight:800; color:#0f172a; margin:0; line-height:1.1;">CUSTOM ZONE</h1>
-                        <p style="font-size:11.5px; color:#475569; margin:2px 0 0 0;">You Imagine. We Customize.</p>
-                        <p style="font-size:10.5px; color:#64748b; margin:0;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
+                        <h1 style="font-size:20px; font-weight:800; color:#0f172a; margin:0; line-height:1.1;">CUSTOM ZONE</h1>
+                        <p style="font-size:11px; color:#475569; margin:2px 0 0 0;">You Imagine. We Customize.</p>
+                        <p style="font-size:10px; color:#64748b; margin:0;">Liluah Chakpara, Howrah | WA: +91 6290407730</p>
                     </div>
                 </div>
 
                 <div style="text-align:right;">
-                    <div style="background:#0f172a; color:#fff; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:4px; margin-bottom:6px; display:inline-block;">TAX INVOICE</div>
-                    <div style="font-size:12px; color:#334155; line-height:1.6;">
-                        <p style="margin:0;"><strong>Invoice:</strong> <input type="text" id="inv-no" value="INV-0099" class="inv-input" style="width:115px; font-weight:700; text-align:right;"></p>
-                        <p style="margin:0;"><strong>Date:</strong> <input type="text" id="inv-date" value="" class="inv-input" style="width:115px; text-align:right;"></p>
+                    <div style="background:#0f172a; color:#fff; font-size:11px; font-weight:800; padding:3px 10px; border-radius:4px; margin-bottom:4px; display:inline-block;">TAX INVOICE</div>
+                    <div style="font-size:11.5px; color:#334155; line-height:1.5;">
+                        <p style="margin:0;"><strong>Invoice:</strong> <input type="text" id="inv-no" value="INV-0099" class="inv-input" style="width:110px; font-weight:700; text-align:right;"></p>
+                        <p style="margin:0;"><strong>Date:</strong> <input type="text" id="inv-date" value="" class="inv-input" style="width:110px; text-align:right;"></p>
                     </div>
                 </div>
             </div>
 
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 15px; margin-bottom:18px;">
-                <span style="font-size:10.5px; font-weight:800; text-transform:uppercase; color:#64748b; display:block; margin-bottom:6px;">Billed To / Recipient:</span>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:8px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-bottom:15px;">
+                <span style="font-size:10px; font-weight:800; text-transform:uppercase; color:#64748b; display:block; margin-bottom:5px;">Billed To / Recipient:</span>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:8px; margin-bottom:6px;">
                     <div>
-                        <label style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Customer Name *</label>
+                        <label style="font-size:10.5px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Customer Name *</label>
                         <input type="text" id="inv-cust-name" class="inv-input" placeholder="Customer Name" style="font-weight:700;">
                     </div>
                     <div>
-                        <label style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Contact Phone (10 digits) *</label>
+                        <label style="font-size:10.5px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Contact Phone (10 digits) *</label>
                         <input type="text" id="inv-cust-phone" class="inv-input" placeholder="Phone Number">
                     </div>
                 </div>
                 <div>
-                    <label style="font-size:11px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Delivery Address</label>
+                    <label style="font-size:10.5px; color:#64748b; font-weight:600; display:block; margin-bottom:2px;">Delivery Address</label>
                     <textarea id="inv-cust-address" class="inv-textarea" rows="2" placeholder="Full Delivery Address"></textarea>
                 </div>
             </div>
@@ -150,12 +150,12 @@
                     <thead>
                         <tr>
                             <th style="width:5%; text-align:center;">#</th>
-                            <th style="width:38%;">Description & Product Image</th>
+                            <th style="width:40%;">Description & Product Image</th>
                             <th style="width:10%; text-align:center;">Qty</th>
                             <th style="width:13%; text-align:right;">Rate (₹)</th>
                             <th class="col-vendor-select" style="width:14%; text-align:left;">Vendor</th>
-                            <th class="col-cost-price" style="width:10%; text-align:right; color:#b45309;">Cost (₹)</th>
-                            <th style="width:10%; text-align:right;">Amount (₹)</th>
+                            <th class="col-cost-price" style="width:9%; text-align:right; color:#b45309;">Cost (₹)</th>
+                            <th style="width:9%; text-align:right;">Amount (₹)</th>
                         </tr>
                     </thead>
                     <tbody id="invoice-items-body">
@@ -163,19 +163,19 @@
                             <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">1</td>
                             <td>
                                 <div style="display:flex; align-items:center; gap:8px;">
-                                    <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                    <div class="col-img-upload no-print" style="position:relative; width:36px; height:36px; flex-shrink:0;">
                                         <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
-                                        <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                        <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" style="width:36px; height:36px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
                                     </div>
                                     <img src="assets/images/logo.png" class="printable-item-img" style="display:none;" alt="Product">
                                     <textarea class="inv-textarea item-desc" rows="1" placeholder="Product name" oninput="autoExpandTextarea(this)">Customized Gift Item</textarea>
-                                    <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
+                                    <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:13px; cursor:pointer; padding-top:4px;">✕</button>
                                 </div>
                             </td>
                             <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
                             <td><input type="number" class="inv-input item-price" value="0" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
                             <td class="col-vendor-select">
-                                <select class="inv-input item-vendor" style="padding:7px; font-size:12px;">
+                                <select class="inv-input item-vendor" style="padding:6px; font-size:11.5px;">
                                     <option value="In-House">In-House</option>
                                 </select>
                             </td>
@@ -186,56 +186,58 @@
                 </table>
             </div>
 
-            <div class="no-print" style="margin-top:10px;">
-                <button type="button" onclick="addInvoiceItemRow()" style="background:#f1f5f9; border:1px dashed #94a3b8; color:#0f172a; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">
+            <div class="no-print" style="margin-top:8px;">
+                <button type="button" onclick="addInvoiceItemRow()" style="background:#f1f5f9; border:1px dashed #94a3b8; color:#0f172a; padding:5px 12px; border-radius:5px; font-size:11.5px; font-weight:700; cursor:pointer;">
                     + Add Item
                 </button>
             </div>
 
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:20px; padding-top:12px; border-top:1px solid #e2e8f0; flex-wrap:wrap; gap:15px;">
-                <div style="max-width:320px; font-size:11px; color:#64748b; line-height:1.5;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:16px; padding-top:10px; border-top:1px solid #e2e8f0; flex-wrap:wrap; gap:12px;">
+                <div style="max-width:300px; font-size:10.5px; color:#64748b; line-height:1.4;">
                     <strong style="color:#0f172a; display:block; margin-bottom:2px;">Terms:</strong>
                     <p style="margin:0;">• Customized products are made-to-order.</p>
                     <p style="margin:0;">• For inquiries, share invoice on WhatsApp.</p>
                 </div>
 
-                <div style="width:260px; font-size:13px;">
-                    <div style="display:flex; justify-content:space-between; padding:3px 0; color:#475569;">
+                <div style="width:240px; font-size:12.5px;">
+                    <div style="display:flex; justify-content:space-between; padding:2px 0; color:#475569;">
                         <span>Subtotal:</span>
                         <strong id="inv-subtotal" style="color:#0f172a;">₹0</strong>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; color:#475569;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0; color:#475569;">
                         <span>Delivery:</span>
-                        <input type="number" id="inv-delivery" value="0" oninput="calculateInvoiceTotal()" class="inv-input" style="width:70px; text-align:right; padding:2px 5px; font-weight:600;">
+                        <input type="number" id="inv-delivery" value="0" oninput="calculateInvoiceTotal()" class="inv-input" style="width:65px; text-align:right; padding:2px 4px; font-weight:600;">
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; color:#475569;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0; color:#475569;">
                         <span>Discount:</span>
-                        <input type="number" id="inv-discount" value="0" oninput="calculateInvoiceTotal()" class="inv-input" style="width:70px; text-align:right; padding:2px 5px; font-weight:600; color:#ef4444;">
+                        <input type="number" id="inv-discount" value="0" oninput="calculateInvoiceTotal()" class="inv-input" style="width:65px; text-align:right; padding:2px 4px; font-weight:600; color:#ef4444;">
                     </div>
-                    <div style="display:flex; justify-content:space-between; border-top:2px solid #0f172a; padding-top:6px; margin-top:4px; font-size:15px; color:#0f172a;">
+                    <div style="display:flex; justify-content:space-between; border-top:2px solid #0f172a; padding-top:5px; margin-top:3px; font-size:14px; color:#0f172a;">
                         <strong>Grand Total:</strong>
-                        <strong id="inv-grand-total" style="font-size:17px; font-weight:800; color:#16a34a;">₹0</strong>
+                        <strong id="inv-grand-total" style="font-size:16px; font-weight:800; color:#16a34a;">₹0</strong>
                     </div>
                 </div>
             </div>
 
-            <!-- OFFICIAL STAMP & SIGNATURE BLOCK -->
-            <div class="auth-sign-block" style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:35px; padding-top:15px; border-top:1px dashed #cbd5e1;">
-                <div style="font-size:10.5px; color:#64748b;">
+            <!-- STAMP & SIGNATURE BLOCK (GUARANTEED DIGITAL SEAL) -->
+            <div class="auth-sign-block" style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:25px; padding-top:12px; border-top:1px dashed #cbd5e1;">
+                <div style="font-size:10px; color:#64748b;">
                     <p style="margin:0; font-weight:700; color:#0f172a;">Thank you for your order!</p>
                     <p style="margin:0;">customzone.in</p>
                 </div>
-                <div style="text-align:center; min-width:160px;">
-                    <div style="height:65px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
-                        <img src="assets/images/stamp.png" onerror="this.style.display='none'" alt="Stamp & Sign" style="max-height:60px; max-width:150px; object-fit:contain;">
+                <div style="text-align:center; min-width:150px;">
+                    <div style="height:55px; display:flex; align-items:center; justify-content:center; margin-bottom:2px;">
+                        <div style="border:2px dashed #1e293b; padding:4px 10px; border-radius:6px; color:#1e293b; font-weight:800; font-size:11px; transform:rotate(-4deg); background:#f8fafc; display:inline-block;">
+                            CUSTOM ZONE<br><span style="font-size:9px; color:#16a34a;">✓ VERIFIED & PAID</span>
+                        </div>
                     </div>
                     <div style="border-top:1px solid #94a3b8; padding-top:2px;">
-                        <span style="font-size:10.5px; font-weight:700; color:#0f172a;">Authorized Signatory</span>
+                        <span style="font-size:10px; font-weight:700; color:#0f172a;">Authorized Signatory</span>
                     </div>
                 </div>
             </div>
 
-            <div class="no-print" style="margin-top:25px; text-align:center; border-top:1px solid #e2e8f0; padding-top:18px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <div class="no-print" style="margin-top:20px; text-align:center; border-top:1px solid #e2e8f0; padding-top:15px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
                 <button type="button" onclick="saveManualInvoiceToLedger()" class="btn-action-main" style="background:#16a34a;" title="Save order & record in profit ledger">
                     <i class="fas fa-save"></i> Save & Record to Ledger
                 </button>
@@ -385,18 +387,18 @@
                                 <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">${idx + 1}</td>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:8px;">
-                                        <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                        <div class="col-img-upload no-print" style="position:relative; width:36px; height:36px; flex-shrink:0;">
                                             <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
-                                            <img src="${itemImg}" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to change product image" data-base64="${itemImg}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                            <img src="${itemImg}" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to change product image" data-base64="${itemImg}" style="width:36px; height:36px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
                                         </div>
                                         <img src="${itemImg}" class="printable-item-img" style="display:none;" alt="Product">
                                         <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${cleanName}</textarea>
-                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
+                                        <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:13px; cursor:pointer; padding-top:4px;">✕</button>
                                     </div>
                                 </td>
                                 <td><input type="number" class="inv-input item-qty" value="${it.quantity || 1}" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
                                 <td><input type="number" class="inv-input item-price" value="${unitPrice}" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
-                                <td class="col-vendor-select"><select class="inv-input item-vendor" style="padding:7px; font-size:12px;">${vendorOpts}</select></td>
+                                <td class="col-vendor-select"><select class="inv-input item-vendor" style="padding:6px; font-size:11.5px;">${vendorOpts}</select></td>
                                 <td class="col-cost-price"><input type="number" class="inv-input item-cost" value="${unitCost}" min="0" placeholder="Cost" style="text-align:right; border-color:#fde68a; background:#fffbeb;"></td>
                                 <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹${it.chargedAmount || it.price}</td>
                             </tr>
@@ -409,18 +411,18 @@
                             <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">1</td>
                             <td>
                                 <div style="display:flex; align-items:center; gap:8px;">
-                                    <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                    <div class="col-img-upload no-print" style="position:relative; width:36px; height:36px; flex-shrink:0;">
                                         <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
-                                        <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" data-base64="assets/images/logo.png" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                        <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" data-base64="assets/images/logo.png" style="width:36px; height:36px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
                                     </div>
                                     <img src="assets/images/logo.png" class="printable-item-img" style="display:none;" alt="Product">
                                     <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${ord.items || 'Customized Item'}</textarea>
-                                    <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
+                                    <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:13px; cursor:pointer; padding-top:4px;">✕</button>
                                 </div>
                             </td>
                             <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
                             <td><input type="number" class="inv-input item-price" value="${totalOrdAmount}" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
-                            <td class="col-vendor-select"><select class="inv-input item-vendor" style="padding:7px; font-size:12px;"><option value="In-House">In-House</option></select></td>
+                            <td class="col-vendor-select"><select class="inv-input item-vendor" style="padding:6px; font-size:11.5px;"><option value="In-House">In-House</option></select></td>
                             <td class="col-cost-price"><input type="number" class="inv-input item-cost" value="0" min="0" placeholder="Cost" style="text-align:right; border-color:#fde68a; background:#fffbeb;"></td>
                             <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹${totalOrdAmount}</td>
                         </tr>
@@ -448,18 +450,18 @@
                     <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">1</td>
                     <td>
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                            <div class="col-img-upload no-print" style="position:relative; width:36px; height:36px; flex-shrink:0;">
                                 <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
-                                <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" data-base64="assets/images/logo.png" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" data-base64="assets/images/logo.png" style="width:36px; height:36px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
                             </div>
                             <img src="assets/images/logo.png" class="printable-item-img" style="display:none;" alt="Product">
                             <textarea class="inv-textarea item-desc" rows="1" placeholder="Product name" oninput="autoExpandTextarea(this)"></textarea>
-                            <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
+                            <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:13px; cursor:pointer; padding-top:4px;">✕</button>
                         </div>
                     </td>
                     <td><input type="number" class="inv-input item-qty" value="1" min="1" oninput="calculateInvoiceTotal()" style="text-align:center;"></td>
                     <td><input type="number" class="inv-input item-price" value="0" min="0" oninput="calculateInvoiceTotal()" style="text-align:right;"></td>
-                    <td class="col-vendor-select"><select class="inv-input item-vendor" style="padding:7px; font-size:12px;">${vendorOpts}</select></td>
+                    <td class="col-vendor-select"><select class="inv-input item-vendor" style="padding:6px; font-size:11.5px;">${vendorOpts}</select></td>
                     <td class="col-cost-price"><input type="number" class="inv-input item-cost" value="0" min="0" placeholder="Cost" style="text-align:right; border-color:#fde68a; background:#fffbeb;"></td>
                     <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹0</td>
                 </tr>
