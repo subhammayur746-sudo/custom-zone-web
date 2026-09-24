@@ -33,7 +33,7 @@
         .mobile-toggle-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        .invoice-sheet { background: #ffffff; padding: 35px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 860px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
+        .invoice-sheet { background: #ffffff; padding: 35px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); max-width: 880px; margin: 0 auto; border: 1px solid #e2e8f0; color: #1e293b; }
         .inv-input { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; background: #f8fafc; color: #0f172a; }
         
         .inv-textarea {
@@ -47,11 +47,11 @@
 
         .btn-action-main { border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #fff; }
 
-        /* STRICTLY HIDE COST PRICE AND VENDOR SELECT ON CUSTOMER PRINT / PDF */
+        /* STRICTLY HIDE COST PRICE, VENDOR SELECT, & IMAGE UPLOAD BUTTONS ON CUSTOMER PRINT / PDF */
         @media print {
             @page { size: A4 portrait; margin: 10mm 14mm; }
             html, body { background: #fff !important; color: #000 !important; font-size: 10.5pt !important; width: 100% !important; height: auto !important; }
-            .sidebar, .no-print, .btn-remove-row, .mobile-admin-bar, .col-cost-price, .col-vendor-select { display: none !important; }
+            .sidebar, .no-print, .btn-remove-row, .mobile-admin-bar, .col-cost-price, .col-vendor-select, .col-img-upload { display: none !important; }
             .main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
             .invoice-sheet { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
             
@@ -63,6 +63,7 @@
             .inv-table th { background: #1e293b !important; color: #fff !important; padding: 6px 10px !important; }
             .inv-table td { padding: 8px 10px !important; }
             .auth-sign-block { display: flex !important; }
+            .printable-item-img { display: inline-block !important; width: 42px !important; height: 42px !important; object-fit: cover !important; border-radius: 4px !important; margin-right: 8px !important; vertical-align: middle !important; border: 1px solid #cbd5e1 !important; }
         }
 
         @media (max-width: 768px) {
@@ -72,7 +73,7 @@
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
             .invoice-sheet { padding: 18px 14px; }
-            .inv-table { min-width: 650px; }
+            .inv-table { min-width: 720px; }
             .table-wrap-mobile { overflow-x: auto; width: 100%; }
         }
     </style>
@@ -148,18 +149,25 @@
                 <table class="inv-table">
                     <thead>
                         <tr>
-                            <th style="width:36%;">Description</th>
+                            <th style="width:5%; text-align:center;">#</th>
+                            <th style="width:38%;">Description & Product Image</th>
                             <th style="width:10%; text-align:center;">Qty</th>
-                            <th style="width:14%; text-align:right;">Rate (₹)</th>
-                            <th class="col-vendor-select" style="width:16%; text-align:left; color:#1e293b;">Assigned Vendor</th>
-                            <th class="col-cost-price" style="width:12%; text-align:right; color:#b45309;">Cost (₹)</th>
-                            <th style="width:12%; text-align:right;">Amount (₹)</th>
+                            <th style="width:13%; text-align:right;">Rate (₹)</th>
+                            <th class="col-vendor-select" style="width:14%; text-align:left;">Vendor</th>
+                            <th class="col-cost-price" style="width:10%; text-align:right; color:#b45309;">Cost (₹)</th>
+                            <th style="width:10%; text-align:right;">Amount (₹)</th>
                         </tr>
                     </thead>
                     <tbody id="invoice-items-body">
                         <tr>
+                            <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">1</td>
                             <td>
-                                <div style="display:flex; align-items:flex-start; gap:6px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                        <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
+                                        <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                    </div>
+                                    <img src="assets/images/logo.png" class="printable-item-img" style="display:none;" alt="Product">
                                     <textarea class="inv-textarea item-desc" rows="1" placeholder="Product name" oninput="autoExpandTextarea(this)">Customized Gift Item</textarea>
                                     <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                 </div>
@@ -211,14 +219,19 @@
                 </div>
             </div>
 
-            <div class="auth-sign-block" style="display:none; justify-content:space-between; align-items:flex-end; margin-top:35px; padding-top:15px; border-top:1px dashed #cbd5e1;">
+            <!-- OFFICIAL STAMP & SIGNATURE BLOCK -->
+            <div class="auth-sign-block" style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:35px; padding-top:15px; border-top:1px dashed #cbd5e1;">
                 <div style="font-size:10.5px; color:#64748b;">
                     <p style="margin:0; font-weight:700; color:#0f172a;">Thank you for your order!</p>
                     <p style="margin:0;">customzone.in</p>
                 </div>
-                <div style="text-align:center;">
-                    <div style="border-bottom:1px solid #94a3b8; width:150px; height:35px; margin-bottom:4px;"></div>
-                    <span style="font-size:10.5px; font-weight:700; color:#0f172a;">Authorized Signatory</span>
+                <div style="text-align:center; min-width:160px;">
+                    <div style="height:65px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                        <img src="assets/images/stamp.png" onerror="this.style.display='none'" alt="Stamp & Sign" style="max-height:60px; max-width:150px; object-fit:contain;">
+                    </div>
+                    <div style="border-top:1px solid #94a3b8; padding-top:2px;">
+                        <span style="font-size:10.5px; font-weight:700; color:#0f172a;">Authorized Signatory</span>
+                    </div>
                 </div>
             </div>
 
@@ -266,6 +279,25 @@
 
         document.getElementById('inv-date').value = new Date().toLocaleDateString('en-GB');
 
+        function previewItemImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const row = input.closest('tr');
+                    const imgPrev = row.querySelector('.item-img-preview');
+                    const printableImg = row.querySelector('.printable-item-img');
+                    
+                    if (imgPrev) {
+                        imgPrev.src = e.target.result;
+                        imgPrev.setAttribute('data-base64', e.target.result);
+                    }
+                    if (printableImg) printableImg.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         async function fetchVendorsForDropdown() {
             try {
                 let snap = await db.collection("staff").where("role", "==", "vendor").get();
@@ -290,12 +322,23 @@
             });
         }
 
+        function updateSerialNumbers() {
+            let rows = document.querySelectorAll('#invoice-items-body tr');
+            rows.forEach((r, idx) => {
+                let slCell = r.querySelector('.row-sl-no');
+                if (slCell) slCell.innerText = idx + 1;
+            });
+        }
+
         window.onload = () => {
             fetchVendorsForDropdown();
             const urlParams = new URLSearchParams(window.location.search);
             const orderId = urlParams.get('orderId');
             if (orderId) loadOrderDetailsIntoInvoice(orderId);
-            else calculateInvoiceTotal();
+            else {
+                updateSerialNumbers();
+                calculateInvoiceTotal();
+            }
         };
 
         async function loadOrderDetailsIntoInvoice(orderId) {
@@ -325,10 +368,11 @@
                 tbody.innerHTML = "";
 
                 if (Array.isArray(ord.items) && ord.items.length > 0) {
-                    ord.items.forEach(it => {
+                    ord.items.forEach((it, idx) => {
                         let unitPrice = Math.round((it.chargedAmount || it.price || 0) / (it.quantity || 1));
                         let unitCost = it.vendorCost || 0;
                         let itemVendor = it.vendorName || "In-House";
+                        let itemImg = it.image || 'assets/images/logo.png';
                         let cleanName = `${it.name}${it.variantName ? ` (${it.variantName})` : ''}${it.userText ? ` [Custom: ${it.userText}]` : ''}`;
                         
                         let vendorOpts = '<option value="In-House">In-House</option>';
@@ -338,8 +382,14 @@
 
                         tbody.innerHTML += `
                             <tr>
+                                <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">${idx + 1}</td>
                                 <td>
-                                    <div style="display:flex; align-items:flex-start; gap:6px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                            <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
+                                            <img src="${itemImg}" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to change product image" data-base64="${itemImg}" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                        </div>
+                                        <img src="${itemImg}" class="printable-item-img" style="display:none;" alt="Product">
                                         <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${cleanName}</textarea>
                                         <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                     </div>
@@ -356,8 +406,14 @@
                     let totalOrdAmount = parseInt(ord.totalAmount) || parseInt(ord.total) || 0;
                     tbody.innerHTML += `
                         <tr>
+                            <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">1</td>
                             <td>
-                                <div style="display:flex; align-items:flex-start; gap:6px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                        <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
+                                        <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" data-base64="assets/images/logo.png" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                                    </div>
+                                    <img src="assets/images/logo.png" class="printable-item-img" style="display:none;" alt="Product">
                                     <textarea class="inv-textarea item-desc" rows="1" oninput="autoExpandTextarea(this)">${ord.items || 'Customized Item'}</textarea>
                                     <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                                 </div>
@@ -373,6 +429,7 @@
 
                 document.querySelectorAll('.item-desc').forEach(el => autoExpandTextarea(el));
                 updateAllVendorDropdowns();
+                updateSerialNumbers();
                 calculateInvoiceTotal();
             } catch(e) {
                 console.error("Invoice auto-fill error:", e);
@@ -388,8 +445,14 @@
 
             tbody.innerHTML += `
                 <tr>
+                    <td style="text-align:center; font-weight:700; color:#64748b;" class="row-sl-no">1</td>
                     <td>
-                        <div style="display:flex; align-items:flex-start; gap:6px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="col-img-upload no-print" style="position:relative; width:40px; height:40px; flex-shrink:0;">
+                                <input type="file" accept="image/*" class="item-img-file" onchange="previewItemImage(this)" style="display:none;">
+                                <img src="assets/images/logo.png" class="item-img-preview" onclick="this.previousElementSibling.click()" title="Click to upload product image" data-base64="assets/images/logo.png" style="width:40px; height:40px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1; cursor:pointer;">
+                            </div>
+                            <img src="assets/images/logo.png" class="printable-item-img" style="display:none;" alt="Product">
                             <textarea class="inv-textarea item-desc" rows="1" placeholder="Product name" oninput="autoExpandTextarea(this)"></textarea>
                             <button type="button" class="btn-remove-row no-print" onclick="removeInvoiceItemRow(this)" style="background:none; border:none; color:#ef4444; font-size:14px; cursor:pointer; padding-top:4px;">✕</button>
                         </div>
@@ -401,11 +464,13 @@
                     <td style="text-align:right; font-weight:700; color:#0f172a;" class="item-line-total">₹0</td>
                 </tr>
             `;
+            updateSerialNumbers();
         }
 
         function removeInvoiceItemRow(btn) {
             if (document.querySelectorAll('#invoice-items-body tr').length > 1) {
                 btn.closest('tr').remove();
+                updateSerialNumbers();
                 calculateInvoiceTotal();
             }
         }
@@ -425,7 +490,6 @@
             document.getElementById('inv-grand-total').innerText = `₹${Math.max(0, subtotal + delivery - discount)}`;
         }
 
-        // SAVE MANUAL INVOICE TO LEDGER & PROFIT CALCULATOR WITH VENDOR MARKING
         async function saveManualInvoiceToLedger() {
             const custName = document.getElementById('inv-cust-name').value.trim();
             const custPhone = document.getElementById('inv-cust-phone').value.trim();
@@ -450,6 +514,8 @@
                 let unitPrice = parseFloat(r.querySelector('.item-price').value) || 0;
                 let unitCost = parseFloat(r.querySelector('.item-cost').value) || 0;
                 let assignedVendor = r.querySelector('.item-vendor').value || "In-House";
+                let imgEl = r.querySelector('.item-img-preview');
+                let itemImg = imgEl ? (imgEl.getAttribute('data-base64') || imgEl.src) : 'assets/images/logo.png';
                 let chargedAmount = qty * unitPrice;
 
                 subtotal += chargedAmount;
@@ -461,7 +527,8 @@
                     price: chargedAmount,
                     chargedAmount: chargedAmount,
                     vendorCost: unitCost,
-                    vendorName: assignedVendor
+                    vendorName: assignedVendor,
+                    image: itemImg
                 });
             });
 
