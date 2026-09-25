@@ -358,6 +358,7 @@
             }
         }
 
+        // OPTIMIZED COMPRESSION TO FIT WITHIN FIREBASE 1MB DOCUMENT LIMIT
         function handleDirectImageUpload(input) {
             const files = Array.from(input.files);
             if (!files.length) return;
@@ -369,7 +370,7 @@
                     img.src = e.target.result;
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const maxDimension = 800;
+                        const maxDimension = 600; // Optimized dimension to keep file size small
                         let width = img.width;
                         let height = img.height;
 
@@ -386,7 +387,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65); // 65% quality for optimal size
                         uploadedProductImages.push(compressedBase64);
                         renderImagePreviews();
                     };
@@ -517,7 +518,7 @@
                     img.src = e.target.result;
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const maxDim = 600;
+                        const maxDim = 500; // Optimized dimension for variant thumbs
                         let w = img.width;
                         let h = img.height;
                         if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
@@ -528,7 +529,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, w, h);
 
-                        const compressed = canvas.toDataURL('image/jpeg', 0.72);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.65);
                         currentImgs.push(compressed);
                         hiddenInput.value = JSON.stringify(currentImgs);
                         renderVariantThumbnails(previewRow, currentImgs);
@@ -909,7 +910,6 @@
             document.getElementById('btn-cancel-edit').style.display = "none";
         }
 
-        // 100% FIXED & SAFE SAVER (REPLACED SERVER TIMESTAMP TO PREVENT DESKTOP HANG)
         async function saveProductCloud() {
             const id = document.getElementById('prod-doc-id').value;
             const name = document.getElementById('prod-name').value.trim();
