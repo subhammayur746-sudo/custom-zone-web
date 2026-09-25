@@ -8,10 +8,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Firebase SDK v8 & Storage -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="js/firebase-config.js"></script>
 
     <style>
@@ -172,7 +170,7 @@
             </div>
 
             <div class="form-group" style="margin-top:15px;">
-                <label><i class="fas fa-images"></i> Product Photos (Cloud Storage Upload):</label>
+                <label><i class="fas fa-images"></i> Product Photos (Instant Local Compress):</label>
                 <div class="upload-dropzone" onclick="document.getElementById('prod-file-input').click()">
                     <i class="fas fa-cloud-upload-alt" style="font-size:26px; color:#3498db; margin-bottom:6px;"></i>
                     <p style="margin:0; font-size:13px; font-weight:600; color:#2c3e50;">Click here to select images from Phone/PC</p>
@@ -360,40 +358,40 @@
             }
         }
 
-        // FIREBASE STORAGE UPLOAD HELPER FOR HD IMAGES WITHOUT 1MB LIMIT
-        async function uploadFileToFirebaseStorage(file) {
-            try {
-                const storageRef = firebase.storage().ref();
-                const uniqueName = `products/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "")}`;
-                const fileRef = storageRef.child(uniqueName);
-                const snapshot = await fileRef.put(file);
-                const downloadURL = await snapshot.ref.getDownloadURL();
-                return downloadURL;
-            } catch (err) {
-                console.error("Cloud storage upload error:", err);
-                return null;
-            }
+        // INSTANT SYNCHRONOUS LOCAL COMPRESSION (NO WAITING FOR CLOUD UPLOAD)
+        function compressImageToDataURL(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 320; // Ultra compact size to keep total doc size < 1MB
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    callback(canvas.toDataURL('image/jpeg', 0.40));
+                };
+            };
+            reader.readAsDataURL(file);
         }
 
-        // DIRECT FILE INPUT HANDLER FOR MAIN PRODUCT IMAGES
-        async function handleDirectImageUpload(input) {
+        function handleDirectImageUpload(input) {
             const files = Array.from(input.files);
             if (!files.length) return;
 
-            const btn = document.getElementById('btn-save-prod');
-            btn.disabled = true;
-            btn.innerText = "Uploading Images to Cloud...";
-
-            for (let file of files) {
-                let downloadUrl = await uploadFileToFirebaseStorage(file);
-                if (downloadUrl) {
-                    uploadedProductImages.push(downloadUrl);
-                }
-            }
-
-            renderImagePreviews();
-            btn.disabled = false;
-            btn.innerText = "Save Product";
+            files.forEach(file => {
+                compressImageToDataURL(file, (compressedBase64) => {
+                    uploadedProductImages.push(compressedBase64);
+                    renderImagePreviews();
+                });
+            });
             input.value = "";
         }
 
@@ -501,7 +499,7 @@
             refreshBulkVariantOptions();
         }
 
-        async function handleVariantMultiImageUpload(input) {
+        function handleVariantMultiImageUpload(input) {
             const files = Array.from(input.files);
             if (!files.length) return;
             const parent = input.parentElement;
@@ -511,21 +509,13 @@
             let currentImgs = [];
             try { currentImgs = JSON.parse(hiddenInput.value) || []; } catch(e) {}
 
-            const btn = document.getElementById('btn-save-prod');
-            btn.disabled = true;
-            btn.innerText = "Uploading Variant Images...";
-
-            for (let file of files) {
-                let downloadUrl = await uploadFileToFirebaseStorage(file);
-                if (downloadUrl) {
-                    currentImgs.push(downloadUrl);
-                }
-            }
-
-            hiddenInput.value = JSON.stringify(currentImgs);
-            renderVariantThumbnails(previewRow, currentImgs);
-            btn.disabled = false;
-            btn.innerText = "Save Product";
+            files.forEach(file => {
+                compressImageToDataURL(file, (compressedBase64) => {
+                    currentImgs.push(compressedBase64);
+                    hiddenInput.value = JSON.stringify(currentImgs);
+                    renderVariantThumbnails(previewRow, currentImgs);
+                });
+            });
             input.value = "";
         }
 
