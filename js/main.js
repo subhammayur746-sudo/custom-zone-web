@@ -17,20 +17,19 @@ const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
 
-// GLOBAL MAINTENANCE & CACHE BYPASS CHECK ON EVERY PAGE LOAD
 async function checkSiteMaintenanceMode() {
     try {
         let doc = await db.collection("settings").doc("maintenance").get();
-        if (doc.exists && doc.data().enabled === true) {
-            let path = window.location.pathname;
-            if (!path.includes("maintenance.html") && !path.includes("admin-")) {
+        if (doc.exists) {
+            let isMaint = doc.data().enabled === true;
+            let currentPath = window.location.pathname;
+            if (isMaint && !currentPath.includes('maintenance.html') && !currentPath.includes('admin')) {
                 window.location.href = "maintenance.html";
             }
         }
     } catch(e) {}
 }
 
-// Mobile Drawer Controls
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -45,7 +44,6 @@ function closeMobileDrawer() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Fetch Live Products & Reviews safely
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
@@ -59,20 +57,17 @@ async function fetchLiveProducts() {
             let rev = doc.data();
             rev.id = doc.id;
             if (rev.productId) {
-                if (!allReviewsMap[rev.productId]) {
-                    allReviewsMap[rev.productId] = [];
-                }
+                if (!allReviewsMap[rev.productId]) allReviewsMap[rev.productId] = [];
                 allReviewsMap[rev.productId].push(rev);
             }
         });
 
-        const snapshot = await db.collection("products").where("isActive", "==", true).get();
+        const snapshot = await db.collection("products").get();
         liveProducts = [];
         categoryMap = { "Handmade": new Set(), "Customized": new Set() };
         
         if (snapshot.empty) {
             container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1;'>No products available right now.</p>";
-            renderHomePaginationBar(0);
             return;
         }
 
@@ -87,10 +82,7 @@ async function fetchLiveProducts() {
             let mainCatFormatted = prod.mainCategory.trim();
             mainCatFormatted = mainCatFormatted.charAt(0).toUpperCase() + mainCatFormatted.slice(1);
 
-            if (!categoryMap[mainCatFormatted]) {
-                categoryMap[mainCatFormatted] = new Set();
-            }
-
+            if (!categoryMap[mainCatFormatted]) categoryMap[mainCatFormatted] = new Set();
             if (prod.subCategory && prod.subCategory.trim() !== "") {
                 categoryMap[mainCatFormatted].add(prod.subCategory.trim());
             }
@@ -116,7 +108,7 @@ async function fetchLiveProducts() {
 
     } catch (error) {
         console.error("Error fetching products & reviews:", error);
-        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products. Please check connection.</p>";
+        container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products.</p>";
     }
 }
 
@@ -124,13 +116,11 @@ function renderCategoryPills() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
 
-    let html = '<button class="cat-pill-btn ' + (selectedMainCategory === 'all' ? 'active' : '') + '" onclick="setMainCategoryFilter(\'all\', this)">All</button>';
-
+    let html = `<button class="cat-pill-btn ${selectedMainCategory === 'all' ? 'active' : ''}" onclick="setMainCategoryFilter('all', this)">All</button>`;
     for (let mainCat in categoryMap) {
         let isActive = selectedMainCategory.toLowerCase() === mainCat.toLowerCase();
-        html += '<button class="cat-pill-btn ' + (isActive ? 'active' : '') + '" onclick="setMainCategoryFilter(\'' + mainCat + '\', this)">' + mainCat + '</button>';
+        html += `<button class="cat-pill-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">${mainCat}</button>`;
     }
-
     nav.innerHTML = html;
     renderSubCategoryRow();
 }
@@ -151,9 +141,9 @@ function renderSubCategoryRow() {
         return;
     }
 
-    let html = '<span class="subcat-pill ' + (selectedSubCategory === 'all' ? 'active' : '') + '" onclick="setSubCategoryFilter(\'all\')">All ' + selectedMainCategory + '</span>';
+    let html = `<span class="subcat-pill ${selectedSubCategory === 'all' ? 'active' : ''}" onclick="setSubCategoryFilter('all')">All ${selectedMainCategory}</span>`;
     subCats.forEach(sub => {
-        html += '<span class="subcat-pill ' + (selectedSubCategory === sub ? 'active' : '') + '" onclick="setSubCategoryFilter(\'' + sub + '\')">' + sub + '</span>';
+        html += `<span class="subcat-pill ${selectedSubCategory === sub ? 'active' : ''}" onclick="setSubCategoryFilter('${sub}')">${sub}</span>`;
     });
 
     subRow.innerHTML = html;
@@ -196,6 +186,7 @@ function renderHomeProducts(products) {
     const fallbackImg = "assets/images/logo.png";
 
     pageItems.forEach(prod => {
+        let isOutOfStock = prod.isActive === false;
         let images = prod.images && prod.images.length > 0 ? prod.images : [fallbackImg];
         let mainImg = images[0];
         let isWishlisted = wishlist.some(w => w.id === prod.id);
@@ -213,12 +204,12 @@ function renderHomeProducts(products) {
         if (hasVariants) {
             let variantPrices = prod.variants.map(v => parseInt(v.price) || sellingPrice).filter(p => p > 0);
             effectiveSellingPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : sellingPrice;
-            displayPriceText = "₹" + effectiveSellingPrice + "+";
+            displayPriceText = `₹${effectiveSellingPrice}+`;
 
             let variantActuals = prod.variants.map(v => parseInt(v.actualPrice) || actualPrice).filter(p => p > 0);
             if (variantActuals.length > 0) actualPrice = Math.max(...variantActuals);
         } else {
-            displayPriceText = "₹" + sellingPrice;
+            displayPriceText = `₹${sellingPrice}`;
         }
 
         let hasDiscount = actualPrice > 0 && effectiveSellingPrice > 0 && effectiveSellingPrice < actualPrice;
@@ -226,13 +217,28 @@ function renderHomeProducts(products) {
 
         let priceHtml = "";
         if (hasDiscount) {
-            priceHtml = '<div class="price-display-wrapper"><span class="original-price-strike">₹' + actualPrice + '</span><span class="sale-price-highlight">' + displayPriceText + '</span></div><div><span class="discount-badge-pill">🔥 ' + discountPct + '% OFF</span></div>';
+            priceHtml = `
+                <div class="price-display-wrapper">
+                    <span class="original-price-strike">₹${actualPrice}</span>
+                    <span class="sale-price-highlight">${displayPriceText}</span>
+                </div>
+                <div><span class="discount-badge-pill">🔥 ${discountPct}% OFF</span></div>
+            `;
         } else {
-            priceHtml = '<p class="sale-price-highlight" style="margin-bottom:8px;">' + displayPriceText + '</p>';
+            priceHtml = `<p class="sale-price-highlight" style="margin-bottom:8px;">${displayPriceText}</p>`;
         }
 
+        let stockBadgeHtml = isOutOfStock 
+            ? `<span style="position:absolute; top:10px; left:10px; background:#dc2626; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px; z-index:5; box-shadow:0 2px 6px rgba(0,0,0,0.15);">OUT OF STOCK</span>` 
+            : '';
+
+        let btnHtml = isOutOfStock
+            ? `<button class="btn-cart-action" style="background:#94a3b8 !important; cursor:not-allowed;" disabled>Out of Stock</button>`
+            : `<button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')"><i class="fas fa-shopping-cart"></i> Add to Cart</button>`;
+
         container.innerHTML += `
-            <div class="product-card" onclick="openProductDetailsModal('${prod.id}')">
+            <div class="product-card" style="${isOutOfStock ? 'opacity:0.85;' : ''}" onclick="openProductDetailsModal('${prod.id}')">
+                ${stockBadgeHtml}
                 <div class="card-top-actions">
                     <button class="action-btn-circle" onclick="event.stopPropagation(); shareDirectProduct('${prod.id}', event)" title="Share Product">
                         <i class="fas fa-share-alt"></i>
@@ -255,9 +261,7 @@ function renderHomeProducts(products) {
 
                 ${priceHtml}
 
-                <button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')">
-                    <i class="fas fa-shopping-cart"></i> Add to Cart
-                </button>
+                ${btnHtml}
             </div>
         `;
     });
@@ -286,17 +290,32 @@ function renderHomePaginationBar(totalItems) {
     let totalPages = Math.ceil(totalItems / HOME_PRODUCTS_PER_PAGE);
     let html = "";
 
-    html += '<button onclick="goToHomePage(' + (currentHomePage - 1) + ')" ' + (currentHomePage === 1 ? 'disabled' : '') + ' style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:' + (currentHomePage === 1 ? 'not-allowed' : 'pointer') + '; opacity:' + (currentHomePage === 1 ? '0.5' : '1') + ';">&laquo; Prev</button>';
+    html += `
+        <button onclick="goToHomePage(${currentHomePage - 1})" ${currentHomePage === 1 ? 'disabled' : ''} 
+                style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === 1 ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === 1 ? '0.5' : '1'};">
+            &laquo; Prev
+        </button>
+    `;
 
     let startPage = Math.max(1, currentHomePage - 2);
     let endPage = Math.min(totalPages, currentHomePage + 2);
 
     for (let i = startPage; i <= endPage; i++) {
         let isAct = i === currentHomePage;
-        html += '<button onclick="goToHomePage(' + i + ')" style="background:' + (isAct ? '#28469E' : '#fff') + '; color:' + (isAct ? '#fff' : '#1e293b') + '; border:1px solid ' + (isAct ? '#28469E' : '#cbd5e1') + '; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">' + i + '</button>';
+        html += `
+            <button onclick="goToHomePage(${i})" 
+                    style="background:${isAct ? '#28469E' : '#fff'}; color:${isAct ? '#fff' : '#1e293b'}; border:1px solid ${isAct ? '#28469E' : '#cbd5e1'}; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+                ${i}
+            </button>
+        `;
     }
 
-    html += '<button onclick="goToHomePage(' + (currentHomePage + 1) + ')" ' + (currentHomePage === totalPages ? 'disabled' : '') + ' style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:' + (currentHomePage === totalPages ? 'not-allowed' : 'pointer') + '; opacity:' + (currentHomePage === totalPages ? '0.5' : '1') + ';">Next &raquo;</button>';
+    html += `
+        <button onclick="goToHomePage(${currentHomePage + 1})" ${currentHomePage === totalPages ? 'disabled' : ''} 
+                style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === totalPages ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === totalPages ? '0.5' : '1'};">
+            Next &raquo;
+        </button>
+    `;
 
     bar.innerHTML = html;
 }
@@ -355,17 +374,13 @@ function shareDirectProduct(productId, event) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
 
-    let shareUrl = window.location.origin + "/index.html?product=" + productId;
-    let shareText = "Check out this customized \"" + product.name + "\" on Custom Zone! 🎁✨\n" + shareUrl;
+    let shareUrl = `${window.location.origin}/index.html?product=${productId}`;
+    let shareText = `Check out this customized "${product.name}" on Custom Zone! 🎁✨\n${shareUrl}`;
 
     if (navigator.share) {
-        navigator.share({
-            title: product.name,
-            text: shareText,
-            url: shareUrl
-        }).catch(() => {});
+        navigator.share({ title: product.name, text: shareText, url: shareUrl }).catch(() => {});
     } else {
-        const waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText);
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
         window.open(waUrl, "_blank");
     }
 }
@@ -381,9 +396,15 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
 
     if (hasDiscount) {
-        priceContainer.innerHTML = '<div style="display:flex; align-items:center; gap:10px;"><span class="original-price-strike" style="font-size:16px;">₹' + actualPrice + '</span><span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">' + sellingPrice + '</span></span><span class="discount-badge-pill" style="margin-bottom:0;">🔥 ' + discountPct + '% OFF</span></div>';
+        priceContainer.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
+                <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
+                <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
+            </div>
+        `;
     } else {
-        priceContainer.innerHTML = '<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">' + sellingPrice + '</span></div>';
+        priceContainer.innerHTML = `<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></div>`;
     }
 }
 
@@ -440,11 +461,9 @@ function openProductDetailsModal(productId) {
         mainImgEl.src = defaultImages[0];
         mainImgEl.style.cssText = "width:100%; max-height:360px; aspect-ratio:1/1; object-fit:contain; background:#ffffff; border-radius:8px; display:block; margin:0 auto;";
         mainImgEl.onclick = () => directImageZoom(mainImgEl.src);
-        mainImgEl.title = "Click to Zoom";
-        mainImgEl.style.cursor = "zoom-in";
     }
 
-    if (badgeEl) badgeEl.innerText = product.mainCategory + " • " + (product.subCategory || 'Handmade');
+    if (badgeEl) badgeEl.innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
     if (titleEl) titleEl.innerText = product.name;
 
     renderModalGallery(defaultImages);
@@ -454,23 +473,43 @@ function openProductDetailsModal(productId) {
 
     if (product.hasSizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         currentSelectedSize = product.sizes[0];
-        let sizeHtml = '<div class="pdm-variant-wrapper" style="margin-bottom:12px;"><div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-ruler-combined"></i> Select Size / Dimension:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">';
-        product.sizes.forEach((s, idx) => {
-            sizeHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductSize(\'' + s.name + '\', ' + (s.extraPrice || 0) + ', this)">' + s.name + (s.extraPrice > 0 ? ' (+₹' + s.extraPrice + ')' : '') + '</button>';
-        });
-        sizeHtml += '</div></div>';
+        let sizeHtml = `
+            <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
+                <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;">
+                    <i class="fas fa-ruler-combined"></i> Select Size / Dimension:
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${product.sizes.map((s, idx) => `
+                        <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductSize('${s.name.replace(/'/g, "\\'")}', ${s.extraPrice || 0}, this)">
+                            ${s.name}${s.extraPrice > 0 ? `(+₹${s.extraPrice})` : ''}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
         customContainer.innerHTML += sizeHtml;
     }
 
     if (product.hasVariants && Array.isArray(product.variants) && product.variants.length > 0) {
         currentSelectedVariant = product.variants[0];
-        let variantHtml = '<div class="pdm-variant-wrapper" style="margin-bottom:12px;"><div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-palette"></i> Select Color / Design:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">';
-        product.variants.forEach((v, idx) => {
-            let vImages = v.images || (v.image ? [v.image] : []);
-            let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
-            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariant(\'' + v.name + '\', ' + v.price + ', \'' + (v.actualPrice || '') + '\', \'' + imgJson + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
-        });
-        variantHtml += '</div></div>';
+        let variantHtml = `
+            <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
+                <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;">
+                    <i class="fas fa-palette"></i> Select Color / Design:
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${product.variants.map((v, idx) => {
+                        let vImages = v.images || (v.image ? [v.image] : []);
+                        let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
+                        return `
+                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name.replace(/'/g, "\\'")}', ${v.price}, '${v.actualPrice \vert{}\vert{} ''}',${imgJson}, this)">
+                                ${v.name} • ₹${v.price}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
         customContainer.innerHTML += variantHtml;
 
         let firstVarImgs = currentSelectedVariant.images || (currentSelectedVariant.image ? [currentSelectedVariant.image] : []);
@@ -480,56 +519,78 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    customContainer.innerHTML += '<div id="pdm-bulk-qty-wrapper"></div>';
+    customContainer.innerHTML += `<div id="pdm-bulk-qty-wrapper"></div>`;
     renderApplicableBulkPackages(product);
 
     if (product.customType === "name") {
-        customContainer.innerHTML += '<div style="margin-top:10px;"><label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label><input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);"></div>';
+        customContainer.innerHTML += `
+            <div style="margin-top:10px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label>
+                <input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);">
+            </div>
+        `;
     } else if (product.customType === "pic") {
-        customContainer.innerHTML += '<div style="margin-top:10px;"><p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">📷 Photo Customization: Share your photo on WhatsApp after checkout!</p></div>';
+        customContainer.innerHTML += `
+            <div style="margin-top:10px;">
+                <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
+                    📷 Photo Customization: Share your photo on WhatsApp after checkout!
+                </p>
+            </div>
+        `;
     }
 
     recalculateLinkedPrice(product);
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
-    if (starsEl) starsEl.innerText = ratingVal + " ★";
-    if (revCountEl) revCountEl.innerText = "(" + reviewNum + (reviewNum === 1 ? " customer review" : " customer reviews") + ")";
+    if (starsEl) starsEl.innerText = `${ratingVal} ★`;
+    if (revCountEl) revCountEl.innerText = `(${reviewNum} ${reviewNum === 1 ? 'customer review' : 'customer reviews'})`;
 
     const btnAdd = document.getElementById('pdm-btn-add');
     const btnBuy = document.getElementById('pdm-btn-buy');
+    let isOutOfStock = product.isActive === false;
 
     if (btnAdd) {
-        btnAdd.onclick = () => {
-            let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-            handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentSelectedSize);
-            closeProductDetailsModal();
-        };
+        if (isOutOfStock) {
+            btnAdd.disabled = true;
+            btnAdd.style.background = "#94a3b8";
+            btnAdd.innerText = "Out of Stock";
+        } else {
+            btnAdd.disabled = false;
+            btnAdd.style.background = "";
+            btnAdd.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+            btnAdd.onclick = () => {
+                let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+                handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentSelectedSize);
+                closeProductDetailsModal();
+            };
+        }
     }
 
     if (btnBuy) {
-        btnBuy.onclick = () => {
-            let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-            let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
+        if (isOutOfStock) {
+            btnBuy.style.display = "none";
+        } else {
+            btnBuy.style.display = "block";
+            btnBuy.onclick = () => {
+                let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+                let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
 
-            if (!customer) {
-                pendingAction = { 
-                    type: 'buy_now', 
-                    id: product.id, 
-                    text: customVal, 
-                    variant: currentSelectedVariant, 
-                    qty: currentSelectedQty, 
-                    price: currentApplicablePrice,
-                    size: currentSelectedSize 
-                };
-                closeProductDetailsModal();
-                openAuthModal(true);
-                return;
-            }
+                if (!customer) {
+                    pendingAction = { 
+                        type: 'buy_now', id: product.id, text: customVal, 
+                        variant: currentSelectedVariant, qty: currentSelectedQty, 
+                        price: currentApplicablePrice, size: currentSelectedSize 
+                    };
+                    closeProductDetailsModal();
+                    openAuthModal(true);
+                    return;
+                }
 
-            handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentSelectedSize);
-            window.location.href = "cart.html";
-        };
+                handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentSelectedSize);
+                window.location.href = "cart.html";
+            };
+        }
     }
 
     loadProductSpecificReviews(productId);
@@ -555,12 +616,24 @@ function renderApplicableBulkPackages(product) {
     }
 
     let sorted = [...matchedTiers].sort((a, b) => a.minQty - b.minQty);
-    let html = '<div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span><span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span></div><div style="display:flex; gap:6px; flex-wrap:wrap;"><button type="button" class="pdm-qty-pill-btn ' + (currentSelectedQty === 1 ? 'active' : '') + '" onclick="onSelectBulkQty(1, this)">1 PC (Standard)</button>';
-    sorted.forEach(t => {
-        html += '<button type="button" class="pdm-qty-pill-btn ' + (currentSelectedQty === t.minQty ? 'active' : '') + '" onclick="onSelectBulkQty(' + t.minQty + ', this)">' + t.minQty + ' PCS Package</button>';
-    });
-    html += '</div></div>';
-    wrapper.innerHTML = html;
+    wrapper.innerHTML = `
+        <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span>
+                <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === 1 ? 'active' : ''}" onclick="onSelectBulkQty(1, this)">
+                    1 PC (Standard)
+                </button>
+                ${sorted.map(t => `
+                    <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === t.minQty ? 'active' : ''}" onclick="onSelectBulkQty(${t.minQty}, this)">
+                        ${t.minQty} PCS Package
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
 function renderModalGallery(imgs) {
@@ -570,7 +643,11 @@ function renderModalGallery(imgs) {
     thumbsContainer.innerHTML = "";
     if (imgs && imgs.length > 1) {
         imgs.forEach(img => {
-            thumbsContainer.innerHTML += '<img src="' + img + '" onerror="this.src=\'' + fallbackImg + '\'" style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" onclick="document.getElementById(\'pdm-main-img\').src=\'' + img + '\'">';
+            thumbsContainer.innerHTML += `
+                <img src="${img}" onerror="this.src='${fallbackImg}'" 
+                     style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" 
+                     onclick="document.getElementById('pdm-main-img').src='${img}'">
+            `;
         });
     }
 }
@@ -584,15 +661,12 @@ function onSelectProductSize(sizeName, extraPrice, btnEl) {
     if (product) recalculateLinkedPrice(product);
 }
 
-function onSelectProductVariant(varName, price, actualPrice, imagesJsonStr, btnEl) {
-    let parsedImgs = [];
-    try { parsedImgs = JSON.parse(imagesJsonStr); } catch(e) {}
-
+function onSelectProductVariant(varName, price, actualPrice, images, btnEl) {
     currentSelectedVariant = {
         name: varName,
         price: parseInt(price),
         actualPrice: actualPrice ? parseInt(actualPrice) : null,
-        images: parsedImgs
+        images: Array.isArray(images) ? images : (images ? [images] : [])
     };
     btnEl.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btnEl.classList.add('active');
@@ -621,8 +695,6 @@ function onSelectBulkQty(qty, btnEl) {
 function closeProductDetailsModal() {
     const modal = document.getElementById('product-details-modal');
     if (modal) modal.classList.remove('show-modal');
-    const writeBox = document.getElementById('product-write-review-box');
-    if (writeBox) writeBox.style.display = "none";
 }
 
 function closeImageZoomModal() {
@@ -654,11 +726,20 @@ async function loadProductSpecificReviews(productId) {
         container.innerHTML = "";
         reviews.forEach(r => {
             let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
-            let photoHtml = r.photoUrl ? '<img src="' + r.photoUrl + '" class="review-photo" onclick="directImageZoom(\'' + r.photoUrl + '\')" alt="Customer Real Pic">' : "";
+            let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="directImageZoom('${r.photoUrl}')" alt="Customer Real Pic">` : "";
 
-            container.innerHTML += '<div class="review-card-item"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><strong style="color:var(--blue-primary); font-size:13px;">' + (r.customerName || 'Customer') + '</strong><span style="color:#f39c12; font-size:12px;">' + stars + '</span></div><p style="margin:0; font-size:12px; color:var(--text-primary);">' + (r.comment || '') + '</p>' + photoHtml + '<div style="font-size:10px; color:#595959; margin-top:5px;">' + (r.date || 'Recent') + '</div></div>';
+            container.innerHTML += `
+                <div class="review-card-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="color:var(--blue-primary); font-size:13px;">${r.customerName || 'Customer'}</strong>
+                        <span style="color:#f39c12; font-size:12px;">${stars}</span>
+                    </div>
+                    <p style="margin:0; font-size:12px; color:var(--text-primary);">${r.comment || ''}</p>
+                    ${photoHtml}
+                    <div style="font-size:10px; color:#595959; margin-top:5px;">${r.date || 'Recent'}</div>
+                </div>
+            `;
         });
-
     } catch (e) {
         container.innerHTML = "<p style='color:#595959; font-size:12px;'>Verified product rating: 5.0 ★</p>";
     }
@@ -675,22 +756,22 @@ function checkUrlProductParam() {
 function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null, selectedSize = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     
+    let product = liveProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    if (product.isActive === false) {
+        alert("Sorry, this item is currently Out of Stock.");
+        return;
+    }
+
     if (!customer) {
         pendingAction = { 
-            type: 'cart', 
-            id: productId, 
-            text: customText, 
-            variant: selectedVariant, 
-            qty: selectedQty, 
-            price: packagePrice,
-            size: selectedSize 
+            type: 'cart', id: productId, text: customText, 
+            variant: selectedVariant, qty: selectedQty, price: packagePrice, size: selectedSize 
         };
         openAuthModal(true);
         return;
     }
-
-    let product = liveProducts.find(p => p.id === productId);
-    if (!product) return;
 
     let finalPackagePrice = packagePrice !== null ? packagePrice : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
 
@@ -704,25 +785,20 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
     }
 
     let specParts = [];
-    if (selectedSize && selectedSize.name) specParts.push("Size: " + selectedSize.name);
-    if (selectedVariant && selectedVariant.name) specParts.push("Color: " + selectedVariant.name);
+    if (selectedSize && selectedSize.name) specParts.push(`Size: ${selectedSize.name}`);
+    if (selectedVariant && selectedVariant.name) specParts.push(`Color: ${selectedVariant.name}`);
     let fullVariantName = specParts.join(' | ');
 
     let cart = JSON.parse(localStorage.getItem('cz_cart')) || [];
     cart.push({
-        id: product.id,
-        name: product.name,
-        price: finalPackagePrice,
-        variantName: fullVariantName,
-        image: finalImg,
-        customType: product.customType,
-        userText: customText,
-        quantity: selectedQty
+        id: product.id, name: product.name, price: finalPackagePrice,
+        variantName: fullVariantName, image: finalImg,
+        customType: product.customType, userText: customText, quantity: selectedQty
     });
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert("✅ " + product.name + " (" + selectedQty + " PCS - ₹" + finalPackagePrice + ") added to cart!");
+    alert(`✅ ${product.name} (${selectedQty} PCS - ₹${finalPackagePrice}) added to cart!`);
 }
 
 async function toggleWishlistCloud(productId) {
@@ -744,8 +820,7 @@ async function toggleWishlistCloud(productId) {
         alert("Removed from Wishlist.");
     } else {
         wishlist.push({
-            id: product.id,
-            name: product.name,
+            id: product.id, name: product.name,
             price: product.discountPrice || product.price,
             image: product.images ? product.images[0] : 'assets/images/logo.png',
             customType: product.customType
@@ -787,9 +862,7 @@ function openAuthModal(isGate = false) {
     switchAuthForm('login');
     const modal = document.getElementById('auth-modal');
     const gateMsg = document.getElementById('auth-gate-alert');
-    if (gateMsg) {
-        gateMsg.style.display = isGate ? 'block' : 'none';
-    }
+    if (gateMsg) gateMsg.style.display = isGate ? 'block' : 'none';
     if (modal) modal.classList.add('show-modal');
 }
 
@@ -810,19 +883,19 @@ async function handleCustomerAuthSubmit() {
     const address = addressInput ? addressInput.value.trim() : "";
 
     if (phone.length !== 10) {
-        if(err) { err.style.display = "block"; err.innerText = "Please enter a valid 10-digit WhatsApp phone number."; }
+        err.style.display = "block";
+        err.innerText = "Please enter a valid 10-digit WhatsApp phone number.";
         return;
     }
 
     if (!name) {
-        if(err) { err.style.display = "block"; err.innerText = "Please enter your Full Name."; }
+        err.style.display = "block";
+        err.innerText = "Please enter your Full Name.";
         return;
     }
 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = "Verifying...";
-    }
+    btn.disabled = true;
+    btn.innerText = "Verifying...";
 
     try {
         const customerRef = db.collection("customers").doc(phone);
@@ -830,59 +903,63 @@ async function handleCustomerAuthSubmit() {
 
         if (currentAuthMode === 'login') {
             if (!docSnap.exists) {
-                if(err) { 
-                    err.style.display = "block"; 
-                    err.innerText = "Account not found for this number. Please click 'Sign Up' to register."; 
-                }
-                if(btn) { btn.disabled = false; btn.innerText = "Login / Proceed"; }
+                err.style.display = "block";
+                err.innerText = "Account not found. Please click 'Sign Up' to register.";
+                btn.disabled = false;
+                btn.innerText = "Login / Proceed";
                 return;
             }
 
             const customerData = docSnap.data();
-            customerRef.set({ lastLogin: new Date().toISOString() }, { merge: true }).catch(() => {});
+            if (customerData.name.trim().toLowerCase() !== name.toLowerCase()) {
+                err.style.display = "block";
+                err.innerText = "Invalid phone number or name combination.";
+                btn.disabled = false;
+                btn.innerText = "Login / Proceed";
+                return;
+            }
 
+            if (!customerData.customerId) {
+                customerData.customerId = "CZ-CUST-" + Math.floor(10000 + Math.random() * 90000);
+                await customerRef.update({ customerId: customerData.customerId });
+            }
+
+            await customerRef.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert("🎉 Welcome back, " + (customerData.name || name) + "!");
+            alert(`🎉 Welcome back, ${customerData.name}!`);
 
         } else {
             if (docSnap.exists) {
-                if(err) { 
-                    err.style.display = "block"; 
-                    err.innerText = "This phone number is already registered! Please switch to 'Login'."; 
-                }
-                if(btn) { btn.disabled = false; btn.innerText = "Create Account"; }
+                err.style.display = "block";
+                err.innerText = "This phone number is already registered. Please log in.";
+                btn.disabled = false;
+                btn.innerText = "Create Account";
                 return;
             }
 
             if (!address) {
-                if(err) { 
-                    err.style.display = "block"; 
-                    err.innerText = "Complete delivery address is required for registration."; 
-                }
-                if(btn) { btn.disabled = false; btn.innerText = "Create Account"; }
+                err.style.display = "block";
+                err.innerText = "Complete delivery address is required for registration.";
+                btn.disabled = false;
+                btn.innerText = "Create Account";
                 return;
             }
 
             const autoCustomerId = "CZ-CUST-" + Math.floor(10000 + Math.random() * 90000);
-
             const newCustomerData = {
-                customerId: autoCustomerId,
-                name: name,
-                phone: phone,
-                savedAddress: address,
-                isActive: true,
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString()
+                customerId: autoCustomerId, name: name, phone: phone,
+                savedAddress: address, isActive: true,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             await customerRef.set(newCustomerData);
-
             localStorage.setItem('cz_customer_user', JSON.stringify(newCustomerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert("🎉 Account created successfully! Customer ID: " + autoCustomerId);
+            alert(`🎉 Account created! Your unique Customer ID is: ${autoCustomerId}`);
         }
 
         if (pendingAction) {
@@ -898,13 +975,11 @@ async function handleCustomerAuthSubmit() {
         }
 
     } catch (e) {
-        console.error("Auth Error:", e);
-        if(err) { err.style.display = "block"; err.innerText = "Server connection error. Please try again."; }
+        err.style.display = "block";
+        err.innerText = "Server connection error. Please try again.";
     } finally {
-        if(btn) {
-            btn.disabled = false;
-            btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
-        }
+        btn.disabled = false;
+        btn.innerText = currentAuthMode === 'login' ? "Login / Proceed" : "Create Account";
     }
 }
 
@@ -915,9 +990,9 @@ function updateNavUserSlot() {
 
     let html = "";
     if (customer) {
-        html = '<a href="profile.html"><i class="fas fa-user-circle"></i> ' + customer.name.split(" ")[0] + '</a>';
+        html = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
     } else {
-        html = '<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>';
+        html = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>`;
     }
 
     if (desktopSlot) desktopSlot.innerHTML = html;
@@ -961,7 +1036,7 @@ function displayPopup(data) {
         };
     }
 
-    setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
+    setTimeout(() => { popup.classList.add('show-modal'); }, 1200);
 }
 
 function checkPromoPopup() {
@@ -974,11 +1049,11 @@ function checkPromoPopup() {
 
 function closePopup() {
     const popup = document.getElementById('promo-popup');
-    if (popup) popup.classList.remove('show-popup');
+    if (popup) popup.classList.remove('show-modal');
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    checkSiteMaintenanceMode();
+window.addEventListener('DOMContentLoaded', async () => {
+    await checkSiteMaintenanceMode();
     updateNavUserSlot();
     updateCartCount();
     fetchLiveProducts();
