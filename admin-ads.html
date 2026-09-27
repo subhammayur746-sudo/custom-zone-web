@@ -34,12 +34,11 @@
         .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; }
 
         .admin-card { background: #fff; padding: 22px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #eee; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #f8fafc; color: #0f172a; }
+        .admin-card h3 { margin-top: 0; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 17px; color: #2c3e50; }
 
-        .upload-box { border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; background: #f8fafc; cursor: pointer; transition: 0.2s; }
-        .upload-box:hover { border-color: #2563eb; background: #f1f5f9; }
+        .form-grid-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; background: #f8fafc; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -81,66 +80,79 @@
         <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Store Settings & Maintenance Mode</h2>
 
         <!-- Maintenance Mode Card -->
-        <div class="admin-card" style="border: 2px dashed #f59e0b; background: #fffbeb;">
-            <h3 style="color: #b45309; margin-bottom: 10px;"><i class="fas fa-tools"></i> Website Maintenance Mode</h3>
-            <p style="font-size: 12.5px; color: #78350f; margin-bottom: 15px;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice.</p>
-            
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                <select id="maint-status-select" style="max-width:280px; padding:9px; border-radius:6px; border:1px solid #cbd5e1; font-weight:bold;">
-                    <option value="live">🟢 Site is LIVE (Normal)</option>
-                    <option value="maintenance">🔴 Maintenance Mode (ON)</option>
-                </select>
-                <button onclick="saveMaintenanceStatus()" style="background:#d97706; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:700; cursor:pointer;">
-                    <i class="fas fa-save"></i> Save Maintenance Status
-                </button>
+        <div class="admin-card" style="background:#fffbeb; border:1px solid #fde68a;">
+            <h3 style="color:#b45309; border-bottom-color:#fde68a;"><i class="fas fa-tools"></i> Website Maintenance Mode</h3>
+            <p style="font-size:12.5px; color:#92400e; margin-bottom:12px;">Turn ON when updating inventory, database, or code so customers see an animated maintenance notice.</p>
+            <div class="form-grid-row">
+                <div class="form-group">
+                    <label>Maintenance Status</label>
+                    <select id="maintenance-status-select">
+                        <option value="false">Site is LIVE (Normal)</option>
+                        <option value="true">Site is UNDER MAINTENANCE</option>
+                    </select>
+                </div>
             </div>
+            <button onclick="saveMaintenanceStatus()" id="btn-save-maint" style="background:#b45309; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
+                Save Maintenance Status
+            </button>
         </div>
 
-        <!-- Store Promo Popup & Banner Card -->
+        <!-- Delivery Charge Settings Card (Restored) -->
         <div class="admin-card">
-            <h3 style="color: #2c3e50; margin-bottom: 15px;"><i class="fas fa-bullhorn"></i> Store Promo Popup & Banner Settings</h3>
+            <h3><i class="fas fa-truck"></i> Delivery Charge & Free Delivery Settings</h3>
+            <div class="form-grid-row">
+                <div class="form-group">
+                    <label>Standard Delivery Fee (₹) *</label>
+                    <input type="number" id="delivery-fee-input" placeholder="e.g. 50" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Free Delivery Above Order Amount (₹)</label>
+                    <input type="number" id="delivery-free-above-input" placeholder="e.g. 499 (0 for no free delivery)" min="0" value="0">
+                </div>
+            </div>
+            <button onclick="saveDeliverySettings()" id="btn-save-delivery" style="background:#2563eb; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
+                Save Delivery Settings
+            </button>
+        </div>
 
-            <div class="form-group">
+        <!-- Store Promo Popup & Banner Settings -->
+        <div class="admin-card">
+            <h3><i class="fas fa-bullhorn"></i> Store Promo Popup & Banner Settings</h3>
+            
+            <div class="form-group" style="margin-bottom:14px;">
                 <label>Popup Status (Enable / Disable):</label>
-                <select id="promo-status-select" style="max-width:280px; font-weight:bold;">
-                    <option value="enabled">🟢 Enabled (Show Popup on Home)</option>
-                    <option value="disabled">🔴 Disabled (Hidden)</option>
+                <select id="promo-status-select">
+                    <option value="true">Enabled (Show Popup on Home)</option>
+                    <option value="false">Disabled (Hide Popup)</option>
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:14px;">
                 <label>Popup Title:</label>
-                <input type="text" id="promo-title" placeholder="e.g., Make Every Gift Uniquely Yours!">
+                <input type="text" id="promo-title-input" placeholder="e.g. Special Offer">
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:14px;">
                 <label>Popup Description:</label>
-                <textarea id="promo-desc" rows="3" placeholder="Enter offers, discounts, or announcements..."></textarea>
+                <textarea id="promo-desc-input" rows="3" placeholder="Enter promotion details..."></textarea>
             </div>
 
-            <div class="form-group">
-                <label>Promo Banner / Image (Direct Upload):</label>
-                <div class="upload-box" onclick="document.getElementById('promo-file-input').click()">
-                    <i class="fas fa-cloud-upload-alt" style="font-size: 28px; color: #2563eb; margin-bottom: 6px;"></i>
-                    <p style="font-size: 13px; color: #334155; font-weight: 600;" id="upload-label-text">Click here to select banner image</p>
-                    <input type="file" id="promo-file-input" accept="image/*" style="display:none;" onchange="handlePromoImageUpload(event)">
-                </div>
-                <div id="promo-preview-wrap" style="margin-top: 10px; display:none; text-align:center;">
-                    <img id="promo-img-preview" src="" alt="Preview" style="max-height: 120px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                </div>
+            <div class="form-group" style="margin-bottom:16px;">
+                <label>Promo Banner Image URL:</label>
+                <input type="text" id="promo-img-input" placeholder="Paste image link or asset path">
             </div>
 
-            <button onclick="savePromoSettings()" style="background:#16a34a; color:#fff; border:none; padding:10px 24px; border-radius:6px; font-weight:700; cursor:pointer;" id="btn-save-promo">
-                <i class="fas fa-save"></i> Save Promo Settings
+            <button onclick="savePromoSettings()" id="btn-save-promo" style="background:#16a34a; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
+                Save Promo Settings
             </button>
         </div>
     </div>
 
     <script>
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
-        if (!loggedInAdmin) window.location.href = "admin-login.html";
-
-        let uploadedPromoBase64 = "";
+        if (!loggedInAdmin) {
+            window.location.href = "admin-login.html";
+        }
 
         function toggleSidebarMenu() {
             const sb = document.getElementById('admin-sidebar');
@@ -149,42 +161,30 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
-        function handlePromoImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedPromoBase64 = e.target.result;
-                document.getElementById('promo-img-preview').src = uploadedPromoBase64;
-                document.getElementById('promo-preview-wrap').style.display = 'block';
-                document.getElementById('upload-label-text').innerText = "Image Selected Successfully!";
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function loadExistingSettings() {
+        async function loadStoreSettings() {
             try {
-                // Load Maintenance Status
-                let maintDoc = await db.collection("settings").doc("maintenance").get();
+                // Load Maintenance
+                const maintDoc = await db.collection("settings").doc("maintenance").get();
                 if (maintDoc.exists) {
-                    let isMaint = maintDoc.data().enabled === true;
-                    document.getElementById('maint-status-select').value = isMaint ? "maintenance" : "live";
+                    document.getElementById('maintenance-status-select').value = maintDoc.data().enabled ? "true" : "false";
+                }
+
+                // Load Delivery Settings
+                const delDoc = await db.collection("settings").doc("delivery").get();
+                if (delDoc.exists) {
+                    let d = delDoc.data();
+                    document.getElementById('delivery-fee-input').value = d.fee !== undefined ? d.fee : 0;
+                    document.getElementById('delivery-free-above-input').value = d.freeAbove !== undefined ? d.freeAbove : 0;
                 }
 
                 // Load Promo Settings
-                let promoDoc = await db.collection("settings").doc("promo").get();
+                const promoDoc = await db.collection("settings").doc("promo").get();
                 if (promoDoc.exists) {
                     let p = promoDoc.data();
-                    document.getElementById('promo-status-select').value = (p.enabled === false) ? "disabled" : "enabled";
-                    document.getElementById('promo-title').value = p.title || "";
-                    document.getElementById('promo-desc').value = p.description || "";
-                    if (p.imageUrl) {
-                        uploadedPromoBase64 = p.imageUrl;
-                        document.getElementById('promo-img-preview').src = uploadedPromoBase64;
-                        document.getElementById('promo-preview-wrap').style.display = 'block';
-                        document.getElementById('upload-label-text').innerText = "Existing Banner Loaded";
-                    }
+                    document.getElementById('promo-status-select').value = p.enabled !== false ? "true" : "false";
+                    document.getElementById('promo-title-input').value = p.title || "";
+                    document.getElementById('promo-desc-input').value = p.description || "";
+                    document.getElementById('promo-img-input').value = p.imageUrl || "";
                 }
             } catch(e) {
                 console.error("Error loading settings:", e);
@@ -192,45 +192,75 @@
         }
 
         async function saveMaintenanceStatus() {
-            let val = document.getElementById('maint-status-select').value;
-            let isEnabled = (val === 'maintenance');
+            const enabled = document.getElementById('maintenance-status-select').value === "true";
+            const btn = document.getElementById('btn-save-maint');
+            btn.disabled = true;
+            btn.innerText = "Saving...";
             try {
-                await db.collection("settings").doc("maintenance").set({ enabled: isEnabled }, { merge: true });
-                alert("✅ Website Maintenance Mode status updated successfully!");
+                await db.collection("settings").doc("maintenance").set({ enabled: enabled });
+                alert("✅ Maintenance status saved successfully!");
             } catch(e) {
-                alert("Failed to save maintenance status.");
+                alert("Error: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Maintenance Status";
+            }
+        }
+
+        async function saveDeliverySettings() {
+            const fee = parseInt(document.getElementById('delivery-fee-input').value) || 0;
+            const freeAbove = parseInt(document.getElementById('delivery-free-above-input').value) || 0;
+            const btn = document.getElementById('btn-save-delivery');
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                await db.collection("settings").doc("delivery").set({
+                    fee: fee,
+                    freeAbove: freeAbove,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                localStorage.setItem('cz_delivery_settings', JSON.stringify({ fee, freeAbove }));
+                alert("✅ Delivery settings saved successfully!");
+            } catch(e) {
+                console.error(e);
+                alert("Error saving delivery settings: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Delivery Settings";
             }
         }
 
         async function savePromoSettings() {
-            let statusVal = document.getElementById('promo-status-select').value;
-            let title = document.getElementById('promo-title').value.trim();
-            let desc = document.getElementById('promo-desc').value.trim();
-
+            const enabled = document.getElementById('promo-status-select').value === "true";
+            const title = document.getElementById('promo-title-input').value.trim();
+            const description = document.getElementById('promo-desc-input').value.trim();
+            const imageUrl = document.getElementById('promo-img-input').value.trim();
             const btn = document.getElementById('btn-save-promo');
+
             btn.disabled = true;
-            btn.innerText = "Saving Settings...";
+            btn.innerText = "Saving...";
 
             try {
-                let payload = {
-                    enabled: (statusVal === 'enabled'),
+                await db.collection("settings").doc("promo").set({
+                    enabled: enabled,
                     title: title,
-                    description: desc,
-                    imageUrl: uploadedPromoBase64,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                await db.collection("settings").doc("promo").set(payload, { merge: true });
-                alert("✅ Store Promo settings saved successfully!");
+                    description: description,
+                    imageUrl: imageUrl
+                });
+                alert("✅ Promo settings saved successfully!");
             } catch(e) {
-                alert("Failed to save promo settings.");
+                alert("Error: " + e.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> Save Promo Settings';
+                btn.innerText = "Save Promo Settings";
             }
         }
 
-        window.onload = loadExistingSettings;
+        window.onload = () => {
+            loadStoreSettings();
+        };
     </script>
 </body>
 </html>
