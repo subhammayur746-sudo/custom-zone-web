@@ -402,7 +402,11 @@ function recalculateLinkedPrice(product) {
     let sizeExtra = (currentSelectedSize && currentSelectedSize.extraPrice) ? parseInt(currentSelectedSize.extraPrice) : 0;
     let unitPrice = baseVariantPrice + sizeExtra;
 
-    currentApplicableVendorCost = parseInt(product.vendorCost) || 0;
+    let baseVariantCost = currentSelectedVariant && currentSelectedVariant.vendorCost !== undefined && currentSelectedVariant.vendorCost !== null && currentSelectedVariant.vendorCost !== ""
+        ? parseInt(currentSelectedVariant.vendorCost) || 0
+        : (parseInt(product.vendorCost) || 0);
+
+    currentApplicableVendorCost = baseVariantCost;
 
     if (currentSelectedQty > 1 && product.hasQtyPricing && product.qtyTiers && product.qtyTiers.length > 0) {
         let currentVarName = currentSelectedVariant ? currentSelectedVariant.name : "all";
@@ -415,15 +419,15 @@ function recalculateLinkedPrice(product) {
             if (tier.vendorCost !== undefined && tier.vendorCost !== null && tier.vendorCost !== "") {
                 currentApplicableVendorCost = parseInt(tier.vendorCost) || 0;
             } else {
-                currentApplicableVendorCost = (parseInt(product.vendorCost) || 0) * currentSelectedQty;
+                currentApplicableVendorCost = baseVariantCost * currentSelectedQty;
             }
         } else {
             currentApplicablePrice = unitPrice * currentSelectedQty;
-            currentApplicableVendorCost = (parseInt(product.vendorCost) || 0) * currentSelectedQty;
+            currentApplicableVendorCost = baseVariantCost * currentSelectedQty;
         }
     } else {
         currentApplicablePrice = unitPrice;
-        currentApplicableVendorCost = parseInt(product.vendorCost) || 0;
+        currentApplicableVendorCost = baseVariantCost;
     }
 
     let actualMRP = currentSelectedVariant ? (currentSelectedVariant.actualPrice || product.actualPrice) : product.actualPrice;
@@ -484,7 +488,7 @@ function openProductDetailsModal(productId) {
         product.variants.forEach((v, idx) => {
             let vImages = v.images || (v.image ? [v.image] : []);
             let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
-            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariant(\'' + v.name + '\', ' + v.price + ', \'' + (v.actualPrice || '') + '\', \'' + imgJson + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
+            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariant(\'' + v.name + '\', ' + v.price + ', \'' + (v.actualPrice || '') + '\', \'' + (v.vendorCost || '') + '\', \'' + imgJson + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
         });
         variantHtml += '</div></div>';
         customContainer.innerHTML += variantHtml;
@@ -616,7 +620,7 @@ function onSelectProductSize(sizeName, extraPrice, btnEl) {
     if (product) recalculateLinkedPrice(product);
 }
 
-function onSelectProductVariant(varName, price, actualPrice, imagesJsonStr, btnEl) {
+function onSelectProductVariant(varName, price, actualPrice, varVendorCost, imagesJsonStr, btnEl) {
     let parsedImgs = [];
     try { parsedImgs = JSON.parse(imagesJsonStr); } catch(e) {}
 
@@ -624,6 +628,7 @@ function onSelectProductVariant(varName, price, actualPrice, imagesJsonStr, btnE
         name: varName,
         price: parseInt(price),
         actualPrice: actualPrice ? parseInt(actualPrice) : null,
+        vendorCost: varVendorCost !== "" && varVendorCost !== "null" ? parseInt(varVendorCost) : null,
         images: parsedImgs
     };
     btnEl.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
@@ -1002,7 +1007,7 @@ function displayPopup(data) {
         };
     }
 
-    setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
+    setTimeout(() => { popup.classList.add('show-modal'); }, 1000);
 }
 
 function checkPromoPopup() {
