@@ -10,6 +10,7 @@ let currentSelectedVariant = null;
 let currentSelectedSize = null;
 let currentSelectedQty = 1;
 let currentApplicablePrice = 0;
+let currentApplicableVendorCost = 0;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
@@ -63,7 +64,6 @@ async function fetchLiveProducts() {
             }
         });
 
-        // FIXED: Fetch ALL products without filtering out isActive so items load properly
         const snapshot = await db.collection("products").get();
         liveProducts = [];
         categoryMap = { "Handmade": new Set(), "Customized": new Set() };
@@ -402,6 +402,8 @@ function recalculateLinkedPrice(product) {
     let sizeExtra = (currentSelectedSize && currentSelectedSize.extraPrice) ? parseInt(currentSelectedSize.extraPrice) : 0;
     let unitPrice = baseVariantPrice + sizeExtra;
 
+    currentApplicableVendorCost = parseInt(product.vendorCost) || 0;
+
     if (currentSelectedQty > 1 && product.hasQtyPricing && product.qtyTiers && product.qtyTiers.length > 0) {
         let currentVarName = currentSelectedVariant ? currentSelectedVariant.name : "all";
         let tier = product.qtyTiers.find(t => t.minQty === currentSelectedQty && (t.targetVariant === "all" || t.targetVariant === currentVarName));
@@ -410,11 +412,18 @@ function recalculateLinkedPrice(product) {
             let defaultBase = parseInt(product.discountPrice) || 1;
             let ratio = unitPrice / defaultBase;
             currentApplicablePrice = Math.round(tier.price * ratio);
+            if (tier.vendorCost !== undefined && tier.vendorCost !== null && tier.vendorCost !== "") {
+                currentApplicableVendorCost = parseInt(tier.vendorCost) || 0;
+            } else {
+                currentApplicableVendorCost = (parseInt(product.vendorCost) || 0) * currentSelectedQty;
+            }
         } else {
             currentApplicablePrice = unitPrice * currentSelectedQty;
+            currentApplicableVendorCost = (parseInt(product.vendorCost) || 0) * currentSelectedQty;
         }
     } else {
         currentApplicablePrice = unitPrice;
+        currentApplicableVendorCost = parseInt(product.vendorCost) || 0;
     }
 
     let actualMRP = currentSelectedVariant ? (currentSelectedVariant.actualPrice || product.actualPrice) : product.actualPrice;
@@ -517,8 +526,8 @@ function openProductDetailsModal(productId) {
             btnAdd.style.background = "";
             btnAdd.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
             btnAdd.onclick = () => {
-                let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
-                handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentSelectedSize);
+                let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input'].value.trim() : "";
+                handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentApplicableVendorCost, currentSelectedSize);
                 closeProductDetailsModal();
             };
         }
@@ -541,6 +550,7 @@ function openProductDetailsModal(productId) {
                         variant: currentSelectedVariant, 
                         qty: currentSelectedQty, 
                         price: currentApplicablePrice,
+                        vendorCost: currentApplicableVendorCost,
                         size: currentSelectedSize 
                     };
                     closeProductDetailsModal();
@@ -548,7 +558,7 @@ function openProductDetailsModal(productId) {
                     return;
                 }
 
-                handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentSelectedSize);
+                handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentApplicableVendorCost, currentSelectedSize);
                 window.location.href = "cart.html";
             };
         }
@@ -694,7 +704,7 @@ function checkUrlProductParam() {
     }
 }
 
-function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null, selectedSize = null) {
+function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null, packageVendorCost = null, selectedSize = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
     
     let product = liveProducts.find(p => p.id === productId);
@@ -713,6 +723,7 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
             variant: selectedVariant, 
             qty: selectedQty, 
             price: packagePrice,
+            vendorCost: packageVendorCost,
             size: selectedSize 
         };
         openAuthModal(true);
@@ -720,6 +731,7 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
     }
 
     let finalPackagePrice = packagePrice !== null ? packagePrice : (parseInt(product.discountPrice) || parseInt(product.price) || 0);
+    let finalVendorCost = packageVendorCost !== null ? packageVendorCost : (parseInt(product.vendorCost) || 0);
 
     let finalImg = 'assets/images/logo.png';
     if (selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
@@ -740,6 +752,8 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
         id: product.id,
         name: product.name,
         price: finalPackagePrice,
+        vendorCost: finalVendorCost,
+        vendorName: product.vendorName || "In-House",
         variantName: fullVariantName,
         image: finalImg,
         customType: product.customType,
@@ -914,9 +928,9 @@ async function handleCustomerAuthSubmit() {
 
         if (pendingAction) {
             if (pendingAction.type === 'cart') {
-                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
+                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.vendorCost || null, pendingAction.size || null);
             } else if (pendingAction.type === 'buy_now') {
-                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.size || null);
+                handleAddToCart(pendingAction.id, pendingAction.text || "", pendingAction.variant || null, pendingAction.qty || 1, pendingAction.price || null, pendingAction.vendorCost || null, pendingAction.size || null);
                 window.location.href = "cart.html";
             } else if (pendingAction.type === 'wishlist') {
                 toggleWishlistCloud(pendingAction.id);

@@ -164,8 +164,8 @@
                 </div>
                 <div class="form-group" style="margin:0;">
                     <label style="color:#3730a3;"><i class="fas fa-coins"></i> Vendor Buy Rate / Cost Price (₹):</label>
-                    <input type="number" id="prod-vendor-cost" min="0" placeholder="e.g. 120 (Private)" style="background:#fff;">
-                    <small style="color:#4338ca; font-size:11px; font-weight:600;">*Private: Customers cannot see this cost.</small>
+                    <input type="number" id="prod-vendor-cost" min="0" placeholder="e.g. 179 (Private)" style="background:#fff;">
+                    <small style="color:#4338ca; font-size:11px; font-weight:600;">*Base unit cost for vendor.</small>
                 </div>
             </div>
 
@@ -213,9 +213,9 @@
             <div style="background:#f0fdf4; border:2px dashed #22c55e; padding:15px; border-radius:6px; margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:6px;">
                     <label style="font-weight:bold; color:#15803d; margin:0; cursor:pointer;">
-                        <input type="checkbox" id="toggle-qty-pricing" onchange="toggleQtyPricingSection(this.checked)"> Enable Quantity-Based / Bulk Package Pricing
+                        <input type="checkbox" id="toggle-qty-pricing" onchange="toggleQtyPricingSection(this.checked)"> Enable Quantity-Based / Bulk Package Pricing (With Custom Vendor Bulk Payout)
                     </label>
-                    <span style="font-size:11px; background:#16a34a; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Variant-Linked Packages</span>
+                    <span style="font-size:11px; background:#16a34a; color:#fff; padding:2px 8px; border-radius:4px; font-weight:bold;">Bulk Discount & Vendor Cost</span>
                 </div>
                 <div id="qty-pricing-container" style="display:none;">
                     <div id="qty-tier-items-list"></div>
@@ -358,7 +358,6 @@
             }
         }
 
-        // INSTANT SYNCHRONOUS LOCAL COMPRESSION (NO WAITING FOR CLOUD UPLOAD)
         function compressImageToDataURL(file, callback) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -366,7 +365,7 @@
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const maxDim = 320; // Ultra compact size to keep total doc size < 1MB
+                    const maxDim = 320;
                     let w = img.width;
                     let h = img.height;
                     if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
@@ -575,11 +574,12 @@
             const box = document.getElementById('qty-pricing-container');
             box.style.display = isEnabled ? 'block' : 'none';
             if (isEnabled && document.querySelectorAll('.qty-tier-item-box').length === 0) {
-                addQtyTierRow(1, document.getElementById('prod-discount-price').value || 199, "all");
+                addQtyTierRow(10, 799, 700, "all");
             }
         }
 
-        function addQtyTierRow(minQty = "", packagePrice = "", targetVariant = "all") {
+        // Updated with custom vendor cost for bulk tier
+        function addQtyTierRow(minQty = "", packagePrice = "", vendorCost = "", targetVariant = "all") {
             const list = document.getElementById('qty-tier-items-list');
             const varNames = getAvailableVariantNames();
             
@@ -591,23 +591,27 @@
             const div = document.createElement('div');
             div.className = 'qty-tier-item-box';
             div.innerHTML = `
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:1.4; min-width:160px;">
-                        <label style="font-size:11px; font-weight:bold; color:#166534;"><i class="fas fa-layer-group"></i> Applicable Variant:</label>
-                        <select class="qty-variant-select" data-saved-val="${targetVariant || 'all'}" onchange="this.setAttribute('data-saved-val', this.value)" style="width:100%; padding:7px 10px; border:1px solid #86efac; background:#fff; border-radius:4px; font-size:12px; font-weight:600;">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <div style="flex:1.2; min-width:140px;">
+                        <label style="font-size:11px; font-weight:bold; color:#166534;"><i class="fas fa-layer-group"></i> Variant:</label>
+                        <select class="qty-variant-select" data-saved-val="${targetVariant || 'all'}" onchange="this.setAttribute('data-saved-val', this.value)" style="width:100%; padding:7px 8px; border:1px solid #86efac; background:#fff; border-radius:4px; font-size:12px; font-weight:600;">
                             ${optionsHtml}
                         </select>
                     </div>
-                    <div style="flex:0.8; min-width:90px;">
-                        <label style="font-size:11px; font-weight:bold;">Quantity (PCS):</label>
-                        <input type="number" min="1" placeholder="e.g., 3" value="${minQty}" class="qty-min-val" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <div style="flex:0.7; min-width:75px;">
+                        <label style="font-size:11px; font-weight:bold;">Qty (PCS):</label>
+                        <input type="number" min="1" placeholder="e.g. 10" value="${minQty}" class="qty-min-val" style="width:100%; padding:7px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
                     </div>
-                    <div style="flex:1; min-width:110px;">
-                        <label style="font-size:11px; font-weight:bold;">Package Price (₹):</label>
-                        <input type="number" min="1" placeholder="e.g., 499" value="${packagePrice}" class="qty-price-val" style="width:100%; padding:7px 10px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    <div style="flex:0.9; min-width:95px;">
+                        <label style="font-size:11px; font-weight:bold;">Selling (₹):</label>
+                        <input type="number" min="1" placeholder="e.g. 799" value="${packagePrice}" class="qty-price-val" style="width:100%; padding:7px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;" required>
+                    </div>
+                    <div style="flex:0.9; min-width:95px;">
+                        <label style="font-size:11px; font-weight:bold; color:#b45309;">Vendor Cost(₹):</label>
+                        <input type="number" min="0" placeholder="e.g. 700" value="${vendorCost}" class="qty-vendor-cost-val" style="width:100%; padding:7px 8px; border:1px solid #fde68a; background:#fffbeb; border-radius:4px; font-size:12px;" required>
                     </div>
                     <div style="padding-top:16px;">
-                        <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:7px 12px; border-radius:4px; font-size:11px; cursor:pointer;">✕</button>
+                        <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" style="background:#e74c3c; color:white; border:none; padding:7px 10px; border-radius:4px; font-size:11px; cursor:pointer;">✕</button>
                     </div>
                 </div>
             `;
@@ -674,7 +678,7 @@
 
             pageSlice.forEach(p => {
                 let img = p.images && p.images.length > 0 ? p.images[0] : 'assets/images/logo.png';
-                let vendorBadge = p.vendorName ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;"><i class="fas fa-truck-loading"></i> Vendor: ${p.vendorName} (Cost: ₹${p.vendorCost || 0})</span>` : `<span style="background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;">In-House</span>`;
+                let vendorBadge = p.vendorName ? `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;"><i class="fas fa-truck-loading"></i> Vendor: ${p.vendorName} (Base Cost: ₹${p.vendorCost || 0})</span>` : `<span style="background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold; display:inline-block; margin-top:3px;">In-House</span>`;
                 
                 let sizeBadge = (p.hasSizes && p.sizes && p.sizes.length > 0) ? `<span style="background:#ca8a04; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${p.sizes.length} Sizes</span> ` : '';
                 let variantBadge = (p.hasVariants && p.variants && p.variants.length > 0) ? `<span style="background:#2c3e50; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${p.variants.length} Colors</span> ` : '';
@@ -847,7 +851,7 @@
             if (prod.hasQtyPricing && Array.isArray(prod.qtyTiers) && prod.qtyTiers.length > 0) {
                 toggleQty.checked = true;
                 document.getElementById('qty-pricing-container').style.display = 'block';
-                prod.qtyTiers.forEach(t => addQtyTierRow(t.minQty, t.price, t.targetVariant || "all"));
+                prod.qtyTiers.forEach(t => addQtyTierRow(t.minQty, t.price, t.vendorCost || 0, t.targetVariant || "all"));
             } else {
                 toggleQty.checked = false;
                 document.getElementById('qty-pricing-container').style.display = 'none';
@@ -949,8 +953,9 @@
                     let targetVar = r.querySelector('.qty-variant-select').value;
                     let minQ = parseInt(r.querySelector('.qty-min-val').value) || 1;
                     let pkgPrice = parseInt(r.querySelector('.qty-price-val').value) || discountPrice;
+                    let pkgVendorCost = parseInt(r.querySelector('.qty-vendor-cost-val').value) || 0;
                     if (minQ > 0 && pkgPrice > 0) {
-                        qtyTiers.push({ targetVariant: targetVar, minQty: minQ, price: pkgPrice });
+                        qtyTiers.push({ targetVariant: targetVar, minQty: minQ, price: pkgPrice, vendorCost: pkgVendorCost });
                     }
                 });
             }
