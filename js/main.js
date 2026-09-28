@@ -526,7 +526,7 @@ function openProductDetailsModal(productId) {
             btnAdd.style.background = "";
             btnAdd.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
             btnAdd.onclick = () => {
-                let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input'].value.trim() : "";
+                let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
                 handleAddToCart(product.id, customVal, currentSelectedVariant, currentSelectedQty, currentApplicablePrice, currentApplicableVendorCost, currentSelectedSize);
                 closeProductDetailsModal();
             };
