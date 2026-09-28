@@ -201,6 +201,8 @@
                         name: p.name,
                         vendorName: p.vendorName ? p.vendorName.trim() : "In-House",
                         vendorCost: parseInt(p.vendorCost) || 0,
+                        variants: p.variants || [],
+                        qtyTiers: p.qtyTiers || [],
                         image: (p.images && p.images.length > 0) ? p.images[0] : 'assets/images/logo.png'
                     };
                 });
@@ -209,8 +211,62 @@
 
         async function fetchAdminOrders() {
             await fetchDependencies();
+            await autoFixActiveOrdersVendorCosts();
             loadPendingPayments();
             loadConfirmedOrders();
+        }
+
+        // AUTO-CORRECTION: Ensures active/processing orders have correct variant/bulk vendor cost without touching delivered orders
+        async function autoFixActiveOrdersVendorCosts() {
+            try {
+                let ordersSnap = await db.collection("orders").get();
+                
+                ordersSnap.forEach(async (doc) => {
+                    let ord = doc.data();
+                    let status = (ord.orderStatus || ord.status || "").toLowerCase();
+                    if (status === 'delivered' || status === 'cancelled') return;
+
+                    let items = ord.items;
+                    if (!Array.isArray(items)) return;
+
+                    let needsUpdate = false;
+                    let updatedItems = items.map(it => {
+                        let cKey = (it.name || "").trim().toLowerCase();
+                        let pMeta = productsCatalogMap[cKey];
+                        if (!pMeta) return it;
+
+                        let correctVendorCost = parseInt(pMeta.vendorCost) || 0;
+                        let qty = parseInt(it.quantity || it.qty) || 1;
+
+                        // Check Variant vendor cost
+                        if (it.variantName && Array.isArray(pMeta.variants)) {
+                            let matchedVar = pMeta.variants.find(v => it.variantName.toLowerCase().includes(v.name.toLowerCase()));
+                            if (matchedVar && matchedVar.vendorCost !== undefined && matchedVar.vendorCost !== null && matchedVar.vendorCost !== "") {
+                                correctVendorCost = parseInt(matchedVar.vendorCost) || 0;
+                            }
+                        }
+
+                        // Check Bulk Quantity Tier vendor cost
+                        if (qty > 1 && Array.isArray(pMeta.qtyTiers)) {
+                            let currentVarName = it.variantName || "all";
+                            let matchedTier = pMeta.qtyTiers.find(t => t.minQty === qty && (t.targetVariant === "all" || currentVarName.toLowerCase().includes(t.targetVariant.toLowerCase())));
+                            if (matchedTier && matchedTier.vendorCost !== undefined && matchedTier.vendorCost !== null && matchedTier.vendorCost !== "") {
+                                correctVendorCost = parseInt(matchedTier.vendorCost) || 0;
+                            }
+                        }
+
+                        if (parseInt(it.vendorCost) !== correctVendorCost) {
+                            needsUpdate = true;
+                            return { ...it, vendorCost: correctVendorCost };
+                        }
+                        return it;
+                    });
+
+                    if (needsUpdate) {
+                        await db.collection("orders").doc(doc.id).update({ items: updatedItems });
+                    }
+                });
+            } catch(e) {}
         }
 
         async function loadPendingPayments() {
@@ -226,16 +282,16 @@
                     return;
                 }
 
-                badge.innerText = `${snap.size} Pending`;
+                badge.innerText = snap.size + " Pending";
                 let isAdmin = isMainAdminUser();
 
                 snap.forEach(doc => {
                     let p = doc.data();
-                    let noteHTML = p.greetingNote ? `<div style="font-size:11px; background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; margin-top:4px;"><strong>Card Note:</strong> "${p.greetingNote}"</div>` : '';
+                    let noteHTML = p.greetingNote ? '<div style="font-size:11px; background:#fef3c7; color:#92400e; padding:4px 8px; border-radius:4px; margin-top:4px;"><strong>Card Note:</strong> "' + p.greetingNote + '"</div>' : '';
                     let actionButtonsHTML = isAdmin ? `
                         <button onclick="verifyAndMarkPaid('${p.paymentReference}')" style="background:#27ae60; color:#fff; border:none; padding:7px 12px; border-radius:4px; font-weight:bold; cursor:pointer;"><i class="fas fa-check-circle"></i> Verify</button>
                         <button onclick="deletePendingPayment('${p.paymentReference}')" style="background:#e74c3c; color:#fff; border:none; padding:7px 10px; border-radius:4px; font-weight:bold; cursor:pointer; margin-left:4px;"><i class="fas fa-trash"></i></button>
-                    ` : `<button class="btn-disabled-lock"><i class="fas fa-lock"></i> Admin Only</button>`;
+                    ` : '<button class="btn-disabled-lock"><i class="fas fa-lock"></i> Admin Only</button>';
 
                     tbody.innerHTML += `
                         <tr>
@@ -252,7 +308,7 @@
 
         async function deletePendingPayment(paymentRef) {
             if (!isMainAdminUser()) return;
-            if (confirm(`Delete pending payment ${paymentRef}?`)) {
+            if (confirm("Delete pending payment " + paymentRef + "?")) {
                 await db.collection("pending_payments").doc(paymentRef).delete();
                 loadPendingPayments();
             }
@@ -264,7 +320,7 @@
                 return;
             }
 
-            if (!confirm(`Verify payment for ${paymentRef}?`)) return;
+            if (!confirm("Verify payment for " + paymentRef + "?")) return;
             try {
                 const pDoc = await db.collection("pending_payments").doc(paymentRef).get();
                 if (!pDoc.exists) return;
@@ -279,7 +335,16 @@
                         let cKey = (it.name || "").trim().toLowerCase();
                         let pMeta = productsCatalogMap[cKey];
                         let itemVendor = (pMeta && pMeta.vendorName) ? pMeta.vendorName : (it.vendorName || "In-House");
-                        let itemCost = (pMeta && pMeta.vendorCost) ? pMeta.vendorCost : (it.vendorCost || 0);
+                        
+                        let itemCost = it.vendorCost !== undefined ? parseInt(it.vendorCost) : 0;
+                        if (!itemCost && pMeta) {
+                            itemCost = pMeta.vendorCost || 0;
+                            let qty = parseInt(it.quantity || it.qty) || 1;
+                            if (it.variantName && Array.isArray(pMeta.variants)) {
+                                let matchedVar = pMeta.variants.find(v => it.variantName.toLowerCase().includes(v.name.toLowerCase()));
+                                if (matchedVar && matchedVar.vendorCost) itemCost = parseInt(matchedVar.vendorCost) || 0;
+                            }
+                        }
 
                         updatedItems.push({ ...it, vendorName: itemVendor, vendorCost: itemCost });
                         if (itemVendor !== "In-House") itemVendorsSet.add(itemVendor);
@@ -309,7 +374,7 @@
 
                 await db.collection("orders").doc(finalOrderId).set(confirmedPayload);
                 await db.collection("pending_payments").doc(paymentRef).update({ paymentStatus: "Paid", finalOrderId: finalOrderId });
-                alert(`🎉 Payment Verified! Confirmed Order #${finalOrderId} created.`);
+                alert("🎉 Payment Verified! Confirmed Order #" + finalOrderId + " created.");
                 fetchAdminOrders();
             } catch(e) {}
         }
@@ -347,7 +412,10 @@
                     let vName = (it.vendorName && it.vendorName !== "In-House") 
                         ? it.vendorName 
                         : (pMeta && pMeta.vendorName ? pMeta.vendorName : "In-House");
-                    let unitCost = (it.vendorCost && it.vendorCost > 0) ? it.vendorCost : (pMeta && pMeta.vendorCost ? pMeta.vendorCost : 0);
+                    
+                    let unitCost = (it.vendorCost !== undefined && it.vendorCost !== null && it.vendorCost !== "") 
+                        ? parseInt(it.vendorCost) 
+                        : (pMeta ? pMeta.vendorCost : 0);
 
                     if (!map[vName]) map[vName] = [];
                     map[vName].push({ ...it, vendorCost: unitCost, image: it.image || (pMeta ? pMeta.image : 'assets/images/logo.png') });
@@ -402,15 +470,15 @@
                 let vendorBadgesHTML = "";
                 vendorNames.forEach(vn => {
                     if (vn === "In-House") {
-                        vendorBadgesHTML += `<span style="background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold;">In-House</span><br>`;
+                        vendorBadgesHTML += '<span style="background:#f1f5f9; color:#475569; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold;">In-House</span><br>';
                     } else {
                         let totalCostForV = vendorsOrderMap[vn].reduce((sum, x) => sum + (x.vendorCost * (x.quantity || x.qty || 1)), 0);
-                        vendorBadgesHTML += `<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold;"><i class="fas fa-truck-loading"></i> ${vn} (₹${totalCostForV})</span><br>`;
+                        vendorBadgesHTML += '<span style="background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:bold;"><i class="fas fa-truck-loading"></i> ' + vn + ' (₹' + totalCostForV + ')</span><br>';
                     }
                 });
 
-                let itemsDetail = Array.isArray(ord.items) ? ord.items.map(it => `• ${it.name} x${it.quantity || it.qty || 1}`).join("<br>") : (ord.items || '-');
-                let noteHTML = ord.greetingNote ? `<div style="font-size:11px; background:#fef3c7; color:#92400e; padding:3px 6px; border-radius:4px; margin-top:3px;"><strong>Card Note:</strong> "${ord.greetingNote}"</div>` : '';
+                let itemsDetail = Array.isArray(ord.items) ? ord.items.map(it => '• ' + it.name + ' x' + (it.quantity || it.qty || 1)).join("<br>") : (ord.items || '-');
+                let noteHTML = ord.greetingNote ? '<div style="font-size:11px; background:#fef3c7; color:#92400e; padding:3px 6px; border-radius:4px; margin-top:3px;"><strong>Card Note:</strong> "' + ord.greetingNote + '"</div>' : '';
 
                 let vendorActionsHTML = "";
                 vendorNames.forEach(vn => {
@@ -473,16 +541,15 @@
                     ord.status = newStatus;
                 }
 
-                alert(`✓ Order status permanently updated to "${newStatus}"!`);
+                alert("✓ Order status permanently updated to \"" + newStatus + "\"!");
             } catch(e) {
-                console.error("Failed to update status:", e);
                 alert("❌ Failed to update status in database.");
             }
         }
 
         async function deleteOrderPermanent(docId) {
             if (!isMainAdminUser()) return;
-            if (confirm(`Permanently delete order #${docId}?`)) {
+            if (confirm("Permanently delete order #" + docId + "?")) {
                 await db.collection("orders").doc(docId).delete();
                 fetchAdminOrders();
             }
@@ -508,7 +575,7 @@
                         <td style="text-align:right; padding:10px 12px; border-bottom:1px solid #e2e8f0; font-weight:700; color:#0f172a; font-size:13.5px;">₹${it.chargedAmount || it.price}</td>
                     </tr>
                 `;
-            }).join("") : `<tr><td colspan="4">${ord.items || '-'}</td></tr>`;
+            }).join("") : '<tr><td colspan="4">' + (ord.items || '-') + '</td></tr>';
 
             document.getElementById('slip-content-body').innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:16px; margin-bottom:18px;">
@@ -582,7 +649,7 @@
             let savedStamp = localStorage.getItem('cz_central_stamp_sign');
             if (savedStamp) {
                 const slot = document.getElementById('order-slip-stamp-slot');
-                if (slot) slot.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+                if (slot) slot.innerHTML = '<img src="' + savedStamp + '" style="max-height:65px; object-fit:contain;">';
             }
 
             document.getElementById('receipt-modal').style.display = 'flex';
@@ -624,8 +691,8 @@
             let vPaymentMap = ord.vendorPaymentStatusMap || {};
             let payStatus = vPaymentMap[vendorName] || "Unpaid";
             let payStatusStampHTML = payStatus === 'Paid'
-                ? `<div style="border:2px solid #16a34a; color:#16a34a; font-size:13px; font-weight:800; padding:5px 14px; border-radius:6px; display:inline-block; transform:rotate(-5deg);">[ PAID - VENDOR SETTLED ]</div>`
-                : `<div style="border:2px solid #dc2626; color:#dc2626; font-size:13px; font-weight:800; padding:5px 14px; border-radius:6px; display:inline-block; transform:rotate(-5deg);">[ UNPAID - PENDING PAYOUT ]</div>`;
+                ? '<div style="border:2px solid #16a34a; color:#16a34a; font-size:13px; font-weight:800; padding:5px 14px; border-radius:6px; display:inline-block; transform:rotate(-5deg);">[ PAID - VENDOR SETTLED ]</div>'
+                : '<div style="border:2px solid #dc2626; color:#dc2626; font-size:13px; font-weight:800; padding:5px 14px; border-radius:6px; display:inline-block; transform:rotate(-5deg);">[ UNPAID - PENDING PAYOUT ]</div>';
 
             document.getElementById('slip-content-body').innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1e293b; padding-bottom:16px; margin-bottom:18px;">
@@ -701,7 +768,7 @@
             let savedStamp = localStorage.getItem('cz_central_stamp_sign');
             if (savedStamp) {
                 const slot = document.getElementById('po-slip-stamp-slot');
-                if (slot) slot.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+                if (slot) slot.innerHTML = '<img src="' + savedStamp + '" style="max-height:65px; object-fit:contain;">';
             }
 
             document.getElementById('receipt-modal').style.display = 'flex';
@@ -712,8 +779,8 @@
             const slot1 = document.getElementById('order-slip-stamp-slot');
             const slot2 = document.getElementById('po-slip-stamp-slot');
             if (savedStamp) {
-                if (slot1) slot1.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
-                if (slot2) slot2.innerHTML = `<img src="${savedStamp}" style="max-height:65px; object-fit:contain;">`;
+                if (slot1) slot1.innerHTML = '<img src="' + savedStamp + '" style="max-height:65px; object-fit:contain;">';
+                if (slot2) slot2.innerHTML = '<img src="' + savedStamp + '" style="max-height:65px; object-fit:contain;">';
             }
             window.print();
         }
@@ -737,9 +804,9 @@
             if (!phoneNum) { alert("Customer phone number not found."); return; }
 
             let currentStatus = ord.orderStatus || ord.status || 'Processing';
-            let msg = `Hello ${ord.customerName || 'Customer'},\nYour Custom Zone Order *#${ord.orderId || ord.docId}* status: *${currentStatus}*.\nTotal: ₹${ord.totalAmount || 0}.\nThank you! 🎁`;
+            let msg = "Hello " + (ord.customerName || 'Customer') + ",\nYour Custom Zone Order *#" + (ord.orderId || ord.docId) + "* status: *" + currentStatus + "*.\nTotal: ₹" + (ord.totalAmount || 0) + ".\nThank you! 🎁";
 
-            window.open(`https://api.whatsapp.com/send?phone=${phoneNum}&text=${encodeURIComponent(msg)}`, '_blank');
+            window.open("https://api.whatsapp.com/send?phone=" + phoneNum + "&text=" + encodeURIComponent(msg), '_blank');
         }
 
         async function sendIsolatedVendorWhatsApp(docId, vendorName) {
@@ -759,15 +826,15 @@
             let itemsTxt = specificItems.map(it => {
                 let lineCost = (it.vendorCost || 0) * (it.quantity || it.qty || 1);
                 totalVendorPayable += lineCost;
-                return `• Item: ${it.name}\n  Specification: ${it.variant || 'Standard'}\n  Custom Text: ${it.userText ? `"${it.userText}"` : 'None'}\n  Qty: ${it.quantity || it.qty || 1} PCS\n  Rate: ₹${lineCost}`;
+                return "• Item: " + it.name + "\n  Specification: " + (it.variantName || 'Standard') + "\n  Custom Text: " + (it.userText ? '"' + it.userText + '"' : 'None') + "\n  Qty: " + (it.quantity || it.qty || 1) + " PCS\n  Rate: ₹" + lineCost;
             }).join('\n\n');
 
             let vInvId = await getOrAssignVendorInvoiceNumber(docId, vendorName);
             let vPaymentMap = ord.vendorPaymentStatusMap || {};
             let payStatus = vPaymentMap[vendorName] || "Unpaid";
 
-            let msg = `*OFFICIAL VENDOR PURCHASE INVOICE*\nInvoice No: *${vInvId}*\nPayment Status: *${payStatus.toUpperCase()}*\nVendor Partner: *${vendorName}*\n\n*Product Specifications:*\n${itemsTxt}\n\n*Total Agreed Vendor Rate:* ₹${totalVendorPayable}\n\n*Deliver To (Customer):*\nName: ${ord.customerName}\nPhone: ${ord.phone}\nAddress: ${ord.actualDeliveryAddress || '-'}\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.`;
-            window.open(`https://api.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(msg)}`, '_blank');
+            let msg = "*OFFICIAL VENDOR PURCHASE INVOICE*\nInvoice No: *" + vInvId + "*\nPayment Status: *" + payStatus.toUpperCase() + "*\nVendor Partner: *" + vendorName + "*\n\n*Product Specifications:*\n" + itemsTxt + "\n\n*Total Agreed Vendor Rate:* ₹" + totalVendorPayable + "\n\n*Deliver To (Customer):*\nName: " + ord.customerName + "\nPhone: " + ord.phone + "\nAddress: " + (ord.actualDeliveryAddress || '-') + "\n\n*NOTE:* WE PAY FULL AMOUNT AFTER ITEM DELIVERED AND UPDATE EVERY STS OF ORDER AND TRY TO DELIVERY THE CUSTOMER WITHIN 5-6 DAY.";
+            window.open("https://api.whatsapp.com/send?phone=" + p + "&text=" + encodeURIComponent(msg), '_blank');
         }
 
         window.onload = fetchAdminOrders;
