@@ -122,11 +122,11 @@ function renderCategoryPills() {
     const nav = document.getElementById('dynamic-cat-nav');
     if (!nav) return;
 
-    let html = '<button class="cat-pill-btn ' + (selectedMainCategory === 'all' ? 'active' : '') + '" onclick="setMainCategoryFilter(\'all\', this)">All</button>';
+    let html = `<button class="cat-pill-btn ${selectedMainCategory === 'all' ? 'active' : ''}" onclick="setMainCategoryFilter('all', this)">All</button>`;
 
     for (let mainCat in categoryMap) {
         let isActive = selectedMainCategory.toLowerCase() === mainCat.toLowerCase();
-        html += '<button class="cat-pill-btn ' + (isActive ? 'active' : '') + '" onclick="setMainCategoryFilter(\'' + mainCat + '\', this)">' + mainCat + '</button>';
+        html += `<button class="cat-pill-btn ${isActive ? 'active' : ''}" onclick="setMainCategoryFilter('${mainCat}', this)">${mainCat}</button>`;
     }
 
     nav.innerHTML = html;
@@ -149,9 +149,9 @@ function renderSubCategoryRow() {
         return;
     }
 
-    let html = '<span class="subcat-pill ' + (selectedSubCategory === 'all' ? 'active' : '') + '" onclick="setSubCategoryFilter(\'all\')">All ' + selectedMainCategory + '</span>';
+    let html = `<span class="subcat-pill ${selectedSubCategory === 'all' ? 'active' : ''}" onclick="setSubCategoryFilter('all')">All ${selectedMainCategory}</span>`;
     subCats.forEach(sub => {
-        html += '<span class="subcat-pill ' + (selectedSubCategory === sub ? 'active' : '') + '" onclick="setSubCategoryFilter(\'' + sub + '\')">' + sub + '</span>';
+        html += `<span class="subcat-pill ${selectedSubCategory === sub ? 'active' : ''}" onclick="setSubCategoryFilter('${sub}')">${sub}</span>`;
     });
 
     subRow.innerHTML = html;
@@ -213,12 +213,12 @@ function renderHomeProducts(products) {
         if (hasVariants) {
             let variantPrices = prod.variants.map(v => parseInt(v.price) || sellingPrice).filter(p => p > 0);
             effectiveSellingPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : sellingPrice;
-            displayPriceText = "₹" + effectiveSellingPrice + "+";
+            displayPriceText = `₹${effectiveSellingPrice}+`;
 
             let variantActuals = prod.variants.map(v => parseInt(v.actualPrice) || actualPrice).filter(p => p > 0);
             if (variantActuals.length > 0) actualPrice = Math.max(...variantActuals);
         } else {
-            displayPriceText = "₹" + sellingPrice;
+            displayPriceText = `₹${sellingPrice}`;
         }
 
         let hasDiscount = actualPrice > 0 && effectiveSellingPrice > 0 && effectiveSellingPrice < actualPrice;
@@ -226,18 +226,18 @@ function renderHomeProducts(products) {
 
         let priceHtml = "";
         if (hasDiscount) {
-            priceHtml = '<div class="price-display-wrapper"><span class="original-price-strike">₹' + actualPrice + '</span><span class="sale-price-highlight">' + displayPriceText + '</span></div><div><span class="discount-badge-pill">🔥 ' + discountPct + '% OFF</span></div>';
+            priceHtml = `<div class="price-display-wrapper"><span class="original-price-strike">₹${actualPrice}</span><span class="sale-price-highlight">${displayPriceText}</span></div><div><span class="discount-badge-pill">🔥 ${discountPct}% OFF</span></div>`;
         } else {
-            priceHtml = '<p class="sale-price-highlight" style="margin-bottom:8px;">' + displayPriceText + '</p>';
+            priceHtml = `<p class="sale-price-highlight" style="margin-bottom:8px;">${displayPriceText}</p>`;
         }
 
         let stockBadgeHtml = isOutOfStock 
-            ? '<span style="position:absolute; top:10px; left:10px; background:#dc2626; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px; z-index:5; box-shadow:0 2px 6px rgba(0,0,0,0.15);">OUT OF STOCK</span>' 
+            ? `<span style="position:absolute; top:10px; left:10px; background:#dc2626; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px; z-index:5; box-shadow:0 2px 6px rgba(0,0,0,0.15);">OUT OF STOCK</span>` 
             : '';
 
         let btnHtml = isOutOfStock
-            ? '<button class="btn-cart-action" style="background:#94a3b8 !important; cursor:not-allowed;" disabled>Out of Stock</button>'
-            : '<button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart(\'' + prod.id + '\')"><i class="fas fa-shopping-cart"></i> Add to Cart</button>';
+            ? `<button class="btn-cart-action" style="background:#94a3b8 !important; cursor:not-allowed;" disabled>Out of Stock</button>`
+            : `<button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart('${prod.id}')"><i class="fas fa-shopping-cart"></i> Add to Cart</button>`;
 
         container.innerHTML += `
             <div class="product-card" style="${isOutOfStock ? 'opacity:0.85; position:relative;' : 'position:relative;'}" onclick="openProductDetailsModal('${prod.id}')">
@@ -293,17 +293,17 @@ function renderHomePaginationBar(totalItems) {
     let totalPages = Math.ceil(totalItems / HOME_PRODUCTS_PER_PAGE);
     let html = "";
 
-    html += '<button onclick="goToHomePage(' + (currentHomePage - 1) + ')" ' + (currentHomePage === 1 ? 'disabled' : '') + ' style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:' + (currentHomePage === 1 ? 'not-allowed' : 'pointer') + '; opacity:' + (currentHomePage === 1 ? '0.5' : '1') + ';">&laquo; Prev</button>';
+    html += `<button onclick="goToHomePage(${currentHomePage - 1})" ${currentHomePage === 1 ? 'disabled' : ''} style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === 1 ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === 1 ? '0.5' : '1'};">&laquo; Prev</button>`;
 
     let startPage = Math.max(1, currentHomePage - 2);
     let endPage = Math.min(totalPages, currentHomePage + 2);
 
     for (let i = startPage; i <= endPage; i++) {
         let isAct = i === currentHomePage;
-        html += '<button onclick="goToHomePage(' + i + ')" style="background:' + (isAct ? '#28469E' : '#fff') + '; color:' + (isAct ? '#fff' : '#1e293b') + '; border:1px solid ' + (isAct ? '#28469E' : '#cbd5e1') + '; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">' + i + '</button>';
+        html += `<button onclick="goToHomePage(${i})" style="background:${isAct ? '#28469E' : '#fff'}; color:${isAct ? '#fff' : '#1e293b'}; border:1px solid ${isAct ? '#28469E' : '#cbd5e1'}; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">${i}</button>`;
     }
 
-    html += '<button onclick="goToHomePage(' + (currentHomePage + 1) + ')" ' + (currentHomePage === totalPages ? 'disabled' : '') + ' style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:' + (currentHomePage === totalPages ? 'not-allowed' : 'pointer') + '; opacity:' + (currentHomePage === totalPages ? '0.5' : '1') + ';">Next &raquo;</button>';
+    html += `<button onclick="goToHomePage(${currentHomePage + 1})" ${currentHomePage === totalPages ? 'disabled' : ''} style="background:#fff; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:${currentHomePage === totalPages ? 'not-allowed' : 'pointer'}; opacity:${currentHomePage === totalPages ? '0.5' : '1'};">Next &raquo;</button>`;
 
     bar.innerHTML = html;
 }
@@ -362,8 +362,8 @@ function shareDirectProduct(productId, event) {
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
 
-    let shareUrl = window.location.origin + "/index.html?product=" + productId;
-    let shareText = "Check out this customized \"" + product.name + "\" on Custom Zone! 🎁✨\n" + shareUrl;
+    let shareUrl = `${window.location.origin}/index.html?product=${productId}`;
+    let shareText = `Check out this customized "${product.name}" on Custom Zone! 🎁✨\n${shareUrl}`;
 
     if (navigator.share) {
         navigator.share({
@@ -372,7 +372,7 @@ function shareDirectProduct(productId, event) {
             url: shareUrl
         }).catch(() => {});
     } else {
-        const waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText);
+        const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
         window.open(waUrl, "_blank");
     }
 }
@@ -388,9 +388,15 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
     let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
 
     if (hasDiscount) {
-        priceContainer.innerHTML = '<div style="display:flex; align-items:center; gap:10px;"><span class="original-price-strike" style="font-size:16px;">₹' + actualPrice + '</span><span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">' + sellingPrice + '</span></span><span class="discount-badge-pill" style="margin-bottom:0;">🔥 ' + discountPct + '% OFF</span></div>';
+        priceContainer.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="original-price-strike" style="font-size:16px;">₹${actualPrice}</span>
+                <span style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></span>
+                <span class="discount-badge-pill" style="margin-bottom:0;">🔥 ${discountPct}% OFF</span>
+            </div>
+        `;
     } else {
-        priceContainer.innerHTML = '<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">' + sellingPrice + '</span></div>';
+        priceContainer.innerHTML = `<div style="font-size:24px; font-weight:800; color:var(--blue-primary);">₹<span id="pdm-price">${sellingPrice}</span></div>`;
     }
 }
 
@@ -464,7 +470,7 @@ function openProductDetailsModal(productId) {
         mainImgEl.style.cursor = "zoom-in";
     }
 
-    if (badgeEl) badgeEl.innerText = product.mainCategory + " • " + (product.subCategory || 'Handmade');
+    if (badgeEl) badgeEl.innerText = `${product.mainCategory} • ${product.subCategory || 'Handmade'}`;
     if (titleEl) titleEl.innerText = product.name;
 
     renderModalGallery(defaultImages);
@@ -474,23 +480,39 @@ function openProductDetailsModal(productId) {
 
     if (product.hasSizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
         currentSelectedSize = product.sizes[0];
-        let sizeHtml = '<div class="pdm-variant-wrapper" style="margin-bottom:12px;"><div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-ruler-combined"></i> Select Size / Dimension:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">';
-        product.sizes.forEach((s, idx) => {
-            sizeHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductSize(\'' + s.name + '\', ' + (s.extraPrice || 0) + ', this)">' + s.name + (s.extraPrice > 0 ? ' (+₹' + s.extraPrice + ')' : '') + '</button>';
-        });
-        sizeHtml += '</div></div>';
+        let sizeHtml = `
+            <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
+                <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-ruler-combined"></i> Select Size / Dimension:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${product.sizes.map((s, idx) => `
+                        <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductSize('${s.name}',${s.extraPrice || 0}, this)">
+                            ${s.name}${s.extraPrice > 0 ? ` (+₹${s.extraPrice})` : ''}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
         customContainer.innerHTML += sizeHtml;
     }
 
     if (product.hasVariants && Array.isArray(product.variants) && product.variants.length > 0) {
         currentSelectedVariant = product.variants[0];
-        let variantHtml = '<div class="pdm-variant-wrapper" style="margin-bottom:12px;"><div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-palette"></i> Select Color / Design:</div><div style="display:flex; gap:6px; flex-wrap:wrap;">';
-        product.variants.forEach((v, idx) => {
-            let vImages = v.images || (v.image ? [v.image] : []);
-            let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
-            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariant(\'' + v.name + '\', ' + v.price + ', \'' + (v.actualPrice || '') + '\', \'' + (v.vendorCost || '') + '\', \'' + imgJson + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
-        });
-        variantHtml += '</div></div>';
+        let variantHtml = `
+            <div class="pdm-variant-wrapper" style="margin-bottom:12px;">
+                <div style="font-size:12px; font-weight:bold; color:var(--blue-primary); margin-bottom:6px;"><i class="fas fa-palette"></i> Select Color / Design:</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    ${product.variants.map((v, idx) => {
+                        let vImages = v.images || (v.image ? [v.image] : []);
+                        let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
+                        return `
+                            <button type="button" class="pdm-variant-btn ${idx === 0 ? 'active' : ''}" onclick="onSelectProductVariant('${v.name}', ${v.price}, '${v.actualPrice || ''}', '${v.vendorCost \vert{}\vert{} ''}', '${imgJson}', this)">
+                                ${v.name} • ₹${v.price}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
         customContainer.innerHTML += variantHtml;
 
         let firstVarImgs = currentSelectedVariant.images || (currentSelectedVariant.image ? [currentSelectedVariant.image] : []);
@@ -500,21 +522,32 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    customContainer.innerHTML += '<div id="pdm-bulk-qty-wrapper"></div>';
+    customContainer.innerHTML += `<div id="pdm-bulk-qty-wrapper"></div>`;
     renderApplicableBulkPackages(product);
 
     if (product.customType === "name") {
-        customContainer.innerHTML += '<div style="margin-top:10px;"><label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label><input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);"></div>';
+        customContainer.innerHTML += `
+            <div style="margin-top:10px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label>
+                <input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);">
+            </div>
+        `;
     } else if (product.customType === "pic") {
-        customContainer.innerHTML += '<div style="margin-top:10px;"><p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">📷 Photo Customization: Share your photo on WhatsApp after checkout!</p></div>';
+        customContainer.innerHTML += `
+            <div style="margin-top:10px;">
+                <p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">
+                    📷 Photo Customization: Share your photo on WhatsApp after checkout!
+                </p>
+            </div>
+        `;
     }
 
     recalculateLinkedPrice(product);
 
     let ratingVal = product.avgRating ? product.avgRating.toFixed(1) : "5.0";
     let reviewNum = product.reviewCount || 0;
-    if (starsEl) starsEl.innerText = ratingVal + " ★";
-    if (revCountEl) revCountEl.innerText = "(" + reviewNum + (reviewNum === 1 ? " customer review" : " customer reviews") + ")";
+    if (starsEl) starsEl.innerText = `${ratingVal} ★`;
+    if (revCountEl) revCountEl.innerText = `(${reviewNum} ${reviewNum === 1 ? 'customer review' : 'customer reviews'})`;
 
     const btnAdd = document.getElementById('pdm-btn-add');
     const btnBuy = document.getElementById('pdm-btn-buy');
@@ -591,11 +624,20 @@ function renderApplicableBulkPackages(product) {
     }
 
     let sorted = [...matchedTiers].sort((a, b) => a.minQty - b.minQty);
-    let html = '<div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span><span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span></div><div style="display:flex; gap:6px; flex-wrap:wrap;"><button type="button" class="pdm-qty-pill-btn ' + (currentSelectedQty === 1 ? 'active' : '') + '" onclick="onSelectBulkQty(1, this)">1 PC (Standard)</button>';
-    sorted.forEach(t => {
-        html += '<button type="button" class="pdm-qty-pill-btn ' + (currentSelectedQty === t.minQty ? 'active' : '') + '" onclick="onSelectBulkQty(' + t.minQty + ', this)">' + t.minQty + ' PCS Package</button>';
-    });
-    html += '</div></div>';
+    let html = `
+        <div class="pdm-qty-tier-wrapper" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:12px; font-weight:bold; color:var(--blue-primary);"><i class="fas fa-boxes"></i> Package Quantity:</span>
+                <span style="font-size:11px; color:#16a34a; font-weight:700;">Bulk Discount Available</span>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === 1 ? 'active' : ''}" onclick="onSelectBulkQty(1, this)">1 PC (Standard)</button>
+                ${sorted.map(t => `
+                    <button type="button" class="pdm-qty-pill-btn ${currentSelectedQty === t.minQty ? 'active' : ''}" onclick="onSelectBulkQty(${t.minQty}, this)">${t.minQty} PCS Package</button>
+                `).join('')}
+            </div>
+        </div>
+    `;
     wrapper.innerHTML = html;
 }
 
@@ -606,7 +648,7 @@ function renderModalGallery(imgs) {
     thumbsContainer.innerHTML = "";
     if (imgs && imgs.length > 1) {
         imgs.forEach(img => {
-            thumbsContainer.innerHTML += '<img src="' + img + '" onerror="this.src=\'' + fallbackImg + '\'" style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" onclick="document.getElementById(\'pdm-main-img\').src=\'' + img + '\'">';
+            thumbsContainer.innerHTML += `<img src="${img}" onerror="this.src='${fallbackImg}'" style="width:55px; height:55px; aspect-ratio:1/1; object-fit:contain; background:#fff; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;" onclick="document.getElementById('pdm-main-img').src='${img}'">`;
         });
     }
 }
@@ -691,9 +733,19 @@ async function loadProductSpecificReviews(productId) {
         container.innerHTML = "";
         reviews.forEach(r => {
             let stars = "★".repeat(r.rating || 5) + "☆".repeat(5 - (r.rating || 5));
-            let photoHtml = r.photoUrl ? '<img src="' + r.photoUrl + '" class="review-photo" onclick="directImageZoom(\'' + r.photoUrl + '\')" alt="Customer Real Pic">' : "";
+            let photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" class="review-photo" onclick="directImageZoom('${r.photoUrl}')" alt="Customer Real Pic">` : "";
 
-            container.innerHTML += '<div class="review-card-item"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;"><strong style="color:var(--blue-primary); font-size:13px;">' + (r.customerName || 'Customer') + '</strong><span style="color:#f39c12; font-size:12px;">' + stars + '</span></div><p style="margin:0; font-size:12px; color:var(--text-primary);">' + (r.comment || '') + '</p>' + photoHtml + '<div style="font-size:10px; color:#595959; margin-top:5px;">' + (r.date || 'Recent') + '</div></div>';
+            container.innerHTML += `
+                <div class="review-card-item">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="color:var(--blue-primary); font-size:13px;">${r.customerName || 'Customer'}</strong>
+                        <span style="color:#f39c12; font-size:12px;">${stars}</span>
+                    </div>
+                    <p style="margin:0; font-size:12px; color:var(--text-primary);">${r.comment || ''}</p>
+                    ${photoHtml}
+                    <div style="font-size:10px; color:#595959; margin-top:5px;">${r.date || 'Recent'}</div>
+                </div>
+            `;
         });
 
     } catch (e) {
@@ -768,7 +820,7 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
     
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
-    alert("✅ " + product.name + " (" + selectedQty + " PCS - ₹" + finalPackagePrice + ") added to cart!");
+    alert(`✅ ${product.name} (${selectedQty} PCS - ₹${finalPackagePrice}) added to cart!`);
 }
 
 async function toggleWishlistCloud(productId) {
@@ -890,7 +942,7 @@ async function handleCustomerAuthSubmit() {
             localStorage.setItem('cz_customer_user', JSON.stringify(customerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert("🎉 Welcome back, " + (customerData.name || name) + "!");
+            alert(`🎉 Welcome back, ${customerData.name || name}!`);
 
         } else {
             if (docSnap.exists) {
@@ -928,7 +980,7 @@ async function handleCustomerAuthSubmit() {
             localStorage.setItem('cz_customer_user', JSON.stringify(newCustomerData));
             closeAuthModal();
             updateNavUserSlot();
-            alert("🎉 Account created successfully! Customer ID: " + autoCustomerId);
+            alert(`🎉 Account created successfully! Customer ID: ${autoCustomerId}`);
         }
 
         if (pendingAction) {
@@ -961,9 +1013,9 @@ function updateNavUserSlot() {
 
     let html = "";
     if (customer) {
-        html = '<a href="profile.html"><i class="fas fa-user-circle"></i> ' + customer.name.split(" ")[0] + '</a>';
+        html = `<a href="profile.html"><i class="fas fa-user-circle"></i> ${customer.name.split(" ")[0]}</a>`;
     } else {
-        html = '<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>';
+        html = `<a href="javascript:void(0)" onclick="openAuthModal()"><i class="fas fa-user"></i> Login</a>`;
     }
 
     if (desktopSlot) desktopSlot.innerHTML = html;
