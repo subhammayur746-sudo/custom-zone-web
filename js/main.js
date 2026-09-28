@@ -1007,7 +1007,7 @@ function displayPopup(data) {
         };
     }
 
-    setTimeout(() => { popup.classList.add('show-modal'); }, 1000);
+    setTimeout(() => { popup.classList.add('show-popup'); }, 1000);
 }
 
 function checkPromoPopup() {
