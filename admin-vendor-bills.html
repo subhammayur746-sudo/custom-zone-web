@@ -481,7 +481,10 @@
             try {
                 let docRef = db.collection("orders").doc(docId);
                 let docSnap = await docRef.get();
-                if (!docSnap.exists) return;
+                if (!docSnap.exists) {
+                    alert("Order reference not found in database.");
+                    return;
+                }
 
                 let data = docSnap.data();
                 let customMap = data.vendorCustomCostMap || {};
@@ -502,7 +505,8 @@
                 alert("✅ Vendor bill and cost updated successfully!");
                 fetchVendorBills();
             } catch(e) {
-                alert("Failed to update vendor bill.");
+                console.error("Error updating vendor cost:", e);
+                alert("Failed to update vendor bill. Check console for details.");
             }
         }
 
