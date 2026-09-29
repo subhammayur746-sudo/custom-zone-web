@@ -56,6 +56,10 @@
         .page-btn.active { background: #3730a3; color: #fff; border-color: #3730a3; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+        /* Custom Modal Styling for Edit Cost & Instructions */
+        .custom-admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
+        .custom-admin-modal-content { background: #fff; width: 100%; max-width: 480px; padding: 25px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
         #vendor-bill-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
         #printable-vendor-invoice { background: #fff; width: 100%; max-width: 820px; padding: 35px 30px; border-radius: 12px; position: relative; max-height: 94vh; overflow-y: auto; box-shadow: 0 12px 30px rgba(0,0,0,0.25); color: #0f172a; }
 
@@ -208,6 +212,35 @@
             <div class="pagination-container" id="vendor-pagination-bar">
                 <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="pagination-info-text">Showing 0-0 of 0 bills</div>
                 <div style="display:flex; gap:5px;" id="pagination-buttons-slot"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Cost & Narration Modal -->
+    <div id="edit-cost-modal" class="custom-admin-modal">
+        <div class="custom-admin-modal-content">
+            <h3 style="margin-top:0; color:#0f172a; font-size:18px; margin-bottom:15px;"><i class="fas fa-edit" style="color:#d97706;"></i> Edit Vendor Bill & Cost</h3>
+            <input type="hidden" id="edit-modal-docid">
+            <input type="hidden" id="edit-modal-vendorname">
+            
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Agreed Cost Amount (₹) *</label>
+                <input type="number" id="edit-modal-cost" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;" min="0" required>
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Narration / Reason for Difference (Optional)</label>
+                <input type="text" id="edit-modal-narration" placeholder="e.g. Vendor discount, extra packaging charge..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+            </div>
+
+            <div style="margin-bottom:18px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Special Instructions / Production Note (Optional)</label>
+                <textarea id="edit-modal-instruction" rows="3" placeholder="Enter any extra production instructions for vendor..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; resize:vertical;"></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="closeEditCostModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:12.5px;">Cancel</button>
+                <button type="button" onclick="submitEditCostForm()" style="background:#d97706; color:#fff; border:none; padding:8px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12.5px;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -420,20 +453,30 @@
             }
         }
 
-        async function promptEditVendorCost(docId, vendorName, currentCost, currentNarration, currentInstruction) {
-            let newCostStr = prompt(`Enter new agreed cost for vendor "${vendorName}":`, currentCost);
-            if (newCostStr === null) return;
-            let newCost = parseInt(newCostStr);
+        function openEditCostModal(docId, vendorName, currentCost, currentNarration, currentInstruction) {
+            document.getElementById('edit-modal-docid').value = docId;
+            document.getElementById('edit-modal-vendorname').value = vendorName;
+            document.getElementById('edit-modal-cost').value = currentCost;
+            document.getElementById('edit-modal-narration').value = currentNarration || '';
+            document.getElementById('edit-modal-instruction').value = currentInstruction || '';
+            document.getElementById('edit-cost-modal').style.display = 'flex';
+        }
+
+        function closeEditCostModal() {
+            document.getElementById('edit-cost-modal').style.display = 'none';
+        }
+
+        async function submitEditCostForm() {
+            let docId = document.getElementById('edit-modal-docid').value;
+            let vendorName = document.getElementById('edit-modal-vendorname').value;
+            let newCost = parseInt(document.getElementById('edit-modal-cost').value);
+            let narration = document.getElementById('edit-modal-narration').value.trim();
+            let specialInstruction = document.getElementById('edit-modal-instruction').value.trim();
+
             if (isNaN(newCost) || newCost < 0) {
-                alert("Please enter a valid amount.");
+                alert("Please enter a valid agreed cost amount.");
                 return;
             }
-
-            let narration = prompt(`Enter reason / narration for cost adjustment (e.g. Discount, Extra charges):`, currentNarration || "");
-            if (narration === null) return;
-
-            let specialInstruction = prompt(`Enter Special Instructions / Production Note for vendor (Optional):`, currentInstruction || "");
-            if (specialInstruction === null) return;
 
             try {
                 let docRef = db.collection("orders").doc(docId);
@@ -455,7 +498,8 @@
                     vendorInstructionMap: instructionMap
                 });
 
-                alert("✅ Vendor bill updated successfully!");
+                closeEditCostModal();
+                alert("✅ Vendor bill and cost updated successfully!");
                 fetchVendorBills();
             } catch(e) {
                 alert("Failed to update vendor bill.");
@@ -587,7 +631,7 @@
                         <td><strong style="color:#16a34a; font-size:14px;">₹${b.totalCost}</strong></td>
                         <td>${payDropdown}</td>
                         <td style="white-space:nowrap;">
-                            <button class="btn-bill-action btn-edit-cost" onclick="promptEditVendorCost('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', ${b.totalCost}, '${(b.narration || '').replace(/'/g, "\\'")}', '${(b.specialInstruction || '').replace(/'/g, "\\'")}')">
+                            <button class="btn-bill-action btn-edit-cost" onclick="openEditCostModal('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', ${b.totalCost}, '${(b.narration || '').replace(/'/g, "\\'")}', '${(b.specialInstruction || '').replace(/'/g, "\\'")}')">
                                 <i class="fas fa-edit"></i> Edit Cost
                             </button>
                             <button class="btn-bill-action btn-print-bill" onclick="openVendorInvoicePrintModal(${actualIndex})">
