@@ -45,15 +45,19 @@
         .filter-item label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
         .filter-item input, .filter-item select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12.5px; background: #fff; color: #1e293b; }
 
-        .btn-invoice-action { border: none; padding: 6px 12px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; margin-right: 4px; }
+        .btn-invoice-action { border: none; padding: 6px 11px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; margin-right: 3px; margin-bottom: 3px; }
         .btn-print-inv { background: #1e293b; color: #fff; }
         .btn-wa-inv { background: #16a34a; color: #fff; }
+        .btn-edit-ledger { background: #d97706; color: #fff; }
         .btn-excel { background: #16a34a; color: #fff; border: none; padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 
         .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
         .page-btn { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .page-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .custom-admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
+        .custom-admin-modal-content { background: #fff; width: 100%; max-width: 440px; padding: 25px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
         #customer-invoice-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
         #printable-customer-invoice { background: #fff; width: 100%; max-width: 820px; padding: 35px 30px; border-radius: 12px; position: relative; max-height: 94vh; overflow-y: auto; box-shadow: 0 12px 30px rgba(0,0,0,0.25); color: #0f172a; }
@@ -207,6 +211,25 @@
         </div>
     </div>
 
+    <!-- Edit Ledger Cost Modal -->
+    <div id="edit-ledger-cost-modal" class="custom-admin-modal">
+        <div class="custom-admin-modal-content">
+            <h3 style="margin-top:0; color:#0f172a; font-size:18px; margin-bottom:15px;"><i class="fas fa-edit" style="color:#d97706;"></i> Edit Customer Ledger Cost</h3>
+            <input type="hidden" id="edit-ledger-docid">
+            
+            <div style="margin-bottom:15px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Manual Total Sourcing Cost (₹) *</label>
+                <input type="number" id="edit-ledger-cost-input" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:14px;" min="0" required>
+                <small style="color:#64748b; font-size:11px;">This cost will only affect profit calculations on the Customer Ledger page.</small>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="closeEditLedgerCostModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:12.5px;">Cancel</button>
+                <button type="button" onclick="submitEditLedgerCost()" style="background:#d97706; color:#fff; border:none; padding:8px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12.5px;">Save Cost</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Official Customer Tax Invoice Modal -->
     <div id="customer-invoice-modal">
         <div id="printable-customer-invoice">
@@ -298,6 +321,7 @@
                     let orderRef = ord.orderId || ord.docId;
                     let invoiceNo = ord.invoiceNo;
                     let vCustomCostMap = ord.vendorCustomCostMap || {};
+                    let ledgerOverrideMap = ord.customerLedgerOverrideCostMap || {};
 
                     if (!invoiceNo || usedInvoiceNumbers.has(invoiceNo)) {
                         while (true) {
@@ -344,7 +368,6 @@
                             });
                         });
 
-                        // Override with any custom edited vendor costs from Vendor PO Ledger
                         for (let vName in vCustomCostMap) {
                             if (vendorGroupCosts[vName] !== undefined) {
                                 vendorGroupCosts[vName] = parseInt(vCustomCostMap[vName]) || 0;
@@ -352,6 +375,11 @@
                         }
 
                         totalVendorCost = Object.values(vendorGroupCosts).reduce((a, b) => a + b, 0);
+                    }
+
+                    // Check if a direct manual override cost was set specifically for customer ledger
+                    if (ledgerOverrideMap['totalCost'] !== undefined && ledgerOverrideMap['totalCost'] !== null) {
+                        totalVendorCost = parseInt(ledgerOverrideMap['totalCost']) || 0;
                     }
 
                     let actualProfit = saleAmount - totalVendorCost;
@@ -395,6 +423,46 @@
             } catch(e) {
                 console.error(e);
                 tbody.innerHTML = "<tr><td colspan='8' style='color:red; text-align:center;'>Error loading customer sales ledger.</td></tr>";
+            }
+        }
+
+        function openEditLedgerCostModal(docId, currentCost) {
+            document.getElementById('edit-ledger-docid').value = docId;
+            document.getElementById('edit-ledger-cost-input').value = currentCost;
+            document.getElementById('edit-ledger-cost-modal').style.display = 'flex';
+        }
+
+        function closeEditLedgerCostModal() {
+            document.getElementById('edit-ledger-cost-modal').style.display = 'none';
+        }
+
+        async function submitEditLedgerCost() {
+            let docId = document.getElementById('edit-ledger-docid').value;
+            let newCost = parseInt(document.getElementById('edit-ledger-cost-input').value);
+
+            if (isNaN(newCost) || newCost < 0) {
+                alert("Please enter a valid sourcing cost amount.");
+                return;
+            }
+
+            try {
+                let docRef = db.collection("orders").doc(docId);
+                let docSnap = await docRef.get();
+                if (!docSnap.exists) {
+                    alert("Order reference not found.");
+                    return;
+                }
+
+                await docRef.update({
+                    customerLedgerOverrideCostMap: { totalCost: newCost }
+                });
+
+                closeEditLedgerCostModal();
+                alert("✅ Customer ledger cost updated successfully!");
+                fetchCustomerLedger();
+            } catch(e) {
+                console.error(e);
+                alert("Failed to update ledger cost.");
             }
         }
 
@@ -508,6 +576,9 @@
                         <td><strong style="color:${profitColor}; font-size:14px;">${profitPrefix}₹${l.actualProfit}</strong></td>
                         <td><span style="background:${statusBadgeColor}; color:#fff; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700;">${l.status}</span></td>
                         <td style="white-space:nowrap;">
+                            <button class="btn-invoice-action btn-edit-ledger" onclick="openEditLedgerCostModal('${l.docId}', ${l.vendorCost})">
+                                <i class="fas fa-edit"></i> Edit Cost
+                            </button>
                             <button class="btn-invoice-action btn-print-inv" onclick="openCustomerInvoiceModal(${actualIndex})">
                                 <i class="fas fa-print"></i> Print (A4)
                             </button>
