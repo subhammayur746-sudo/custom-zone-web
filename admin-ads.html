@@ -97,7 +97,7 @@
             </button>
         </div>
 
-        <!-- Delivery Charge Settings Card (Restored) -->
+        <!-- Delivery Charge Settings Card -->
         <div class="admin-card">
             <h3><i class="fas fa-truck"></i> Delivery Charge & Free Delivery Settings</h3>
             <div class="form-grid-row">
@@ -138,8 +138,10 @@
             </div>
 
             <div class="form-group" style="margin-bottom:16px;">
-                <label>Promo Banner Image URL:</label>
-                <input type="text" id="promo-img-input" placeholder="Paste image link or asset path">
+                <label>Upload Promo Banner Image:</label>
+                <input type="file" id="promo-image-file-input" accept="image/*" onchange="handlePromoImageUpload(this)" style="padding:7px; border:1px solid #cbd5e1; border-radius:5px; width:100%; background:#fff; cursor:pointer;">
+                <input type="hidden" id="promo-img-url-hidden">
+                <div id="promo-img-preview-wrap" style="margin-top:10px;"></div>
             </div>
 
             <button onclick="savePromoSettings()" id="btn-save-promo" style="background:#16a34a; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
@@ -159,6 +161,20 @@
             const backdrop = document.getElementById('sidebar-backdrop');
             sb.classList.toggle('open');
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+
+        function handlePromoImageUpload(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    let base64String = e.target.result;
+                    document.getElementById('promo-img-url-hidden').value = base64String;
+                    
+                    let previewWrap = document.getElementById('promo-img-preview-wrap');
+                    previewWrap.innerHTML = '<img src="' + base64String + '" style="max-height:120px; border-radius:6px; border:1px solid #cbd5e1; display:block; object-fit:contain;">';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         async function loadStoreSettings() {
@@ -184,7 +200,13 @@
                     document.getElementById('promo-status-select').value = p.enabled !== false ? "true" : "false";
                     document.getElementById('promo-title-input').value = p.title || "";
                     document.getElementById('promo-desc-input').value = p.description || "";
-                    document.getElementById('promo-img-input').value = p.imageUrl || "";
+                    
+                    let imgUrl = p.imageUrl || "";
+                    document.getElementById('promo-img-url-hidden').value = imgUrl;
+                    if (imgUrl) {
+                        let previewWrap = document.getElementById('promo-img-preview-wrap');
+                        previewWrap.innerHTML = '<img src="' + imgUrl + '" style="max-height:120px; border-radius:6px; border:1px solid #cbd5e1; display:block; object-fit:contain;">';
+                    }
                 }
             } catch(e) {
                 console.error("Error loading settings:", e);
@@ -236,7 +258,7 @@
             const enabled = document.getElementById('promo-status-select').value === "true";
             const title = document.getElementById('promo-title-input').value.trim();
             const description = document.getElementById('promo-desc-input').value.trim();
-            const imageUrl = document.getElementById('promo-img-input').value.trim();
+            const imageUrl = document.getElementById('promo-img-url-hidden').value.trim();
             const btn = document.getElementById('btn-save-promo');
 
             btn.disabled = true;
