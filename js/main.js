@@ -40,8 +40,9 @@ async function checkAndRenderTicker() {
                 if (!existingTicker) {
                     let tickerDiv = document.createElement('div');
                     tickerDiv.id = 'cz-announcement-ticker';
-                    tickerDiv.style.cssText = "background: #28469E; color: #fff; padding: 8px 15px; font-size: 13px; font-weight: 600; text-align: center; overflow: hidden; white-space: nowrap; position: relative; z-index: 998; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);";
-                    tickerDiv.innerHTML = '<marquee behavior="scroll" direction="left" scrollamount="5"><i class="fas fa-bullhorn" style="margin-right: 8px; color: #fbbf24;"></i> ' + data.text + '</marquee>';
+                    // Updated background to match the product section's soft sky/mint tone with dark text for clear visibility
+                    tickerDiv.style.cssText = "background: #e2f0ef; color: #0f172a; padding: 9px 15px; font-size: 13px; font-weight: 700; text-align: center; overflow: hidden; white-space: nowrap; position: relative; z-index: 998; border-bottom: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+                    tickerDiv.innerHTML = '<marquee behavior="scroll" direction="left" scrollamount="5"><i class="fas fa-bullhorn" style="margin-right: 8px; color: #28469E;"></i> ' + data.text + '</marquee>';
                     
                     let navbar = document.querySelector('header') || document.querySelector('nav') || document.body.firstChild;
                     if (navbar && navbar.parentNode) {
