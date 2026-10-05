@@ -30,6 +30,31 @@ async function checkSiteMaintenanceMode() {
     } catch(e) {}
 }
 
+async function checkAndRenderTicker() {
+    try {
+        let doc = await db.collection("settings").doc("ticker").get();
+        if (doc.exists) {
+            let data = doc.data();
+            if (data.enabled === true && data.text && data.text.trim() !== "") {
+                let existingTicker = document.getElementById('cz-announcement-ticker');
+                if (!existingTicker) {
+                    let tickerDiv = document.createElement('div');
+                    tickerDiv.id = 'cz-announcement-ticker';
+                    tickerDiv.style.cssText = "background: #28469E; color: #fff; padding: 8px 15px; font-size: 13px; font-weight: 600; text-align: center; overflow: hidden; white-space: nowrap; position: relative; z-index: 998; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);";
+                    tickerDiv.innerHTML = '<marquee behavior="scroll" direction="left" scrollamount="5"><i class="fas fa-bullhorn" style="margin-right: 8px; color: #fbbf24;"></i> ' + data.text + '</marquee>';
+                    
+                    let navbar = document.querySelector('header') || document.querySelector('nav') || document.body.firstChild;
+                    if (navbar && navbar.parentNode) {
+                        navbar.parentNode.insertBefore(tickerDiv, navbar.nextSibling);
+                    } else {
+                        document.body.insertBefore(tickerDiv, document.body.firstChild);
+                    }
+                }
+            }
+        }
+    } catch(e) {}
+}
+
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -461,7 +486,7 @@ function openProductDetailsModal(productId) {
         product.variants.forEach((v, idx) => {
             let vImages = v.images || (v.image ? [v.image] : []);
             let imgJson = JSON.stringify(vImages).replace(/"/g, '&quot;');
-            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariantObject(\'' + idx + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
+            variantHtml += '<button type="button" class="pdm-variant-btn ' + (idx === 0 ? 'active' : '') + '" onclick="onSelectProductVariant(\'' + v.name + '\', ' + v.price + ', \'' + (v.actualPrice || '') + '\', \'' + (v.vendorCost || '') + '\', \'' + imgJson + '\', this)">' + v.name + ' • ₹' + v.price + '</button>';
         });
         variantHtml += '</div></div>';
         customContainer.innerHTML += variantHtml;
@@ -593,21 +618,17 @@ function onSelectProductSize(sizeName, extraPrice, btnEl) {
     if (product) recalculateLinkedPrice(product);
 }
 
-function onSelectProductVariantObject(variantIndex, btnEl) {
-    let product = liveProducts.find(p => p.id === currentOpenProductId);
-    if (!product || !product.variants || !product.variants[variantIndex]) return;
-
-    let v = product.variants[variantIndex];
-    let vImages = v.images || (v.image ? [v.image] : []);
+function onSelectProductVariant(varName, price, actualPrice, varVendorCost, imagesJsonStr, btnEl) {
+    let parsedImgs = [];
+    try { parsedImgs = JSON.parse(imagesJsonStr); } catch(e) {}
 
     currentSelectedVariant = {
-        name: v.name,
-        price: parseInt(v.price) || 0,
-        actualPrice: v.actualPrice ? parseInt(v.actualPrice) : null,
-        vendorCost: v.vendorCost !== "" && v.vendorCost !== "null" && v.vendorCost !== undefined ? parseInt(v.vendorCost) : null,
-        images: vImages
+        name: varName,
+        price: parseInt(price),
+        actualPrice: actualPrice ? parseInt(actualPrice) : null,
+        vendorCost: varVendorCost !== "" && varVendorCost !== "null" ? parseInt(varVendorCost) : null,
+        images: parsedImgs
     };
-
     btnEl.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
     btnEl.classList.add('active');
 
@@ -616,8 +637,11 @@ function onSelectProductVariantObject(variantIndex, btnEl) {
         renderModalGallery(currentSelectedVariant.images);
     }
 
-    renderApplicableBulkPackages(product);
-    recalculateLinkedPrice(product);
+    let product = liveProducts.find(p => p.id === currentOpenProductId);
+    if (product) {
+        renderApplicableBulkPackages(product);
+        recalculateLinkedPrice(product);
+    }
 }
 
 function onSelectBulkQty(qty, btnEl) {
@@ -1003,4 +1027,5 @@ window.addEventListener('DOMContentLoaded', () => {
     updateCartCount();
     fetchLiveProducts();
     checkPromoPopup();
+    checkAndRenderTicker();
 });

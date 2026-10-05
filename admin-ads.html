@@ -115,9 +115,31 @@
             </button>
         </div>
 
+        <!-- Store Ticker / Announcement Bar Settings (NEW) -->
+        <div class="admin-card">
+            <h3><i class="fas fa-bullhorn"></i> Announcement Ticker Bar Settings</h3>
+            
+            <div class="form-group" style="margin-bottom:14px;">
+                <label>Ticker Status (Enable / Disable):</label>
+                <select id="ticker-status-select">
+                    <option value="true">Enabled (Show Ticker on Navbar)</option>
+                    <option value="false">Disabled (Hide Ticker)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:16px;">
+                <label>Announcement Ticker Text:</label>
+                <input type="text" id="ticker-text-input" placeholder="e.g. 🚀 Special Offer: Get Flat 10% OFF on all custom gifts!">
+            </div>
+
+            <button onclick="saveTickerSettings()" id="btn-save-ticker" style="background:#2563eb; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
+                Save Ticker Settings
+            </button>
+        </div>
+
         <!-- Store Promo Popup & Banner Settings -->
         <div class="admin-card">
-            <h3><i class="fas fa-bullhorn"></i> Store Promo Popup & Banner Settings</h3>
+            <h3><i class="fas fa-image"></i> Store Promo Popup & Banner Settings</h3>
             
             <div class="form-group" style="margin-bottom:14px;">
                 <label>Popup Status (Enable / Disable):</label>
@@ -179,13 +201,11 @@
 
         async function loadStoreSettings() {
             try {
-                // Load Maintenance
                 const maintDoc = await db.collection("settings").doc("maintenance").get();
                 if (maintDoc.exists) {
                     document.getElementById('maintenance-status-select').value = maintDoc.data().enabled ? "true" : "false";
                 }
 
-                // Load Delivery Settings
                 const delDoc = await db.collection("settings").doc("delivery").get();
                 if (delDoc.exists) {
                     let d = delDoc.data();
@@ -193,7 +213,13 @@
                     document.getElementById('delivery-free-above-input').value = d.freeAbove !== undefined ? d.freeAbove : 0;
                 }
 
-                // Load Promo Settings
+                const tickerDoc = await db.collection("settings").doc("ticker").get();
+                if (tickerDoc.exists) {
+                    let t = tickerDoc.data();
+                    document.getElementById('ticker-status-select').value = t.enabled !== false ? "true" : "false";
+                    document.getElementById('ticker-text-input').value = t.text || "";
+                }
+
                 const promoDoc = await db.collection("settings").doc("promo").get();
                 if (promoDoc.exists) {
                     let p = promoDoc.data();
@@ -251,6 +277,28 @@
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Save Delivery Settings";
+            }
+        }
+
+        async function saveTickerSettings() {
+            const enabled = document.getElementById('ticker-status-select').value === "true";
+            const text = document.getElementById('ticker-text-input').value.trim();
+            const btn = document.getElementById('btn-save-ticker');
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                await db.collection("settings").doc("ticker").set({
+                    enabled: enabled,
+                    text: text
+                });
+                alert("✅ Announcement ticker settings saved successfully!");
+            } catch(e) {
+                alert("Error: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Ticker Settings";
             }
         }
 
