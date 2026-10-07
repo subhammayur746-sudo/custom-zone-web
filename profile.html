@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: FULL ADDRESS FORM (SAME DETAILS AS CART WITH PINCODE AUTO-LOOKUP) -->
+        <!-- TAB 3: FULL ADDRESS FORM -->
         <div id="tab-address" class="tab-content-panel">
             <div class="profile-card">
                 <h3 style="margin:0 0 14px 0; font-size:16px; color:#0f172a;"><i class="fas fa-address-card" style="color:#28469E;"></i> Update Saved Delivery Address</h3>
@@ -225,7 +225,6 @@
             document.getElementById(tabId).classList.add('active');
         }
 
-        // 1. PINCODE LOOKUP (SAME AS CART)
         async function lookupProfilePincode(pin) {
             const statusEl = document.getElementById('prof-pin-status');
             const distInput = document.getElementById('prof-cust-district');
@@ -253,7 +252,6 @@
             }
         }
 
-        // 2. POPULATE ADDRESS TAB
         function loadCustomerAddressForm() {
             document.getElementById('profile-name').innerText = currentCustomer.name || "Customer";
             document.getElementById('profile-phone').innerText = currentCustomer.phone;
@@ -262,7 +260,6 @@
             document.getElementById('prof-cust-name').value = currentCustomer.name || "";
             document.getElementById('prof-cust-phone').value = currentCustomer.phone || "";
 
-            // If split details exist
             document.getElementById('prof-cust-pin').value = currentCustomer.pin || "";
             document.getElementById('prof-cust-district').value = currentCustomer.district || "";
             document.getElementById('prof-cust-postoffice').value = currentCustomer.postOffice || "";
@@ -311,7 +308,6 @@
             }
         }
 
-        // 3. FETCH ORDERS & VERIFICATION CARDS
         async function fetchCustomerAllOrders() {
             const container = document.getElementById('customer-orders-container');
             let cleanPhone = currentCustomer.phone.replace(/[^0-9]/g, '');
@@ -390,6 +386,22 @@
                         itemsHTML = `<div style="font-size:12px; color:#334155;">${ord.items || 'Custom Handcrafted Gift'}</div>`;
                     }
 
+                    // INDIA POST TRACKING INFO RENDER IN PROFILE
+                    let trackingBlockHTML = "";
+                    if (!isPending && ord.trackingNumber) {
+                        let tUrl = ord.trackingUrl || "https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx";
+                        trackingBlockHTML = `
+                            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 12px; margin-top:10px; font-size:12px; color:#1e40af; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <div>
+                                    <strong>📦 India Post Tracking ID:</strong> <span style="font-weight:800; color:#2563eb;">${ord.trackingNumber}</span>
+                                </div>
+                                <a href="${tUrl}" target="_blank" style="background:#2563eb; color:#fff; padding:5px 12px; border-radius:4px; text-decoration:none; font-weight:700; font-size:11.5px;">
+                                    <i class="fas fa-external-link-alt"></i> Track on India Post
+                                </a>
+                            </div>
+                        `;
+                    }
+
                     container.innerHTML += `
                         <div class="order-history-card">
                             <div class="order-head-row">
@@ -411,6 +423,8 @@
                                 <strong style="color:#16a34a; font-size:14px;">₹${ord.totalAmount || ord.total || 0}</strong>
                             </div>
 
+                            ${trackingBlockHTML}
+
                             ${isPending ? `
                                 <div style="background:#fffbeb; border:1px solid #fde68a; padding:8px 10px; border-radius:4px; font-size:11px; color:#92400e; margin-top:8px;">
                                     ℹ️ Our team is verifying your payment screenshot. Official Order ID will be updated right after verification.
@@ -425,7 +439,6 @@
             }
         }
 
-        // 4. FETCH WISHLIST
         function renderCustomerWishlist() {
             const container = document.getElementById('customer-wishlist-container');
             const countBadge = document.getElementById('wishlist-count-badge');
