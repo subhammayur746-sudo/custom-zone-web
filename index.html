@@ -87,19 +87,27 @@
     <!-- Dynamic Subcategory Row -->
     <div class="subcat-pill-row" id="dynamic-subcat-row"></div>
 
-    <!-- Search & Prices Filter Bar -->
-    <div class="filter-control-bar">
-        <div class="search-wrapper">
+    <!-- Search, Prices Filter & Sorting Bar -->
+    <div class="filter-control-bar" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <div class="search-wrapper" style="flex:1; min-width:220px;">
             <i class="fas fa-search"></i>
             <input type="text" id="home-search-input" onkeyup="filterHomeProducts()" placeholder="Search gifts, keychains, frames...">
         </div>
         
-        <select id="budget-filter" class="price-filter-select" onchange="filterHomeProducts()">
+        <select id="budget-filter" class="price-filter-select" onchange="filterHomeProducts()" style="padding:9px 12px; border:1px solid var(--card-border); border-radius:6px; background:#fff; font-size:13px;">
             <option value="all">🏷️ Prices: All</option>
             <option value="199">Under ₹199</option>
             <option value="299">Under ₹299</option>
             <option value="499">Under ₹499</option>
             <option value="500plus">₹500+ Luxury Items</option>
+        </select>
+
+        <!-- Sorting Dropdown (NEW) -->
+        <select id="sort-by-select" class="price-filter-select" onchange="filterHomeProducts()" style="padding:9px 12px; border:1px solid var(--card-border); border-radius:6px; background:#fff; font-size:13px;">
+            <option value="default">⚡ Sort By: Featured</option>
+            <option value="low-high">📈 Price: Low to High</option>
+            <option value="high-low">📉 Price: High to Low</option>
+            <option value="newest">✨ Newest Arrived</option>
         </select>
     </div>
 

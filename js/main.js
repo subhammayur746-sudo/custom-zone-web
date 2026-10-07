@@ -328,9 +328,11 @@ function directImageZoom(imgUrl) {
 function filterHomeProducts() {
     const searchInput = document.getElementById('home-search-input');
     const budgetSelect = document.getElementById('budget-filter');
+    const sortBySelect = document.getElementById('sort-by-select'); // NEW
 
     const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : "";
     const budgetVal = budgetSelect ? budgetSelect.value : "all";
+    const sortByVal = sortBySelect ? sortBySelect.value : "default";
 
     let filtered = liveProducts.filter(prod => {
         let matchName = prod.name.toLowerCase().includes(searchVal);
@@ -349,6 +351,26 @@ function filterHomeProducts() {
         else if (budgetVal === "500plus") matchBudget = price >= 500;
 
         return matchName && matchMainCat && matchSubCat && matchBudget;
+    });
+
+    // SORTING LOGIC (NEW)
+    filtered.sort((a, b) => {
+        let priceA = parseInt(a.discountPrice || a.price) || 0;
+        let priceB = parseInt(b.discountPrice || b.price) || 0;
+        if (a.hasVariants && a.variants && a.variants.length > 0) priceA = parseInt(a.variants[0].price) || priceA;
+        if (b.hasVariants && b.variants && b.variants.length > 0) priceB = parseInt(b.variants[0].price) || priceB;
+
+        let timeA = a.createdAt?.seconds || 0;
+        let timeB = b.createdAt?.seconds || 0;
+
+        if (sortByVal === "low-high") {
+            return priceA - priceB;
+        } else if (sortByVal === "high-low") {
+            return priceB - priceA;
+        } else if (sortByVal === "newest") {
+            return timeB - timeA;
+        }
+        return 0; // Default featured
     });
 
     currentHomePage = 1;
@@ -584,7 +606,6 @@ function openProductDetailsModal(productId) {
     setTimeout(() => {
         const starContainer = document.querySelector('#product-write-review-box') || document.querySelector('.write-review-box');
         if (starContainer) {
-            // Handle Photo Upload inside Review Box
             let fileInput = starContainer.querySelector('input[type="file"]');
             if (fileInput) {
                 fileInput.onchange = function(e) {
@@ -639,12 +660,12 @@ function openProductDetailsModal(productId) {
                     try {
                         let reviewData = {
                             productId: currentOpenProductId,
-                            productName: product.name || "Product", // FIXED: Save exact product name for admin reviews page
+                            productName: product.name || "Product",
                             customerName: customer.name || "Customer",
                             phone: customer.phone,
                             rating: selectedReviewStar,
                             comment: comment,
-                            photoUrl: uploadedReviewBase64 || "", // FIXED: Save real photo base64
+                            photoUrl: uploadedReviewBase64 || "",
                             date: new Date().toLocaleDateString('en-GB'),
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         };
