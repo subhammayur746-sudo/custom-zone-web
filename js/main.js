@@ -584,6 +584,20 @@ function openProductDetailsModal(productId) {
     setTimeout(() => {
         const starContainer = document.querySelector('#product-write-review-box') || document.querySelector('.write-review-box');
         if (starContainer) {
+            // Handle Photo Upload inside Review Box
+            let fileInput = starContainer.querySelector('input[type="file"]');
+            if (fileInput) {
+                fileInput.onchange = function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        let reader = new FileReader();
+                        reader.onload = function(uploadEvent) {
+                            uploadedReviewBase64 = uploadEvent.target.result;
+                        };
+                        reader.readAsDataURL(e.target.files[0]);
+                    }
+                };
+            }
+
             let stars = starContainer.querySelectorAll('.fa-star, span, i');
             stars.forEach((st, idx) => {
                 st.style.cursor = "pointer";
@@ -625,11 +639,12 @@ function openProductDetailsModal(productId) {
                     try {
                         let reviewData = {
                             productId: currentOpenProductId,
+                            productName: product.name || "Product", // FIXED: Save exact product name for admin reviews page
                             customerName: customer.name || "Customer",
                             phone: customer.phone,
                             rating: selectedReviewStar,
                             comment: comment,
-                            photoUrl: uploadedReviewBase64 || "",
+                            photoUrl: uploadedReviewBase64 || "", // FIXED: Save real photo base64
                             date: new Date().toLocaleDateString('en-GB'),
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         };
@@ -637,6 +652,7 @@ function openProductDetailsModal(productId) {
                         await db.collection("reviews").add(reviewData);
                         alert("✅ Thank you! Your review has been successfully submitted.");
                         if (commentInput) commentInput.value = "";
+                        uploadedReviewBase64 = "";
                         starContainer.style.display = "none";
                         loadProductSpecificReviews(currentOpenProductId);
                     } catch(err) {
