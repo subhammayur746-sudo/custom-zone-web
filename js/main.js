@@ -442,6 +442,9 @@ function openProductDetailsModal(productId) {
     currentSelectedVariant = null;
     currentSelectedSize = null;
     currentSelectedQty = 1;
+    selectedReviewStar = 5;
+    uploadedReviewBase64 = "";
+
     const modal = document.getElementById('product-details-modal');
     if (!modal) return;
 
@@ -567,10 +570,6 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    // FIXED: Corrected ID selector for "+ Write a Review" button trigger
-    const writeReviewBtn = document.getElementById('pdm-write-review-trigger-btn') || document.querySelector('.btn-write-review') || document.querySelector('[onclick*="toggleWriteReview"]') || document.querySelector('.admin-card button') || document.querySelector('#pdm-reviews-container')?.previousElementSibling?.querySelector('button');
-    
-    // Direct robust binding for the Write Review button inside product modal
     document.querySelectorAll('button').forEach(btn => {
         if (btn.innerText && btn.innerText.includes('Write a Review')) {
             btn.onclick = () => {
@@ -581,6 +580,75 @@ function openProductDetailsModal(productId) {
             };
         }
     });
+
+    setTimeout(() => {
+        const starContainer = document.querySelector('#product-write-review-box') || document.querySelector('.write-review-box');
+        if (starContainer) {
+            let stars = starContainer.querySelectorAll('.fa-star, span, i');
+            stars.forEach((st, idx) => {
+                st.style.cursor = "pointer";
+                st.onclick = () => {
+                    selectedReviewStar = (idx % 5) + 1;
+                    stars.forEach((s, sIdx) => {
+                        if (sIdx < selectedReviewStar) {
+                            s.style.color = "#f39c12";
+                            if(s.classList) { s.classList.remove('far'); s.classList.add('fas'); }
+                        } else {
+                            s.style.color = "#cbd5e1";
+                            if(s.classList) { s.classList.remove('fas'); s.classList.add('far'); }
+                        }
+                    });
+                };
+            });
+
+            let submitRevBtn = starContainer.querySelector('button[onclick*="submit"], button.btn-submit-review, button');
+            if (submitRevBtn) {
+                submitRevBtn.onclick = async () => {
+                    let commentInput = starContainer.querySelector('textarea, input[type="text"]');
+                    let comment = commentInput ? commentInput.value.trim() : "";
+                    
+                    let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
+                    if (!customer) {
+                        alert("Please login first to submit a review!");
+                        openAuthModal(true);
+                        return;
+                    }
+
+                    if (!comment) {
+                        alert("Please write a short review comment.");
+                        return;
+                    }
+
+                    submitRevBtn.disabled = true;
+                    submitRevBtn.innerText = "Submitting...";
+
+                    try {
+                        let reviewData = {
+                            productId: currentOpenProductId,
+                            customerName: customer.name || "Customer",
+                            phone: customer.phone,
+                            rating: selectedReviewStar,
+                            comment: comment,
+                            photoUrl: uploadedReviewBase64 || "",
+                            date: new Date().toLocaleDateString('en-GB'),
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+
+                        await db.collection("reviews").add(reviewData);
+                        alert("✅ Thank you! Your review has been successfully submitted.");
+                        if (commentInput) commentInput.value = "";
+                        starContainer.style.display = "none";
+                        loadProductSpecificReviews(currentOpenProductId);
+                    } catch(err) {
+                        alert("Failed to submit review. Please try again.");
+                    } finally {
+                        submitRevBtn.disabled = false;
+                        submitRevBtn.innerText = "Submit Review";
+                    }
+                };
+            }
+        }
+    }, 300);
 
     loadProductSpecificReviews(productId);
     modal.classList.add('show-modal');
