@@ -525,7 +525,6 @@ function openProductDetailsModal(productId) {
             btnAdd.innerText = "Out of Stock";
         } else {
             btnAdd.disabled = false;
-            // FIXED: Set active blue background matching other buttons instead of ash color
             btnAdd.style.background = "var(--blue-primary)";
             btnAdd.style.color = "#fff";
             btnAdd.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
@@ -568,16 +567,20 @@ function openProductDetailsModal(productId) {
         }
     }
 
-    // FIXED: Ensure Write Review button click event works properly inside product modal
-    const writeReviewBtn = document.getElementById('pdm-write-review-trigger-btn');
-    if (writeReviewBtn) {
-        writeReviewBtn.onclick = () => {
-            const writeBox = document.getElementById('product-write-review-box');
-            if (writeBox) {
-                writeBox.style.display = writeBox.style.display === "block" ? "none" : "block";
-            }
-        };
-    }
+    // FIXED: Corrected ID selector for "+ Write a Review" button trigger
+    const writeReviewBtn = document.getElementById('pdm-write-review-trigger-btn') || document.querySelector('.btn-write-review') || document.querySelector('[onclick*="toggleWriteReview"]') || document.querySelector('.admin-card button') || document.querySelector('#pdm-reviews-container')?.previousElementSibling?.querySelector('button');
+    
+    // Direct robust binding for the Write Review button inside product modal
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.innerText && btn.innerText.includes('Write a Review')) {
+            btn.onclick = () => {
+                const writeBox = document.getElementById('product-write-review-box');
+                if (writeBox) {
+                    writeBox.style.display = writeBox.style.display === "block" ? "none" : "block";
+                }
+            };
+        }
+    });
 
     loadProductSpecificReviews(productId);
     modal.classList.add('show-modal');
