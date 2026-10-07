@@ -40,7 +40,6 @@ async function checkAndRenderTicker() {
                 if (!existingTicker) {
                     let tickerDiv = document.createElement('div');
                     tickerDiv.id = 'cz-announcement-ticker';
-                    // Updated background to match the product section's soft sky/mint tone with dark text for clear visibility
                     tickerDiv.style.cssText = "background: #e2f0ef; color: #0f172a; padding: 9px 15px; font-size: 13px; font-weight: 700; text-align: center; overflow: hidden; white-space: nowrap; position: relative; z-index: 998; border-bottom: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
                     tickerDiv.innerHTML = '<marquee behavior="scroll" direction="left" scrollamount="5"><i class="fas fa-bullhorn" style="margin-right: 8px; color: #28469E;"></i> ' + data.text + '</marquee>';
                     
@@ -526,7 +525,9 @@ function openProductDetailsModal(productId) {
             btnAdd.innerText = "Out of Stock";
         } else {
             btnAdd.disabled = false;
-            btnAdd.style.background = "";
+            // FIXED: Set active blue background matching other buttons instead of ash color
+            btnAdd.style.background = "var(--blue-primary)";
+            btnAdd.style.color = "#fff";
             btnAdd.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
             btnAdd.onclick = () => {
                 let customVal = document.getElementById('pdm-custom-input') ? document.getElementById('pdm-custom-input').value.trim() : "";
@@ -565,6 +566,17 @@ function openProductDetailsModal(productId) {
                 window.location.href = "cart.html";
             };
         }
+    }
+
+    // FIXED: Ensure Write Review button click event works properly inside product modal
+    const writeReviewBtn = document.getElementById('pdm-write-review-trigger-btn');
+    if (writeReviewBtn) {
+        writeReviewBtn.onclick = () => {
+            const writeBox = document.getElementById('product-write-review-box');
+            if (writeBox) {
+                writeBox.style.display = writeBox.style.display === "block" ? "none" : "block";
+            }
+        };
     }
 
     loadProductSpecificReviews(productId);
