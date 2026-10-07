@@ -45,6 +45,9 @@
         .btn-del { background: #e74c3c; color: #fff; }
         .btn-disabled-lock { background: #cbd5e1 !important; color: #64748b !important; cursor: not-allowed !important; border: 1px dashed #94a3b8 !important; }
 
+        .custom-admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
+        .custom-admin-modal-content { background: #fff; width: 100%; max-width: 480px; padding: 25px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -131,14 +134,38 @@
                         <th>Customer & Phone</th>
                         <th>Assigned Vendors</th>
                         <th>Items & Total</th>
+                        <th>Tracking Info</th>
                         <th>Status</th>
                         <th style="min-width:340px;">Actions (Customer & Separate Vendor PO)</th>
                     </tr>
                 </thead>
                 <tbody id="confirmed-orders-tbody">
-                    <tr><td colspan="6" style="text-align:center;">Loading orders...</td></tr>
+                    <tr><td colspan="7" style="text-align:center;">Loading orders...</td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Tracking Modal for Shipped Status -->
+    <div id="tracking-input-modal" class="custom-admin-modal">
+        <div class="custom-admin-modal-content">
+            <h3 style="margin-top:0; color:#0f172a; font-size:18px; margin-bottom:15px;"><i class="fas fa-shipping-fast" style="color:#2563eb;"></i> Enter India Post Tracking Info</h3>
+            <input type="hidden" id="tracking-modal-docid">
+            
+            <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">India Post Tracking Number / ID *</label>
+                <input type="text" id="tracking-modal-number" placeholder="e.g. EE123456789IN" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;" required>
+            </div>
+
+            <div style="margin-bottom:18px;">
+                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Tracking URL (Optional)</label>
+                <input type="text" id="tracking-modal-url" placeholder="e.g. https://www.indiapost.gov.in/..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="cancelTrackingModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:12.5px;">Cancel</button>
+                <button type="button" onclick="submitTrackingAndShip()" style="background:#2563eb; color:#fff; border:none; padding:8px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12.5px;">Save & Mark Shipped</button>
+            </div>
         </div>
     </div>
 
@@ -216,7 +243,6 @@
             loadConfirmedOrders();
         }
 
-        // AUTO-CORRECTION: Ensures active/processing orders have correct variant/bulk vendor cost without touching delivered orders
         async function autoFixActiveOrdersVendorCosts() {
             try {
                 let ordersSnap = await db.collection("orders").get();
@@ -238,7 +264,6 @@
                         let correctVendorCost = parseInt(pMeta.vendorCost) || 0;
                         let qty = parseInt(it.quantity || it.qty) || 1;
 
-                        // Check Variant vendor cost
                         if (it.variantName && Array.isArray(pMeta.variants)) {
                             let matchedVar = pMeta.variants.find(v => it.variantName.toLowerCase().includes(v.name.toLowerCase()));
                             if (matchedVar && matchedVar.vendorCost !== undefined && matchedVar.vendorCost !== null && matchedVar.vendorCost !== "") {
@@ -246,7 +271,6 @@
                             }
                         }
 
-                        // Check Bulk Quantity Tier vendor cost
                         if (qty > 1 && Array.isArray(pMeta.qtyTiers)) {
                             let currentVarName = it.variantName || "all";
                             let matchedTier = pMeta.qtyTiers.find(t => t.minQty === qty && (t.targetVariant === "all" || currentVarName.toLowerCase().includes(t.targetVariant.toLowerCase())));
@@ -387,7 +411,7 @@
                 tbody.innerHTML = "";
 
                 if (snap.empty) {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px; color:#7f8c8d;'>No orders found.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px; color:#7f8c8d;'>No orders found.</td></tr>";
                     return;
                 }
 
@@ -464,6 +488,9 @@
             orders.forEach(ord => {
                 let orderDisplayId = ord.orderId || ord.docId;
                 let currentStatus = ord.orderStatus || ord.status || 'Processing';
+                let trackingNo = ord.trackingNumber || "";
+                let trackingUrl = ord.trackingUrl || "https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx";
+                
                 let vendorsOrderMap = getOrderVendorsMap(ord);
                 let vendorNames = Object.keys(vendorsOrderMap);
 
@@ -479,6 +506,8 @@
 
                 let itemsDetail = Array.isArray(ord.items) ? ord.items.map(it => '• ' + it.name + ' x' + (it.quantity || it.qty || 1)).join("<br>") : (ord.items || '-');
                 let noteHTML = ord.greetingNote ? '<div style="font-size:11px; background:#fef3c7; color:#92400e; padding:3px 6px; border-radius:4px; margin-top:3px;"><strong>Card Note:</strong> "' + ord.greetingNote + '"</div>' : '';
+
+                let trackingCellHtml = trackingNo ? `<strong style="color:#2563eb; font-size:12px;">${trackingNo}</strong><br><a href="${trackingUrl}" target="_blank" style="font-size:11px; color:#16a34a; font-weight:bold;">Track on India Post</a>` : `<span style="color:#94a3b8; font-size:11.5px;">Not Shipped Yet</span>`;
 
                 let vendorActionsHTML = "";
                 vendorNames.forEach(vn => {
@@ -499,8 +528,9 @@
                         <td><strong>${ord.customerName || 'Customer'}</strong><br><small>${ord.phone || '-'}</small>${noteHTML}</td>
                         <td>${vendorBadgesHTML}</td>
                         <td><div style="font-size:12px; max-width:210px; max-height:75px; overflow-y:auto;">${itemsDetail}</div><strong style="color:#27ae60; font-size:13px;">₹${ord.totalAmount || 0}</strong></td>
+                        <td>${trackingCellHtml}</td>
                         <td>
-                            <select onchange="updateOrderStatusSync('${ord.docId}', this.value)" style="padding:4px; font-size:11.5px; font-weight:bold; border-radius:4px;">
+                            <select onchange="handleOrderStatusChange('${ord.docId}', this.value, '${trackingNo}', '${trackingUrl}')" style="padding:4px; font-size:11.5px; font-weight:bold; border-radius:4px;">
                                 <option value="Processing" ${currentStatus === 'Processing' ? 'selected' : ''}>Processing</option>
                                 <option value="Packed" ${currentStatus === 'Packed' ? 'selected' : ''}>Packed</option>
                                 <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -528,20 +558,56 @@
             renderOrdersTable(filtered);
         }
 
-        async function updateOrderStatusSync(docId, newStatus) {
+        function handleOrderStatusChange(docId, newStatus, currentTrackNo, currentTrackUrl) {
+            if (newStatus === 'Shipped') {
+                document.getElementById('tracking-modal-docid').value = docId;
+                document.getElementById('tracking-modal-number').value = currentTrackNo || '';
+                document.getElementById('tracking-modal-url').value = currentTrackUrl || 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx';
+                document.getElementById('tracking-input-modal').style.display = 'flex';
+            } else {
+                updateOrderStatusInDb(docId, newStatus, null, null);
+            }
+        }
+
+        function cancelTrackingModal() {
+            document.getElementById('tracking-input-modal').style.display = 'none';
+            loadConfirmedOrders();
+        }
+
+        async function submitTrackingAndShip() {
+            let docId = document.getElementById('tracking-modal-docid').value;
+            let trackingNo = document.getElementById('tracking-modal-number').value.trim();
+            let trackingUrl = document.getElementById('tracking-modal-url').value.trim() || 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx';
+
+            if (!trackingNo) {
+                alert("Please enter India Post tracking number/ID.");
+                return;
+            }
+
+            document.getElementById('tracking-input-modal').style.display = 'none';
+            await updateOrderStatusInDb(docId, 'Shipped', trackingNo, trackingUrl);
+        }
+
+        async function updateOrderStatusInDb(docId, status, trackingNo, trackingUrl) {
             try {
-                await db.collection("orders").doc(docId).update({ 
-                    orderStatus: newStatus,
-                    status: newStatus 
-                });
+                let updateData = { orderStatus: status, status: status };
+                if (trackingNo !== null) {
+                    updateData.trackingNumber = trackingNo;
+                    updateData.trackingUrl = trackingUrl;
+                }
+                await db.collection("orders").doc(docId).update(updateData);
                 
                 let ord = allOrdersCache.find(o => o.docId === docId || o.orderId === docId);
                 if (ord) {
-                    ord.orderStatus = newStatus;
-                    ord.status = newStatus;
+                    ord.orderStatus = status;
+                    ord.status = status;
+                    if (trackingNo !== null) {
+                        ord.trackingNumber = trackingNo;
+                        ord.trackingUrl = trackingUrl;
+                    }
                 }
-
-                alert("✓ Order status permanently updated to \"" + newStatus + "\"!");
+                renderOrdersTable(allOrdersCache);
+                alert("✓ Order status permanently updated to \"" + status + "\"!");
             } catch(e) {
                 alert("❌ Failed to update status in database.");
             }
