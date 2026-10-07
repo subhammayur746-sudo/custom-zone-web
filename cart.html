@@ -195,6 +195,9 @@
                 </button>
             </div>
         </div>
+
+        <!-- Recently Viewed Container on Cart Page (NEW) -->
+        <div id="recently-viewed-cart-container" style="display:none; margin-top:50px; border-top:1px solid #cbd5e1; padding-top:25px;"></div>
     </main>
 
     <footer class="footer">
@@ -214,12 +217,14 @@
             document.getElementById('drawer-overlay').style.display = 'none';
         }
 
-        // কাস্টমার আগে থেকেই লগইন থাকলে চেকআউট ফর্মে নাম ও ফোন অটো-ফিল হওয়া
         window.addEventListener('DOMContentLoaded', () => {
             let cust = JSON.parse(localStorage.getItem('cz_customer_user'));
             if(cust) {
                 if(document.getElementById('cust-name') && cust.name) document.getElementById('cust-name').value = cust.name;
                 if(document.getElementById('cust-phone') && cust.phone) document.getElementById('cust-phone').value = cust.phone;
+            }
+            if (typeof renderRecentlyViewedCart === 'function') {
+                renderRecentlyViewedCart();
             }
         });
     </script>

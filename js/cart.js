@@ -248,6 +248,38 @@ function updateNavbarCartCount() {
     countEls.forEach(el => el.innerText = cartItems.length);
 }
 
+// Recently Viewed Products Renderer on Cart Page (NEW)
+function renderRecentlyViewedCart() {
+    let container = document.getElementById('recently-viewed-cart-container');
+    if (!container) return;
+
+    let recent = JSON.parse(localStorage.getItem('cz_recently_viewed')) || [];
+    if (recent.length === 0) {
+        container.style.display = "none";
+        return;
+    }
+
+    let html = '<h3 style="color:var(--midnight-plum); margin-bottom:15px; font-size:17px;"><i class="fas fa-history" style="color:var(--blue-primary);"></i> Your Recently Viewed Items</h3><div class="product-grid">';
+    recent.forEach(prod => {
+        let fallbackImg = 'assets/images/logo.png';
+        html += `
+            <div class="product-card" style="position:relative; cursor:pointer; background:#fff;" onclick="window.location.href='index.html?product=${prod.id}'">
+                <div class="product-card-img-wrap">
+                    <img src="${prod.image}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
+                </div>
+                <h3 style="font-size:13px;">${prod.name}</h3>
+                <p class="sale-price-highlight" style="margin-bottom:8px;">₹${prod.price}</p>
+                <a href="index.html?product=${prod.id}" class="btn-cart-action" style="text-decoration:none; text-align:center; display:block;">
+                    <i class="fas fa-eye"></i> View Product
+                </a>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    container.style.display = "block";
+}
+
 async function lookupPincode(pin) {
     const pinStr = pin.trim();
     const statusEl = document.getElementById('pin-status');
@@ -288,7 +320,6 @@ async function lookupPincode(pin) {
     }
 }
 
-// FIXED COUPON QUERY WITH FIRESTORE WHERE CLAUSE
 async function applyCoupon() {
     let rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
     const msg = document.getElementById('coupon-msg');
@@ -332,7 +363,6 @@ async function applyCoupon() {
             return;
         }
 
-        // Query by 'code' field instead of document ID
         let couponQuery = await db.collection("coupons").where("code", "==", rawCode).limit(1).get();
         
         if (!couponQuery.empty) {
@@ -484,7 +514,6 @@ async function submitOrderViaWhatsApp() {
         await db.collection("pending_payments").doc(paymentReference).set(pendingPaymentRecord);
 
         if (appliedCouponCode && appliedCouponCode !== "FIRST10" && appliedCouponCode !== "FRIST10") {
-            // Find coupon document ID by code to update usage
             let cSnap = await db.collection("coupons").where("code", "==", appliedCouponCode).limit(1).get();
             if (!cSnap.empty) {
                 await db.collection("coupons").doc(cSnap.docs[0].id).update({
@@ -566,4 +595,5 @@ window.addEventListener('DOMContentLoaded', () => {
     autoFillCustomerAddress();
     loadAvailableCoupons();
     initDynamicFomoTimer();
+    renderRecentlyViewedCart(); // Render Recently Viewed on Cart Page
 });

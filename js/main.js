@@ -135,12 +135,63 @@ async function fetchLiveProducts() {
         currentHomeFilteredProducts = [...liveProducts];
         currentHomePage = 1;
         renderHomeProducts(currentHomeFilteredProducts);
+        renderRecentlyViewedHome(); // Render Recently Viewed on Home
         checkUrlProductParam();
 
     } catch (error) {
         console.error("Error fetching products & reviews:", error);
         container.innerHTML = "<p style='text-align:center; color:red; grid-column: 1/-1;'>Failed to load products. Please check connection.</p>";
     }
+}
+
+function saveToRecentlyViewed(product) {
+    let recent = JSON.parse(localStorage.getItem('cz_recently_viewed')) || [];
+    recent = recent.filter(p => p.id !== product.id);
+    let sellingPrice = parseInt(product.discountPrice || product.price) || 0;
+    if (product.hasVariants && product.variants && product.variants.length > 0) {
+        let vPrices = product.variants.map(v => parseInt(v.price) || sellingPrice).filter(p => p > 0);
+        sellingPrice = vPrices.length > 0 ? Math.min(...vPrices) : sellingPrice;
+    }
+    recent.unshift({
+        id: product.id,
+        name: product.name,
+        price: sellingPrice,
+        image: (product.images && product.images.length > 0) ? product.images[0] : 'assets/images/logo.png'
+    });
+    if (recent.length > 6) recent.pop();
+    localStorage.setItem('cz_recently_viewed', JSON.stringify(recent));
+    renderRecentlyViewedHome();
+}
+
+function renderRecentlyViewedHome() {
+    let container = document.getElementById('recently-viewed-home-container');
+    if (!container) return;
+
+    let recent = JSON.parse(localStorage.getItem('cz_recently_viewed')) || [];
+    if (recent.length === 0) {
+        container.style.display = "none";
+        return;
+    }
+
+    let html = '<h2 class="section-title" style="margin-top:15px; font-size:19px; text-align:left;"><i class="fas fa-history" style="color:var(--blue-primary);"></i> Recently Viewed Products</h2><div class="product-grid">';
+    recent.forEach(prod => {
+        let fallbackImg = 'assets/images/logo.png';
+        html += `
+            <div class="product-card" style="position:relative; cursor:pointer;" onclick="openProductDetailsModal('${prod.id}')">
+                <div class="product-card-img-wrap">
+                    <img src="${prod.image}" onerror="this.src='${fallbackImg}'" alt="${prod.name}">
+                </div>
+                <h3>${prod.name}</h3>
+                <p class="sale-price-highlight" style="margin-bottom:8px;">₹${prod.price}</p>
+                <button class="btn-cart-action" onclick="event.stopPropagation(); openProductDetailsModal('${prod.id}')">
+                    <i class="fas fa-eye"></i> View Product
+                </button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    container.style.display = "block";
 }
 
 function renderCategoryPills() {
@@ -328,7 +379,7 @@ function directImageZoom(imgUrl) {
 function filterHomeProducts() {
     const searchInput = document.getElementById('home-search-input');
     const budgetSelect = document.getElementById('budget-filter');
-    const sortBySelect = document.getElementById('sort-by-select'); // NEW
+    const sortBySelect = document.getElementById('sort-by-select');
 
     const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : "";
     const budgetVal = budgetSelect ? budgetSelect.value : "all";
@@ -353,7 +404,6 @@ function filterHomeProducts() {
         return matchName && matchMainCat && matchSubCat && matchBudget;
     });
 
-    // SORTING LOGIC (NEW)
     filtered.sort((a, b) => {
         let priceA = parseInt(a.discountPrice || a.price) || 0;
         let priceB = parseInt(b.discountPrice || b.price) || 0;
@@ -363,14 +413,10 @@ function filterHomeProducts() {
         let timeA = a.createdAt?.seconds || 0;
         let timeB = b.createdAt?.seconds || 0;
 
-        if (sortByVal === "low-high") {
-            return priceA - priceB;
-        } else if (sortByVal === "high-low") {
-            return priceB - priceA;
-        } else if (sortByVal === "newest") {
-            return timeB - timeA;
-        }
-        return 0; // Default featured
+        if (sortByVal === "low-high") return priceA - priceB;
+        if (sortByVal === "high-low") return priceB - priceA;
+        if (sortByVal === "newest") return timeB - timeA;
+        return 0;
     });
 
     currentHomePage = 1;
@@ -386,11 +432,7 @@ function shareDirectProduct(productId, event) {
     let shareText = "Check out this customized \"" + product.name + "\" on Custom Zone! 🎁✨\n" + shareUrl;
 
     if (navigator.share) {
-        navigator.share({
-            title: product.name,
-            text: shareText,
-            url: shareUrl
-        }).catch(() => {});
+        navigator.share({ title: product.name, text: shareText, url: shareUrl }).catch(() => {});
     } else {
         const waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(shareText);
         window.open(waUrl, "_blank");
@@ -466,6 +508,8 @@ function openProductDetailsModal(productId) {
     currentSelectedQty = 1;
     selectedReviewStar = 5;
     uploadedReviewBase64 = "";
+
+    saveToRecentlyViewed(product); // Save to Recently Viewed
 
     const modal = document.getElementById('product-details-modal');
     if (!modal) return;

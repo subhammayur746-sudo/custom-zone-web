@@ -102,7 +102,6 @@
             <option value="500plus">₹500+ Luxury Items</option>
         </select>
 
-        <!-- Sorting Dropdown (NEW) -->
         <select id="sort-by-select" class="price-filter-select" onchange="filterHomeProducts()" style="padding:9px 12px; border:1px solid var(--card-border); border-radius:6px; background:#fff; font-size:13px;">
             <option value="default">⚡ Sort By: Featured</option>
             <option value="low-high">📈 Price: Low to High</option>
@@ -114,6 +113,9 @@
     <main class="container">
         <h2 class="section-title">Trending Products</h2>
         <div class="product-grid" id="product-list"></div>
+
+        <!-- Recently Viewed Products Section (NEW) -->
+        <div id="recently-viewed-home-container" style="display:none; margin-top:45px;"></div>
     </main>
 
     <!-- Product Details Modal -->
