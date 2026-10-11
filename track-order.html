@@ -12,6 +12,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
+
+    <style>
+        /* Animated Visual Progress Stepper CSS */
+        .tracker-timeline { display: flex; justify-content: space-between; position: relative; margin: 30px 10px 20px 10px; }
+        .tracker-timeline::before { content: ''; position: absolute; top: 18px; left: 10%; width: 80%; height: 3px; background: #cbd5e1; z-index: 1; }
+        .tracker-step { text-align: center; position: relative; z-index: 2; flex: 1; }
+        .tracker-step-icon { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto; font-size: 14px; font-weight: bold; transition: 0.3s; border: 2px solid #fff; }
+        .tracker-step.completed .tracker-step-icon { background: #16a34a; color: #fff; box-shadow: 0 0 10px rgba(22,163,74,0.4); }
+        .tracker-step.active .tracker-step-icon { background: #2563eb; color: #fff; animation: pulse-step 1.5s infinite; box-shadow: 0 0 14px rgba(37,99,235,0.6); }
+        @keyframes pulse-step { 0% { transform: scale(1); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
+        .tracker-step-label { font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.2; }
+        .tracker-step.completed .tracker-step-label, .tracker-step.active .tracker-step-label { color: #0f172a; font-weight: 700; }
+    </style>
 </head>
 <body>
 
@@ -64,7 +77,7 @@
     </div>
 
     <!-- Main Container -->
-    <div class="container" style="max-width: 650px;">
+    <div class="container" style="max-width: 680px;">
         <div class="section-title">Track Your Order</div>
         <p style="text-align:center; color:var(--text-muted); font-size:13.5px; margin-bottom:20px;">Enter your Order ID or registered WhatsApp phone number to check live status.</p>
 
@@ -155,19 +168,37 @@
                 let status = orderFound.orderStatus || orderFound.status || "Processing";
                 let itemsList = Array.isArray(orderFound.items) ? orderFound.items.map(it => `• ${it.name} (x${it.quantity || it.qty || 1})`).join("<br>") : (orderFound.items || '-');
 
-                let stepsClasses = {
-                    processing: status === 'Processing' ? 'active' : 'completed',
-                    packed: status === 'Packed' ? 'active' : (['Shipped', 'Delivered'].includes(status) ? 'completed' : ''),
-                    shipped: status === 'Shipped' ? 'active' : (status === 'Delivered' ? 'completed' : ''),
-                    delivered: status === 'Delivered' ? 'active' : ''
-                };
+                // Step status determination for visual stepper
+                let sLow = status.toLowerCase();
+                let step1Class = "completed";
+                let step2Class = "";
+                let step3Class = "";
+                let step4Class = "";
+
+                if (sLow === "processing") {
+                    step1Class = "active";
+                } else if (sLow === "packed") {
+                    step1Class = "completed";
+                    step2Class = "active";
+                } else if (sLow === "shipped") {
+                    step1Class = "completed";
+                    step2Class = "completed";
+                    step3Class = "active";
+                } else if (sLow === "delivered") {
+                    step1Class = "completed";
+                    step2Class = "completed";
+                    step3Class = "completed";
+                    step4Class = "completed";
+                } else {
+                    step1Class = "active";
+                }
 
                 // INDIA POST TRACKING INFO RENDER IN TRACK-ORDER PAGE
                 let trackingBlockHTML = "";
                 if (orderFound.trackingNumber) {
                     let tUrl = orderFound.trackingUrl || "https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx";
                     trackingBlockHTML = `
-                        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 12px; margin-top:12px; font-size:12px; color:#1e40af; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 12px; margin-top:14px; font-size:12px; color:#1e40af; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                             <div>
                                 <strong>📦 India Post Tracking ID:</strong> <span style="font-weight:800; color:#2563eb;">${orderFound.trackingNumber}</span>
                             </div>
@@ -193,14 +224,27 @@
                             <div style="margin-top:6px;"><strong>Total Amount:</strong> <span style="color:var(--success-green); font-weight:bold;">₹${orderFound.totalAmount || 0}</span></div>
                         </div>
 
-                        ${trackingBlockHTML}
-
-                        <div style="display:flex; flex-direction:column; gap:10px; border-left:2px solid var(--blue-primary); padding-left:14px; margin-left:4px; font-size:12.5px; margin-top:12px;">
-                            <div class="${stepsClasses.processing}" style="font-weight:${stepsClasses.processing === 'active' ? '800':'600'}; color:${stepsClasses.processing ? 'var(--blue-primary)':'var(--text-muted)'};">1. Order Confirmed & Processing</div>
-                            <div class="${stepsClasses.packed}" style="font-weight:${stepsClasses.packed === 'active' ? '800':'600'}; color:${stepsClasses.packed ? 'var(--blue-primary)':'var(--text-muted)'};">2. Quality Check & Packed</div>
-                            <div class="${stepsClasses.shipped}" style="font-weight:${stepsClasses.shipped === 'active' ? '800':'600'}; color:${stepsClasses.shipped ? 'var(--blue-primary)':'var(--text-muted)'};">3. Dispatched / Shipped</div>
-                            <div class="${stepsClasses.delivered}" style="font-weight:${stepsClasses.delivered === 'active' ? '800':'600'}; color:${stepsClasses.delivered ? 'var(--success-green)':'var(--text-muted)'};">4. Successfully Delivered</div>
+                        <!-- Visual Progress Stepper Timeline -->
+                        <div class="tracker-timeline">
+                            <div class="tracker-step ${step1Class}">
+                                <div class="tracker-step-icon"><i class="fas fa-clipboard-check"></i></div>
+                                <div class="tracker-step-label">Confirmed & Processing</div>
+                            </div>
+                            <div class="tracker-step ${step2Class}">
+                                <div class="tracker-step-icon"><i class="fas fa-box-open"></i></div>
+                                <div class="tracker-step-label">Packed</div>
+                            </div>
+                            <div class="tracker-step ${step3Class}">
+                                <div class="tracker-step-icon"><i class="fas fa-shipping-fast"></i></div>
+                                <div class="tracker-step-label">Shipped</div>
+                            </div>
+                            <div class="tracker-step ${step4Class}">
+                                <div class="tracker-step-icon"><i class="fas fa-flag-checkered"></i></div>
+                                <div class="tracker-step-label">Delivered</div>
+                            </div>
                         </div>
+
+                        ${trackingBlockHTML}
                     </div>
                 `;
 
