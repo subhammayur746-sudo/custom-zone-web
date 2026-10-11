@@ -97,6 +97,35 @@
             </button>
         </div>
 
+        <!-- Flash Offer & Countdown Timer Settings Card (NEW) -->
+        <div class="admin-card" style="background:#fff7ed; border:1px solid #fed7aa;">
+            <h3 style="color:#c2410c; border-bottom-color:#fed7aa;"><i class="fas fa-bolt"></i> Flash Offer & Cart Countdown Timer Settings</h3>
+            <p style="font-size:12.5px; color:#9a3412; margin-bottom:12px;">Control the flash timer and benefit shown on the customer cart page to create buying urgency.</p>
+            
+            <div class="form-grid-row">
+                <div class="form-group">
+                    <label>Flash Offer Status</label>
+                    <select id="flash-status-select">
+                        <option value="true">Enabled (Show Flash Timer on Cart)</option>
+                        <option value="false">Disabled (Hide Flash Timer)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Timer Duration (in Minutes)</label>
+                    <input type="number" id="flash-duration-input" placeholder="e.g. 5" min="1" value="5">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label>Offer Benefit Text (e.g. FREE Premium Gift Wrapping!)</label>
+                <input type="text" id="flash-benefit-input" placeholder="e.g. FREE Premium Gift Wrapping!">
+            </div>
+
+            <button onclick="saveFlashOfferSettings()" id="btn-save-flash" style="background:#c2410c; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
+                Save Flash Offer Settings
+            </button>
+        </div>
+
         <!-- Delivery Charge Settings Card -->
         <div class="admin-card">
             <h3><i class="fas fa-truck"></i> Delivery Charge & Free Delivery Settings</h3>
@@ -115,7 +144,7 @@
             </button>
         </div>
 
-        <!-- Store Ticker / Announcement Bar Settings (NEW) -->
+        <!-- Store Ticker / Announcement Bar Settings -->
         <div class="admin-card">
             <h3><i class="fas fa-bullhorn"></i> Announcement Ticker Bar Settings</h3>
             
@@ -206,6 +235,14 @@
                     document.getElementById('maintenance-status-select').value = maintDoc.data().enabled ? "true" : "false";
                 }
 
+                const flashDoc = await db.collection("settings").doc("flash_offer").get();
+                if (flashDoc.exists) {
+                    let f = flashDoc.data();
+                    document.getElementById('flash-status-select').value = f.enabled !== false ? "true" : "false";
+                    document.getElementById('flash-duration-input').value = f.duration || 5;
+                    document.getElementById('flash-benefit-input').value = f.benefit || "FREE Premium Gift Wrapping!";
+                }
+
                 const delDoc = await db.collection("settings").doc("delivery").get();
                 if (delDoc.exists) {
                     let d = delDoc.data();
@@ -252,6 +289,30 @@
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Save Maintenance Status";
+            }
+        }
+
+        async function saveFlashOfferSettings() {
+            const enabled = document.getElementById('flash-status-select').value === "true";
+            const duration = parseInt(document.getElementById('flash-duration-input').value) || 5;
+            const benefit = document.getElementById('flash-benefit-input').value.trim() || "FREE Premium Gift Wrapping!";
+            const btn = document.getElementById('btn-save-flash');
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                await db.collection("settings").doc("flash_offer").set({
+                    enabled: enabled,
+                    duration: duration,
+                    benefit: benefit
+                });
+                alert("✅ Flash offer timer settings saved successfully!");
+            } catch(e) {
+                alert("Error: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Flash Offer Settings";
             }
         }
 
