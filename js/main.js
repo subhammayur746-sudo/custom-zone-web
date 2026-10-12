@@ -55,6 +55,76 @@ async function checkAndRenderTicker() {
     } catch(e) {}
 }
 
+// Meesho-Style Flash Sale Banner Renderer & Live Countdown (NEW)
+async function checkAndRenderFlashSaleBanner() {
+    const container = document.getElementById('meesho-flash-banner-container');
+    if (!container) return;
+
+    try {
+        let doc = await db.collection("settings").doc("flash_sale_banner").get();
+        if (!doc.exists) {
+            container.style.display = "none";
+            return;
+        }
+
+        let data = doc.data();
+        if (data.enabled === false || !data.endTime) {
+            container.style.display = "none";
+            return;
+        }
+
+        let bgStart = data.bgStart || "#fde047";
+        let bgEnd = data.bgEnd || "#eab308";
+        let titleText = data.titleText || "Sale Ends in";
+        let badgeText = data.badgeText || "UP TO 80% OFF";
+        let targetTime = new Date(data.endTime).getTime();
+
+        container.innerHTML = `
+            <div style="background:linear-gradient(135deg, ${bgStart}, ${bgEnd}); padding:12px 20px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; border:2px dashed #ca8a04; box-shadow:0 4px 15px rgba(0,0,0,0.08);">
+                <div style="background:#7f1d1d; color:#fff; padding:6px 14px; border-radius:22px; font-weight:800; font-size:11.5px; text-align:center; line-height:1.2; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
+                    ${badgeText.replace(' ', '<br><span style="font-size:16px;">') + (badgeText.includes(' ') ? '</span>' : '')}
+                </div>
+                <div style="font-weight:800; color:#1e293b; font-size:16px; letter-spacing:0.5px;">
+                    <i class="fas fa-bolt" style="color:#dc2626; margin-right:4px;"></i> ${titleText}
+                </div>
+                <div id="meesho-countdown-clock" style="display:flex; gap:6px; align-items:center; font-weight:800; font-size:14px; color:#1e293b;">
+                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-days">00</span> d : 
+                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-hours">00</span> h : 
+                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-mins">00</span> m : 
+                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-secs">00</span> s
+                </div>
+            </div>
+        `;
+        container.style.display = "block";
+
+        function updateClock() {
+            let now = new Date().getTime();
+            let distance = targetTime - now;
+
+            if (distance < 0) {
+                container.style.display = "none";
+                return;
+            }
+
+            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('m-days').innerText = days < 10 ? "0" + days : days;
+            document.getElementById('m-hours').innerText = hours < 10 ? "0" + hours : hours;
+            document.getElementById('m-mins').innerText = minutes < 10 ? "0" + minutes : minutes;
+            document.getElementById('m-secs').innerText = seconds < 10 ? "0" + seconds : seconds;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+    } catch (e) {
+        container.style.display = "none";
+    }
+}
+
 function openMobileDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -135,7 +205,7 @@ async function fetchLiveProducts() {
         currentHomeFilteredProducts = [...liveProducts];
         currentHomePage = 1;
         renderHomeProducts(currentHomeFilteredProducts);
-        renderRecentlyViewedHome(); // Render Recently Viewed on Home
+        renderRecentlyViewedHome();
         checkUrlProductParam();
 
     } catch (error) {
@@ -509,7 +579,7 @@ function openProductDetailsModal(productId) {
     selectedReviewStar = 5;
     uploadedReviewBase64 = "";
 
-    saveToRecentlyViewed(product); // Save to Recently Viewed
+    saveToRecentlyViewed(product);
 
     const modal = document.getElementById('product-details-modal');
     if (!modal) return;
@@ -1193,4 +1263,5 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchLiveProducts();
     checkPromoPopup();
     checkAndRenderTicker();
+    checkAndRenderFlashSaleBanner(); // Render Meesho-style Flash Sale Banner
 });

@@ -97,32 +97,66 @@
             </button>
         </div>
 
-        <!-- Flash Offer & Countdown Timer Settings Card (NEW) -->
-        <div class="admin-card" style="background:#fff7ed; border:1px solid #fed7aa;">
-            <h3 style="color:#c2410c; border-bottom-color:#fed7aa;"><i class="fas fa-bolt"></i> Flash Offer & Cart Countdown Timer Settings</h3>
-            <p style="font-size:12.5px; color:#9a3412; margin-bottom:12px;">Control the flash timer and benefit shown on the customer cart page to create buying urgency.</p>
+        <!-- Meesho-Style Festive Flash Sale Banner Settings & Live Preview (NEW) -->
+        <div class="admin-card" style="background:#fffbeb; border:1px solid #fef3c7;">
+            <h3 style="color:#d97706; border-bottom-color:#fef3c7;"><i class="fas fa-stopwatch"></i> Meesho-Style Flash Sale Banner & Countdown Timer</h3>
+            <p style="font-size:12.5px; color:#b45309; margin-bottom:15px;">Configure the homepage live countdown sale banner with custom colors and live preview.</p>
             
             <div class="form-grid-row">
                 <div class="form-group">
-                    <label>Flash Offer Status</label>
-                    <select id="flash-status-select">
-                        <option value="true">Enabled (Show Flash Timer on Cart)</option>
-                        <option value="false">Disabled (Hide Flash Timer)</option>
+                    <label>Banner Status</label>
+                    <select id="flash-banner-status">
+                        <option value="true">Enabled (Show on Homepage)</option>
+                        <option value="false">Disabled (Hide Banner)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Timer Duration (in Minutes)</label>
-                    <input type="number" id="flash-duration-input" placeholder="e.g. 5" min="1" value="5">
+                    <label>Discount Badge Text (e.g. UP TO 80% OFF)</label>
+                    <input type="text" id="flash-badge-text" placeholder="UP TO 80% OFF" value="UP TO 80% OFF">
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:15px;">
-                <label>Offer Benefit Text (e.g. FREE Premium Gift Wrapping!)</label>
-                <input type="text" id="flash-benefit-input" placeholder="e.g. FREE Premium Gift Wrapping!">
+            <div class="form-grid-row">
+                <div class="form-group">
+                    <label>Sale Title Text</label>
+                    <input type="text" id="flash-title-text" placeholder="Sale Ends in" value="Sale Ends in">
+                </div>
+                <div class="form-group">
+                    <label>Target End Date & Time</label>
+                    <input type="datetime-local" id="flash-endtime-input">
+                </div>
             </div>
 
-            <button onclick="saveFlashOfferSettings()" id="btn-save-flash" style="background:#c2410c; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
-                Save Flash Offer Settings
+            <div class="form-grid-row">
+                <div class="form-group">
+                    <label>Background Gradient Start Color</label>
+                    <input type="color" id="flash-bg-start" value="#fde047" style="height:40px; padding:2px; cursor:pointer;">
+                </div>
+                <div class="form-group">
+                    <label>Background Gradient End Color</label>
+                    <input type="color" id="flash-bg-end" value="#eab308" style="height:40px; padding:2px; cursor:pointer;">
+                </div>
+            </div>
+
+            <!-- Live Preview Box -->
+            <div style="margin-top:15px; margin-bottom:15px;">
+                <label style="font-size:12px; font-weight:700; color:#334155; margin-bottom:6px; display:block;">Live Banner Preview:</label>
+                <div id="admin-banner-preview-box" style="padding:12px 18px; border-radius:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:linear-gradient(135deg, #fde047, #eab308); border:2px dashed #ca8a04; box-shadow:0 3px 10px rgba(0,0,0,0.08);">
+                    <div style="background:#7f1d1d; color:#fff; padding:6px 12px; border-radius:20px; font-weight:800; font-size:11px; text-align:center;">
+                        UP TO <br><span style="font-size:15px;">80% OFF</span>
+                    </div>
+                    <div style="font-weight:800; color:#1e293b; font-size:15px;" id="preview-sale-title">Sale Ends in</div>
+                    <div style="display:flex; gap:6px; align-items:center; font-weight:700; font-size:13px; color:#1e293b;">
+                        <span style="background:#dc2626; color:#fff; padding:5px 8px; border-radius:5px;">06</span> d : 
+                        <span style="background:#dc2626; color:#fff; padding:5px 8px; border-radius:5px;">12</span> h : 
+                        <span style="background:#dc2626; color:#fff; padding:5px 8px; border-radius:5px;">05</span> m : 
+                        <span style="background:#dc2626; color:#fff; padding:5px 8px; border-radius:5px;">52</span> s
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="saveFlashSaleBannerSettings()" id="btn-save-flash-banner" style="background:#d97706; color:#fff; border:none; padding:10px 24px; border-radius:5px; font-weight:700; cursor:pointer;">
+                Save Flash Banner Settings
             </button>
         </div>
 
@@ -214,6 +248,28 @@
             backdrop.style.display = sb.classList.contains('open') ? 'block' : 'none';
         }
 
+        // Live preview updater on input change
+        function updateAdminBannerPreview() {
+            const startColor = document.getElementById('flash-bg-start').value;
+            const endColor = document.getElementById('flash-bg-end').value;
+            const title = document.getElementById('flash-title-text').value || "Sale Ends in";
+            const badge = document.getElementById('flash-badge-text').value || "UP TO 80% OFF";
+
+            const box = document.getElementById('admin-banner-preview-box');
+            box.style.background = `linear-gradient(135deg, ${startColor}, ${endColor})`;
+            document.getElementById('preview-sale-title').innerText = title;
+            
+            let badgeDiv = box.querySelector('div:first-child');
+            if (badgeDiv) {
+                badgeDiv.innerHTML = badge.replace(' ', '<br><span style="font-size:15px;">') + (badge.includes(' ') ? '</span>' : '');
+            }
+        }
+
+        ['flash-bg-start', 'flash-bg-end', 'flash-title-text', 'flash-badge-text'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', updateAdminBannerPreview);
+        });
+
         function handlePromoImageUpload(input) {
             if (input.files && input.files[0]) {
                 let reader = new FileReader();
@@ -235,12 +291,16 @@
                     document.getElementById('maintenance-status-select').value = maintDoc.data().enabled ? "true" : "false";
                 }
 
-                const flashDoc = await db.collection("settings").doc("flash_offer").get();
+                const flashDoc = await db.collection("settings").doc("flash_sale_banner").get();
                 if (flashDoc.exists) {
                     let f = flashDoc.data();
-                    document.getElementById('flash-status-select').value = f.enabled !== false ? "true" : "false";
-                    document.getElementById('flash-duration-input').value = f.duration || 5;
-                    document.getElementById('flash-benefit-input').value = f.benefit || "FREE Premium Gift Wrapping!";
+                    document.getElementById('flash-banner-status').value = f.enabled !== false ? "true" : "false";
+                    document.getElementById('flash-badge-text').value = f.badgeText || "UP TO 80% OFF";
+                    document.getElementById('flash-title-text').value = f.titleText || "Sale Ends in";
+                    document.getElementById('flash-endtime-input').value = f.endTime || "";
+                    document.getElementById('flash-bg-start').value = f.bgStart || "#fde047";
+                    document.getElementById('flash-bg-end').value = f.bgEnd || "#eab308";
+                    updateAdminBannerPreview();
                 }
 
                 const delDoc = await db.collection("settings").doc("delivery").get();
@@ -292,27 +352,38 @@
             }
         }
 
-        async function saveFlashOfferSettings() {
-            const enabled = document.getElementById('flash-status-select').value === "true";
-            const duration = parseInt(document.getElementById('flash-duration-input').value) || 5;
-            const benefit = document.getElementById('flash-benefit-input').value.trim() || "FREE Premium Gift Wrapping!";
-            const btn = document.getElementById('btn-save-flash');
+        async function saveFlashSaleBannerSettings() {
+            const enabled = document.getElementById('flash-banner-status').value === "true";
+            const badgeText = document.getElementById('flash-badge-text').value.trim() || "UP TO 80% OFF";
+            const titleText = document.getElementById('flash-title-text').value.trim() || "Sale Ends in";
+            const endTime = document.getElementById('flash-endtime-input').value;
+            const bgStart = document.getElementById('flash-bg-start').value;
+            const bgEnd = document.getElementById('flash-bg-end').value;
+            const btn = document.getElementById('btn-save-flash-banner');
+
+            if (!endTime) {
+                alert("Please select a target end date and time for the sale banner.");
+                return;
+            }
 
             btn.disabled = true;
             btn.innerText = "Saving...";
 
             try {
-                await db.collection("settings").doc("flash_offer").set({
+                await db.collection("settings").doc("flash_sale_banner").set({
                     enabled: enabled,
-                    duration: duration,
-                    benefit: benefit
+                    badgeText: badgeText,
+                    titleText: titleText,
+                    endTime: endTime,
+                    bgStart: bgStart,
+                    bgEnd: bgEnd
                 });
-                alert("✅ Flash offer timer settings saved successfully!");
+                alert("✅ Meesho-style Flash Sale Banner settings saved successfully!");
             } catch(e) {
                 alert("Error: " + e.message);
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Save Flash Offer Settings";
+                btn.innerText = "Save Flash Banner Settings";
             }
         }
 
