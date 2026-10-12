@@ -55,7 +55,7 @@ async function checkAndRenderTicker() {
     } catch(e) {}
 }
 
-// Meesho-Style Flash Sale Banner Renderer & Live Countdown with Mobile Responsive Styling (UPDATED)
+// Meesho-Style Ultra-Compact Flash Sale Banner Renderer & Live Countdown
 async function checkAndRenderFlashSaleBanner() {
     const container = document.getElementById('meesho-flash-banner-container');
     if (!container) return;
@@ -83,90 +83,60 @@ async function checkAndRenderFlashSaleBanner() {
             <style>
                 .meesho-flash-banner {
                     background: linear-gradient(135deg, ${bgStart}, ${bgEnd});
-                    padding: 12px 18px;
-                    border-radius: 10px;
+                    padding: 8px 14px;
+                    border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    flex-wrap: nowrap;
-                    gap: 12px;
+                    gap: 8px;
                     border: 2px dashed #ca8a04;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-                    overflow: hidden;
+                    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
                 }
                 .mf-badge {
                     background: #7f1d1d;
                     color: #fff;
-                    padding: 5px 10px;
-                    border-radius: 20px;
+                    padding: 4px 8px;
+                    border-radius: 15px;
                     font-weight: 800;
-                    font-size: 11px;
+                    font-size: 10px;
                     text-align: center;
-                    line-height: 1.1;
                     white-space: nowrap;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
                 }
                 .mf-title {
-                    font-weight: 800;
+                    font-weight: 700;
                     color: #1e293b;
-                    font-size: 14.5px;
-                    letter-spacing: 0.3px;
-                    white-space: nowrap;
+                    font-size: 12px;
+                    flex: 1;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
                 .mf-clock {
                     display: flex;
-                    gap: 4px;
+                    gap: 3px;
                     align-items: center;
-                    font-weight: 800;
-                    font-size: 12.5px;
+                    font-weight: 700;
+                    font-size: 11px;
                     color: #1e293b;
                     white-space: nowrap;
                 }
                 .mf-box {
                     background: #dc2626;
                     color: #fff;
-                    padding: 4px 7px;
+                    padding: 3px 5px;
                     border-radius: 4px;
-                    font-size: 12px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                @media (max-width: 768px) {
-                    .meesho-flash-banner {
-                        padding: 8px 10px;
-                        gap: 6px;
-                    }
-                    .mf-badge {
-                        padding: 4px 8px;
-                        font-size: 9.5px;
-                    }
-                    .mf-title {
-                        font-size: 11.5px;
-                    }
-                    .mf-clock {
-                        font-size: 11px;
-                        gap: 2px;
-                    }
-                    .mf-box {
-                        padding: 3px 5px;
-                        font-size: 10.5px;
-                    }
+                    font-size: 11px;
                 }
             </style>
 
             <div class="meesho-flash-banner">
-                <div class="mf-badge">
-                    ${badgeText.replace(' ', '<br><span style="font-size:13px;">') + (badgeText.includes(' ') ? '</span>' : '')}
-                </div>
-                <div class="mf-title">
-                    <i class="fas fa-bolt" style="color:#dc2626; margin-right:2px;"></i> ${titleText}
-                </div>
+                <div class="mf-badge">${badgeText}</div>
+                <div class="mf-title"><i class="fas fa-bolt" style="color:#dc2626;"></i> ${titleText}</div>
                 <div class="mf-clock">
-                    <span class="mf-box" id="m-days">00</span> d : 
-                    <span class="mf-box" id="m-hours">00</span> h : 
-                    <span class="mf-box" id="m-mins">00</span> m : 
-                    <span class="mf-box" id="m-secs">00</span> s
+                    <span class="mf-box" id="m-days">00</span>d:
+                    <span class="mf-box" id="m-hours">00</span>h:
+                    <span class="mf-box" id="m-mins">00</span>m:
+                    <span class="mf-box" id="m-secs">00</span>s
                 </div>
             </div>
         `;
