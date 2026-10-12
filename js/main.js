@@ -55,7 +55,7 @@ async function checkAndRenderTicker() {
     } catch(e) {}
 }
 
-// Meesho-Style Centered Ultra-Compact Flash Sale Banner Renderer & Live Countdown
+// Meesho-Style Responsive Flash Sale Banner (Optimized for Mobile & Desktop)
 async function checkAndRenderFlashSaleBanner() {
     const container = document.getElementById('meesho-flash-banner-container');
     if (!container) return;
@@ -83,68 +83,95 @@ async function checkAndRenderFlashSaleBanner() {
             <style>
                 #meesho-flash-banner-container {
                     width: 100%;
-                    padding: 0 12px;
+                    max-width: 1240px;
+                    padding: 0 15px;
                     box-sizing: border-box;
-                    margin: 10px auto;
+                    margin: 12px auto;
                 }
                 .meesho-flash-banner {
                     background: linear-gradient(135deg, ${bgStart}, ${bgEnd});
-                    padding: 8px 12px;
-                    border-radius: 8px;
+                    padding: 10px 20px;
+                    border-radius: 10px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 6px;
+                    gap: 15px;
                     border: 2px dashed #ca8a04;
-                    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-                    width: 100%;
-                    box-sizing: border-box;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+                    max-width: 800px;
+                    margin: 0 auto;
                 }
                 .mf-badge {
                     background: #7f1d1d;
                     color: #fff;
-                    padding: 3px 7px;
-                    border-radius: 12px;
+                    padding: 5px 10px;
+                    border-radius: 15px;
                     font-weight: 800;
-                    font-size: 9.5px;
+                    font-size: 11px;
                     text-align: center;
                     white-space: nowrap;
                 }
                 .mf-title {
                     font-weight: 700;
                     color: #1e293b;
-                    font-size: 11px;
+                    font-size: 13.5px;
                     flex: 1;
+                    text-align: left;
+                    white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    white-space: nowrap;
-                    text-align: left;
                 }
                 .mf-clock {
                     display: flex;
-                    gap: 2px;
+                    gap: 4px;
                     align-items: center;
                     font-weight: 700;
-                    font-size: 10.5px;
+                    font-size: 12px;
                     color: #1e293b;
                     white-space: nowrap;
                 }
                 .mf-box {
                     background: #dc2626;
                     color: #fff;
-                    padding: 2px 4px;
-                    border-radius: 3px;
-                    font-size: 10.5px;
+                    padding: 3px 6px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                }
+                @media (max-width: 768px) {
+                    #meesho-flash-banner-container {
+                        padding: 0 10px;
+                        margin: 8px auto;
+                    }
+                    .meesho-flash-banner {
+                        max-width: 100%;
+                        padding: 8px 12px;
+                        gap: 8px;
+                    }
+                    .mf-badge {
+                        padding: 3px 7px;
+                        font-size: 9.5px;
+                    }
+                    .mf-title {
+                        font-size: 11px;
+                    }
+                    .mf-clock {
+                        font-size: 10.5px;
+                        gap: 2px;
+                    }
+                    .mf-box {
+                        padding: 2px 4px;
+                        font-size: 10.5px;
+                    }
                 }
             </style>
 
             <div class="meesho-flash-banner">
                 <div class="mf-badge">${badgeText}</div>
-                <div class="mf-title"><i class="fas fa-bolt" style="color:#dc2626;"></i> ${titleText}</div>
+                <div class="mf-title"><i class="fas fa-bolt" style="color:#dc2626; margin-right:4px;"></i> ${titleText}</div>
                 <div class="mf-clock">
-                    <span class="mf-box" id="m-days">00</span>d:
-                    <span class="mf-box" id="m-hours">00</span>h:
-                    <span class="mf-box" id="m-mins">00</span>m:
+                    <span class="mf-box" id="m-days">00</span>d : 
+                    <span class="mf-box" id="m-hours">00</span>h : 
+                    <span class="mf-box" id="m-mins">00</span>m : 
                     <span class="mf-box" id="m-secs">00</span>s
                 </div>
             </div>
