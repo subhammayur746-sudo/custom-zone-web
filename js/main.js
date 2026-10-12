@@ -42,7 +42,7 @@ async function checkAndRenderTicker() {
                     tickerDiv.id = 'cz-announcement-ticker';
                     tickerDiv.style.cssText = "background: #e2f0ef; color: #0f172a; padding: 9px 15px; font-size: 13px; font-weight: 700; text-align: center; overflow: hidden; white-space: nowrap; position: relative; z-index: 998; border-bottom: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
                     tickerDiv.innerHTML = '<marquee behavior="scroll" direction="left" scrollamount="5"><i class="fas fa-bullhorn" style="margin-right: 8px; color: #28469E;"></i> ' + data.text + '</marquee>';
-                    
+
                     let navbar = document.querySelector('header') || document.querySelector('nav') || document.body.firstChild;
                     if (navbar && navbar.parentNode) {
                         navbar.parentNode.insertBefore(tickerDiv, navbar.nextSibling);
@@ -55,7 +55,7 @@ async function checkAndRenderTicker() {
     } catch(e) {}
 }
 
-// Meesho-Style Flash Sale Banner Renderer & Live Countdown (NEW)
+// Meesho-Style Flash Sale Banner Renderer & Live Countdown with Mobile Responsive Styling (UPDATED)
 async function checkAndRenderFlashSaleBanner() {
     const container = document.getElementById('meesho-flash-banner-container');
     if (!container) return;
@@ -80,18 +80,93 @@ async function checkAndRenderFlashSaleBanner() {
         let targetTime = new Date(data.endTime).getTime();
 
         container.innerHTML = `
-            <div style="background:linear-gradient(135deg, ${bgStart}, ${bgEnd}); padding:12px 20px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; border:2px dashed #ca8a04; box-shadow:0 4px 15px rgba(0,0,0,0.08);">
-                <div style="background:#7f1d1d; color:#fff; padding:6px 14px; border-radius:22px; font-weight:800; font-size:11.5px; text-align:center; line-height:1.2; box-shadow:0 2px 5px rgba(0,0,0,0.15);">
-                    ${badgeText.replace(' ', '<br><span style="font-size:16px;">') + (badgeText.includes(' ') ? '</span>' : '')}
+            <style>
+                .meesho-flash-banner {
+                    background: linear-gradient(135deg, ${bgStart}, ${bgEnd});
+                    padding: 12px 18px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    flex-wrap: nowrap;
+                    gap: 12px;
+                    border: 2px dashed #ca8a04;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                    overflow: hidden;
+                }
+                .mf-badge {
+                    background: #7f1d1d;
+                    color: #fff;
+                    padding: 5px 10px;
+                    border-radius: 20px;
+                    font-weight: 800;
+                    font-size: 11px;
+                    text-align: center;
+                    line-height: 1.1;
+                    white-space: nowrap;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+                }
+                .mf-title {
+                    font-weight: 800;
+                    color: #1e293b;
+                    font-size: 14.5px;
+                    letter-spacing: 0.3px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .mf-clock {
+                    display: flex;
+                    gap: 4px;
+                    align-items: center;
+                    font-weight: 800;
+                    font-size: 12.5px;
+                    color: #1e293b;
+                    white-space: nowrap;
+                }
+                .mf-box {
+                    background: #dc2626;
+                    color: #fff;
+                    padding: 4px 7px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                @media (max-width: 768px) {
+                    .meesho-flash-banner {
+                        padding: 8px 10px;
+                        gap: 6px;
+                    }
+                    .mf-badge {
+                        padding: 4px 8px;
+                        font-size: 9.5px;
+                    }
+                    .mf-title {
+                        font-size: 11.5px;
+                    }
+                    .mf-clock {
+                        font-size: 11px;
+                        gap: 2px;
+                    }
+                    .mf-box {
+                        padding: 3px 5px;
+                        font-size: 10.5px;
+                    }
+                }
+            </style>
+
+            <div class="meesho-flash-banner">
+                <div class="mf-badge">
+                    ${badgeText.replace(' ', '<br><span style="font-size:13px;">') + (badgeText.includes(' ') ? '</span>' : '')}
                 </div>
-                <div style="font-weight:800; color:#1e293b; font-size:16px; letter-spacing:0.5px;">
-                    <i class="fas fa-bolt" style="color:#dc2626; margin-right:4px;"></i> ${titleText}
+                <div class="mf-title">
+                    <i class="fas fa-bolt" style="color:#dc2626; margin-right:2px;"></i> ${titleText}
                 </div>
-                <div id="meesho-countdown-clock" style="display:flex; gap:6px; align-items:center; font-weight:800; font-size:14px; color:#1e293b;">
-                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-days">00</span> d : 
-                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-hours">00</span> h : 
-                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-mins">00</span> m : 
-                    <span style="background:#dc2626; color:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1);" id="m-secs">00</span> s
+                <div class="mf-clock">
+                    <span class="mf-box" id="m-days">00</span> d : 
+                    <span class="mf-box" id="m-hours">00</span> h : 
+                    <span class="mf-box" id="m-mins">00</span> m : 
+                    <span class="mf-box" id="m-secs">00</span> s
                 </div>
             </div>
         `;
@@ -111,10 +186,15 @@ async function checkAndRenderFlashSaleBanner() {
             let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             let seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            document.getElementById('m-days').innerText = days < 10 ? "0" + days : days;
-            document.getElementById('m-hours').innerText = hours < 10 ? "0" + hours : hours;
-            document.getElementById('m-mins').innerText = minutes < 10 ? "0" + minutes : minutes;
-            document.getElementById('m-secs').innerText = seconds < 10 ? "0" + seconds : seconds;
+            let dEl = document.getElementById('m-days');
+            let hEl = document.getElementById('m-hours');
+            let mEl = document.getElementById('m-mins');
+            let sEl = document.getElementById('m-secs');
+
+            if (dEl) dEl.innerText = days < 10 ? "0" + days : days;
+            if (hEl) hEl.innerText = hours < 10 ? "0" + hours : hours;
+            if (mEl) mEl.innerText = minutes < 10 ? "0" + minutes : minutes;
+            if (sEl) sEl.innerText = seconds < 10 ? "0" + seconds : seconds;
         }
 
         updateClock();
@@ -142,9 +222,9 @@ function closeMobileDrawer() {
 async function fetchLiveProducts() {
     const container = document.getElementById('product-list'); 
     if (!container) return;
-    
+
     container.innerHTML = "<p style='text-align:center; width:100%; color:#595959; grid-column: 1/-1;'><i class='fas fa-spinner fa-spin'></i> Loading products...</p>";
-    
+
     try {
         const revSnapshot = await db.collection("reviews").get();
         allReviewsMap = {};
@@ -162,7 +242,7 @@ async function fetchLiveProducts() {
         const snapshot = await db.collection("products").get();
         liveProducts = [];
         categoryMap = { "Handmade": new Set(), "Customized": new Set() };
-        
+
         if (snapshot.empty) {
             container.innerHTML = "<p style='text-align:center; width:100%; grid-column: 1/-1;'>No products available right now.</p>";
             renderHomePaginationBar(0);
@@ -172,11 +252,11 @@ async function fetchLiveProducts() {
         snapshot.forEach(doc => {
             let prod = doc.data();
             prod.id = doc.id;
-            
+
             if (!prod.mainCategory) {
                 prod.mainCategory = prod.customType === "none" ? "Handmade" : "Customized";
             }
-            
+
             let mainCatFormatted = prod.mainCategory.trim();
             mainCatFormatted = mainCatFormatted.charAt(0).toUpperCase() + mainCatFormatted.slice(1);
 
@@ -348,7 +428,7 @@ function renderHomeProducts(products) {
 
         let ratingVal = prod.avgRating ? prod.avgRating.toFixed(1) : "5.0";
         let reviewNum = prod.reviewCount || 0;
-        
+
         let hasVariants = prod.hasVariants && Array.isArray(prod.variants) && prod.variants.length > 0;
         let actualPrice = parseInt(prod.actualPrice) || 0;
         let sellingPrice = parseInt(prod.discountPrice || prod.price) || 0;
@@ -432,7 +512,7 @@ function goToHomePage(page) {
     if (page < 1 || page > totalPages) return;
     currentHomePage = page;
     renderHomeProducts(currentHomeFilteredProducts);
-    
+
     const pList = document.getElementById('product-list');
     if (pList) pList.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -515,7 +595,7 @@ function updateModalPriceBox(product, currentPrice, currentActualPrice = null) {
 
     let actualPrice = currentActualPrice !== null ? parseInt(currentActualPrice) : (parseInt(product.actualPrice) || 0);
     let sellingPrice = parseInt(currentPrice) || 0;
-    
+
     let hasDiscount = actualPrice > 0 && sellingPrice > 0 && sellingPrice < actualPrice;
     let discountPct = hasDiscount ? Math.round(((actualPrice - sellingPrice) / actualPrice) * 100) : 0;
 
@@ -543,7 +623,7 @@ function recalculateLinkedPrice(product) {
     if (currentSelectedQty > 1 && product.hasQtyPricing && product.qtyTiers && product.qtyTiers.length > 0) {
         let currentVarName = currentSelectedVariant ? currentSelectedVariant.name : "all";
         let tier = product.qtyTiers.find(t => t.minQty === currentSelectedQty && (t.targetVariant === "all" || t.targetVariant === currentVarName));
-        
+
         if (tier) {
             let defaultBase = parseInt(product.discountPrice) || 1;
             let ratio = unitPrice / defaultBase;
@@ -755,7 +835,7 @@ function openProductDetailsModal(productId) {
                 submitRevBtn.onclick = async () => {
                     let commentInput = starContainer.querySelector('textarea, input[type="text"]');
                     let comment = commentInput ? commentInput.value.trim() : "";
-                    
+
                     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
                     if (!customer) {
                         alert("Please login first to submit a review!");
@@ -944,7 +1024,7 @@ function checkUrlProductParam() {
 
 function handleAddToCart(productId, customText = "", selectedVariant = null, selectedQty = 1, packagePrice = null, packageVendorCost = null, selectedSize = null) {
     let customer = JSON.parse(localStorage.getItem('cz_customer_user'));
-    
+
     let product = liveProducts.find(p => p.id === productId);
     if (!product) return;
 
@@ -998,7 +1078,7 @@ function handleAddToCart(productId, customText = "", selectedVariant = null, sel
         userText: customText,
         quantity: selectedQty
     });
-    
+
     localStorage.setItem('cz_cart', JSON.stringify(cart));
     updateCartCount();
     alert("✅ " + product.name + " (" + selectedQty + " PCS - ₹" + finalPackagePrice + ") added to cart!");
@@ -1220,7 +1300,7 @@ function displayPopup(data) {
 
     if (titleEl) titleEl.innerText = data.title || "Special Offer!";
     if (descEl) descEl.innerText = data.description || "";
-    
+
     if (imgEl && data.imageUrl && data.imageUrl.trim() !== "") {
         imgEl.src = data.imageUrl;
         imgEl.style.display = "block";
