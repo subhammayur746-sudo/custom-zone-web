@@ -55,7 +55,7 @@ async function checkAndRenderTicker() {
     } catch(e) {}
 }
 
-// Meesho-Style Ultra-Compact Flash Sale Banner Renderer & Live Countdown
+// Meesho-Style Centered Ultra-Compact Flash Sale Banner Renderer & Live Countdown
 async function checkAndRenderFlashSaleBanner() {
     const container = document.getElementById('meesho-flash-banner-container');
     if (!container) return;
@@ -81,51 +81,60 @@ async function checkAndRenderFlashSaleBanner() {
 
         container.innerHTML = `
             <style>
+                #meesho-flash-banner-container {
+                    width: 100%;
+                    padding: 0 12px;
+                    box-sizing: border-box;
+                    margin: 10px auto;
+                }
                 .meesho-flash-banner {
                     background: linear-gradient(135deg, ${bgStart}, ${bgEnd});
-                    padding: 8px 14px;
+                    padding: 8px 12px;
                     border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 8px;
+                    gap: 6px;
                     border: 2px dashed #ca8a04;
                     box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+                    width: 100%;
+                    box-sizing: border-box;
                 }
                 .mf-badge {
                     background: #7f1d1d;
                     color: #fff;
-                    padding: 4px 8px;
-                    border-radius: 15px;
+                    padding: 3px 7px;
+                    border-radius: 12px;
                     font-weight: 800;
-                    font-size: 10px;
+                    font-size: 9.5px;
                     text-align: center;
                     white-space: nowrap;
                 }
                 .mf-title {
                     font-weight: 700;
                     color: #1e293b;
-                    font-size: 12px;
+                    font-size: 11px;
                     flex: 1;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
+                    text-align: left;
                 }
                 .mf-clock {
                     display: flex;
-                    gap: 3px;
+                    gap: 2px;
                     align-items: center;
                     font-weight: 700;
-                    font-size: 11px;
+                    font-size: 10.5px;
                     color: #1e293b;
                     white-space: nowrap;
                 }
                 .mf-box {
                     background: #dc2626;
                     color: #fff;
-                    padding: 3px 5px;
-                    border-radius: 4px;
-                    font-size: 11px;
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    font-size: 10.5px;
                 }
             </style>
 
