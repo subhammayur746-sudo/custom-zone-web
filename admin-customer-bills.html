@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
-    <!-- Include html2pdf library for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -111,13 +110,13 @@
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
-    <div class="main-content" id="customer-pdf-export-container">
+    <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Customer Sales & Profit Ledger</h2>
                 <small style="color:#64748b;">Tracks real customer revenue, vendor sourcing cost, and Actual Net Profit</small>
             </div>
-            <div style="display:flex; gap:8px;" class="no-print-slip">
+            <div style="display:flex; gap:8px;">
                 <button onclick="exportCustomerLedgerToExcel()" class="btn-excel">
                     <i class="fas fa-file-excel"></i> Export / Copy to Excel
                 </button>
@@ -157,7 +156,7 @@
         </div>
 
         <div class="admin-card" style="overflow-x:auto;">
-            <div class="filter-bar-wrap no-print-slip">
+            <div class="filter-bar-wrap">
                 <div class="filter-item">
                     <label>Order Status:</label>
                     <select id="filter-order-status" onchange="applyLedgerFilters()">
@@ -202,7 +201,7 @@
                         <th>Sale Amount</th>
                         <th>Actual Profit</th>
                         <th>Status</th>
-                        <th class="no-print-slip">Actions</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="customer-ledger-tbody">
@@ -210,7 +209,7 @@
                 </tbody>
             </table>
 
-            <div class="pagination-container no-print-slip" id="ledger-pagination-bar">
+            <div class="pagination-container" id="ledger-pagination-bar">
                 <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="ledger-pagination-info">Showing 0-0 of 0 invoices</div>
                 <div style="display:flex; gap:5px;" id="ledger-pagination-buttons"></div>
             </div>
@@ -580,7 +579,7 @@
                         <td><strong style="color:#0f172a; font-size:14px;">₹${l.saleAmount}</strong><br><small style="color:#64748b;">Cost: ₹${l.vendorCost}</small></td>
                         <td><strong style="color:${profitColor}; font-size:14px;">${profitPrefix}₹${l.actualProfit}</strong></td>
                         <td><span style="background:${statusBadgeColor}; color:#fff; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700;">${l.status}</span></td>
-                        <td style="white-space:nowrap;" class="no-print-slip">
+                        <td style="white-space:nowrap;">
                             <button class="btn-invoice-action btn-edit-ledger" onclick="openEditLedgerCostModal('${l.docId}', ${l.vendorCost})">
                                 <i class="fas fa-edit"></i> Edit Cost
                             </button>
@@ -665,21 +664,86 @@
             document.body.removeChild(link);
         }
 
-        // Professional PDF Export Feature using html2pdf
         function exportCustomerLedgerToPDF() {
             if (filteredLedgerList.length === 0) {
                 alert("No customer invoices to export for PDF.");
                 return;
             }
-            const element = document.getElementById('customer-pdf-export-container');
-            const opt = {
+
+            let totalSales = 0, totalProfit = 0, totalVendorDed = 0;
+            filteredLedgerList.forEach(l => {
+                totalSales += l.saleAmount;
+                totalProfit += l.actualProfit;
+                totalVendorDed += l.vendorCost;
+            });
+
+            let rowsHtml = filteredLedgerList.map(l => `
+                <tr>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">${l.invoiceNo}<br><span style="color:#64748b;">${l.date}</span></td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;"><strong>${l.customerName}</strong><br><span style="color:#64748b;">${l.phone}</span></td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">#${l.orderId}</td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">Rs.${l.saleAmount}</td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">Rs.${l.vendorCost}</td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px; color:#16a34a; font-weight:bold;">Rs.${l.actualProfit}</td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">${l.status}</td>
+                </tr>
+            `).join('');
+
+            let reportHtml = `
+                <div style="font-family:'Poppins', sans-serif; padding:15px; color:#1e293b; background:#fff; width:100%; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #28469E; padding-bottom:10px; margin-bottom:15px;">
+                        <div>
+                            <h2 style="margin:0; color:#28469E; font-size:20px;">CUSTOM ZONE</h2>
+                            <p style="margin:2px 0 0 0; font-size:11px; color:#64748b;">Customer Sales & Profit Ledger Report</p>
+                        </div>
+                        <div style="text-align:right; font-size:11px; color:#64748b;">
+                            <div>Date: ${new Date().toLocaleDateString('en-GB')}</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:15px;">
+                        <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:10px; border-radius:6px;">
+                            <div style="font-size:10px; color:#64748b; font-weight:bold;">TOTAL SALES VOLUME</div>
+                            <div style="font-size:15px; font-weight:bold; color:#2563eb;">Rs.${totalSales.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px;">
+                            <div style="font-size:10px; color:#15803d; font-weight:bold;">ACTUAL NET PROFIT</div>
+                            <div style="font-size:15px; font-weight:bold; color:#16a34a;">Rs.${totalProfit.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#fef2f2; border:1px solid #fecaca; padding:10px; border-radius:6px;">
+                            <div style="font-size:10px; color:#991b1b; font-weight:bold;">VENDOR COST DEDUCTED</div>
+                            <div style="font-size:15px; font-weight:bold; color:#dc2626;">Rs.${totalVendorDed.toLocaleString('en-IN')}</div>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-top:5px;">
+                        <thead>
+                            <tr style="background:#f1f5f9; color:#334155; font-size:11px; text-transform:uppercase;">
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Invoice / Date</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Customer</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Order Ref</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Sale</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Cost</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Profit</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            let opt = {
                 margin:       5,
                 filename:     `customer_ledger_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            html2pdf().from(element).set(opt).save();
+
+            html2pdf().from(reportHtml).set(opt).save();
         }
 
         function openCustomerInvoiceModal(index) {

@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
-    <!-- Include html2pdf library for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -111,13 +110,13 @@
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
-    <div class="main-content" id="vendor-pdf-export-container">
+    <div class="main-content">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Vendor Purchases, Payouts & Billing Ledger</h2>
                 <small style="color:#64748b;">Manage vendor payment statuses (Paid / Unpaid) with sequential PO invoices</small>
             </div>
-            <div style="display:flex; gap:8px;" class="no-print-slip">
+            <div style="display:flex; gap:8px;">
                 <button onclick="exportVendorBillsToExcel()" class="btn-excel">
                     <i class="fas fa-file-excel"></i> Export / Copy to Excel
                 </button>
@@ -157,7 +156,7 @@
         </div>
 
         <div class="admin-card" style="overflow-x:auto;">
-            <div class="filter-bar-wrap no-print-slip">
+            <div class="filter-bar-wrap">
                 <div class="filter-item">
                     <label>Filter by Vendor:</label>
                     <select id="filter-vendor-select" onchange="applyAllFilters()">
@@ -206,7 +205,7 @@
                         <th>Product Details</th>
                         <th>Agreed Cost</th>
                         <th>Payment Status</th>
-                        <th class="no-print-slip">Action</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="vendor-bills-tbody">
@@ -214,7 +213,7 @@
                 </tbody>
             </table>
 
-            <div class="pagination-container no-print-slip" id="vendor-pagination-bar">
+            <div class="pagination-container" id="vendor-pagination-bar">
                 <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="pagination-info-text">Showing 0-0 of 0 bills</div>
                 <div style="display:flex; gap:5px;" id="pagination-buttons-slot"></div>
             </div>
@@ -639,7 +638,7 @@
                         <td style="font-size:12px; max-width:280px; line-height:1.4;">${itemsListHTML}</td>
                         <td><strong style="color:#16a34a; font-size:14px;">₹${b.totalCost}</strong></td>
                         <td>${payDropdown}</td>
-                        <td style="white-space:nowrap;" class="no-print-slip">
+                        <td style="white-space:nowrap;">
                             <button class="btn-bill-action btn-edit-cost" onclick="openEditCostModal('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', ${b.totalCost}, '${(b.narration || '').replace(/'/g, "\\'")}', '${(b.specialInstruction || '').replace(/'/g, "\\'")}')">
                                 <i class="fas fa-edit"></i> Edit Cost
                             </button>
@@ -724,21 +723,82 @@
             document.body.removeChild(link);
         }
 
-        // Professional PDF Export Feature using html2pdf
         function exportVendorBillsToPDF() {
             if (filteredBillsList.length === 0) {
                 alert("No vendor bills to export for PDF.");
                 return;
             }
-            const element = document.getElementById('vendor-pdf-export-container');
-            const opt = {
+
+            let totalVolume = 0, totalPaid = 0, totalUnpaid = 0;
+            filteredBillsList.forEach(b => {
+                totalVolume += b.totalCost;
+                if (b.payStatus === 'Paid') totalPaid += b.totalCost;
+                else totalUnpaid += b.totalCost;
+            });
+
+            let rowsHtml = filteredBillsList.map(b => `
+                <tr>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">${b.invoiceNo}<br><span style="color:#64748b;">${b.date}</span></td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;"><strong>${b.vendorName}</strong></td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">#${b.orderId}</td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px; font-weight:bold; color:#16a34a;">Rs.${b.totalCost}</td>
+                    <td style="padding:8px; border:1px solid #cbd5e1; font-size:11px;">${b.payStatus}</td>
+                </tr>
+            `).join('');
+
+            let reportHtml = `
+                <div style="font-family:'Poppins', sans-serif; padding:15px; color:#1e293b; background:#fff; width:100%; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3730a3; padding-bottom:10px; margin-bottom:15px;">
+                        <div>
+                            <h2 style="margin:0; color:#3730a3; font-size:20px;">CUSTOM ZONE</h2>
+                            <p style="margin:2px 0 0 0; font-size:11px; color:#64748b;">Vendor Purchases & Payouts Ledger Report</p>
+                        </div>
+                        <div style="text-align:right; font-size:11px; color:#64748b;">
+                            <div>Date: ${new Date().toLocaleDateString('en-GB')}</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:15px;">
+                        <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:10px; border-radius:6px;">
+                            <div style="font-size:10px; color:#64748b; font-weight:bold;">TOTAL PURCHASE VOLUME</div>
+                            <div style="font-size:15px; font-weight:bold; color:#3730a3;">Rs.${totalVolume.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:6px;">
+                            <div style="font-size:10px; color:#15803d; font-weight:bold;">TOTAL PAID TO VENDORS</div>
+                            <div style="font-size:15px; font-weight:bold; color:#16a34a;">Rs.${totalPaid.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div style="background:#fef2f2; border:1px solid #fecaca; padding:10px; border-radius:6px;">
+                            <div style="font-size:10px; color:#991b1b; font-weight:bold;">TOTAL UNPAID BALANCE</div>
+                            <div style="font-size:15px; font-weight:bold; color:#dc2626;">Rs.${totalUnpaid.toLocaleString('en-IN')}</div>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-top:5px;">
+                        <thead>
+                            <tr style="background:#f1f5f9; color:#334155; font-size:11px; text-transform:uppercase;">
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Bill / Date</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Vendor</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Order Ref</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Agreed Cost</th>
+                                <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            let opt = {
                 margin:       5,
                 filename:     `vendor_ledger_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            html2pdf().from(element).set(opt).save();
+
+            html2pdf().from(reportHtml).set(opt).save();
         }
 
         function openVendorInvoicePrintModal(index) {
