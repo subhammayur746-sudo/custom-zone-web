@@ -11,6 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="js/firebase-config.js"></script>
+    <!-- Include html2pdf library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
@@ -50,13 +52,13 @@
         .btn-wa-bill { background: #16a34a; color: #fff; }
         .btn-edit-cost { background: #d97706; color: #fff; }
         .btn-excel { background: #16a34a; color: #fff; border: none; padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-pdf { background: #dc2626; color: #fff; border: none; padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
 
         .pagination-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
         .page-btn { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 6px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .page-btn.active { background: #3730a3; color: #fff; border-color: #3730a3; }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* Custom Modal Styling for Edit Cost & Instructions */
         .custom-admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
         .custom-admin-modal-content { background: #fff; width: 100%; max-width: 480px; padding: 25px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
@@ -109,15 +111,18 @@
         <a href="#" onclick="localStorage.removeItem('cz_logged_in_user'); window.location.href='admin-login.html';" style="background:#c0392b; color:#fff; margin-top:20px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
-    <div class="main-content">
+    <div class="main-content" id="vendor-pdf-export-container">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
             <div>
                 <h2 style="color: #2c3e50; margin:0; font-size: 20px;">Vendor Purchases, Payouts & Billing Ledger</h2>
                 <small style="color:#64748b;">Manage vendor payment statuses (Paid / Unpaid) with sequential PO invoices</small>
             </div>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px;" class="no-print-slip">
                 <button onclick="exportVendorBillsToExcel()" class="btn-excel">
                     <i class="fas fa-file-excel"></i> Export / Copy to Excel
+                </button>
+                <button onclick="exportVendorBillsToPDF()" class="btn-pdf">
+                    <i class="fas fa-file-pdf"></i> Export to PDF
                 </button>
                 <button onclick="fetchVendorBills()" style="background:#28469E; color:#fff; border:none; padding:8px 16px; border-radius:6px; font-size:12.5px; font-weight:bold; cursor:pointer;">
                     <i class="fas fa-sync-alt"></i> Refresh Ledger
@@ -152,7 +157,7 @@
         </div>
 
         <div class="admin-card" style="overflow-x:auto;">
-            <div class="filter-bar-wrap">
+            <div class="filter-bar-wrap no-print-slip">
                 <div class="filter-item">
                     <label>Filter by Vendor:</label>
                     <select id="filter-vendor-select" onchange="applyAllFilters()">
@@ -201,7 +206,7 @@
                         <th>Product Details</th>
                         <th>Agreed Cost</th>
                         <th>Payment Status</th>
-                        <th>Action</th>
+                        <th class="no-print-slip">Action</th>
                     </tr>
                 </thead>
                 <tbody id="vendor-bills-tbody">
@@ -209,7 +214,7 @@
                 </tbody>
             </table>
 
-            <div class="pagination-container" id="vendor-pagination-bar">
+            <div class="pagination-container no-print-slip" id="vendor-pagination-bar">
                 <div style="font-size:12.5px; color:#64748b; font-weight:600;" id="pagination-info-text">Showing 0-0 of 0 bills</div>
                 <div style="display:flex; gap:5px;" id="pagination-buttons-slot"></div>
             </div>
@@ -634,7 +639,7 @@
                         <td style="font-size:12px; max-width:280px; line-height:1.4;">${itemsListHTML}</td>
                         <td><strong style="color:#16a34a; font-size:14px;">₹${b.totalCost}</strong></td>
                         <td>${payDropdown}</td>
-                        <td style="white-space:nowrap;">
+                        <td style="white-space:nowrap;" class="no-print-slip">
                             <button class="btn-bill-action btn-edit-cost" onclick="openEditCostModal('${b.docId}', '${b.vendorName.replace(/'/g, "\\'")}', ${b.totalCost}, '${(b.narration || '').replace(/'/g, "\\'")}', '${(b.specialInstruction || '').replace(/'/g, "\\'")}')">
                                 <i class="fas fa-edit"></i> Edit Cost
                             </button>
@@ -717,6 +722,23 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        // Professional PDF Export Feature using html2pdf
+        function exportVendorBillsToPDF() {
+            if (filteredBillsList.length === 0) {
+                alert("No vendor bills to export for PDF.");
+                return;
+            }
+            const element = document.getElementById('vendor-pdf-export-container');
+            const opt = {
+                margin:       5,
+                filename:     `vendor_ledger_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().from(element).set(opt).save();
         }
 
         function openVendorInvoicePrintModal(index) {
