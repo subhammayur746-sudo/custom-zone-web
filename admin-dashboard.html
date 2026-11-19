@@ -109,6 +109,7 @@
         <a href="admin-invoice.html" id="nav-invoice"><i class="fas fa-receipt"></i> Manual Invoice</a>
         <a href="admin-customer-bills.html" id="nav-customer-bills"><i class="fas fa-file-invoice-dollar"></i> Customer Ledger</a>
         <a href="admin-vendor-bills.html" id="nav-vendor-bills"><i class="fas fa-truck-loading"></i> Vendor PO Ledger</a>
+        <a href="admin-expenses.html" id="nav-expenses"><i class="fas fa-wallet"></i> Expense Management</a>
         <a href="admin-reviews.html" id="nav-reviews"><i class="fas fa-star"></i> Manage Reviews</a>
         <a href="admin-coupons.html" id="nav-coupons"><i class="fas fa-tags"></i> Discount & Vouchers</a>
         <a href="admin-ads.html" id="nav-ads"><i class="fas fa-bullhorn"></i> Store Settings</a>
@@ -363,6 +364,7 @@
                 if (!perms.includes('coupons')) document.getElementById('nav-coupons').style.display = 'none';
                 if (!perms.includes('vendor_bills')) document.getElementById('nav-vendor-bills').style.display = 'none';
                 if (!perms.includes('customer_bills')) document.getElementById('nav-customer-bills').style.display = 'none';
+                if (!perms.includes('expenses')) document.getElementById('nav-expenses').style.display = 'none';
                 document.getElementById('nav-ads').style.display = 'none';
                 document.getElementById('nav-users').style.display = 'none';
             }
