@@ -48,6 +48,7 @@
 
         .btn-action { border: none; padding: 6px 11px; border-radius: 4px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
         .btn-delete { background: #fee2e2; color: #991b1b; }
+        .btn-row-pdf { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; margin-right: 5px; }
         .btn-excel { background: #16a34a; color: #fff; border: none; padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
         .btn-pdf { background: #dc2626; color: #fff; border: none; padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
         .btn-primary-cz { background: #28469E; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12.5px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -380,6 +381,58 @@
             }
         }
 
+        function exportSingleExpensePDF(docId) {
+            let e = allExpensesList.find(item => item.docId === docId);
+            if (!e) return;
+
+            let singleVoucherHtml = `
+                <div style="font-family:'Poppins', sans-serif; padding:20px; color:#1e293b; background:#fff; width:100%; box-sizing:border-box;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #1e293b; padding-bottom:12px; margin-bottom:18px;">
+                        <div>
+                            <h2 style="margin:0; color:#1e293b; font-size:20px;">CUSTOM ZONE</h2>
+                            <p style="margin:2px 0 0 0; font-size:11px; color:#64748b;">Expense Payment Voucher</p>
+                        </div>
+                        <div style="text-align:right; font-size:12px;">
+                            <div><strong>Voucher:</strong> <span style="color:#28469E;">${e.voucherNo}</span></div>
+                            <div><strong>Date:</strong> ${e.date}</div>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:18px;">
+                        <tr>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; width:35%; font-size:12px;">Category</td>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; font-size:12px;">${e.category}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Paid To / Payee</td>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; font-size:12px;"><strong>${e.payee}</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Amount</td>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; font-size:14px; font-weight:800; color:#dc2626;">Rs.${Number(e.amount).toLocaleString('en-IN')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Notes / Description</td>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; font-size:12px;">${e.notes || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Added By</td>
+                            <td style="padding:9px 12px; border:1px solid #cbd5e1; font-size:12px;">${e.addedBy || 'Admin'}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+
+            const opt = {
+                margin:       8,
+                filename:     `${e.voucherNo}_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(singleVoucherHtml).set(opt).save();
+        }
+
         function applyExpenseFilters() {
             let categoryFilter = document.getElementById('filter-category').value;
             let term = document.getElementById('expense-search-input').value.toLowerCase().trim();
@@ -435,7 +488,10 @@
                         <td><strong style="color:#dc2626; font-size:14px;">₹${e.amount}</strong></td>
                         <td style="font-size:12px; color:#475569;">${e.notes || '-'}</td>
                         <td><small style="color:#64748b;">${e.addedBy || 'Admin'}</small></td>
-                        <td class="no-print-slip">
+                        <td class="no-print-slip" style="white-space:nowrap;">
+                            <button class="btn-action btn-row-pdf" onclick="exportSingleExpensePDF('${e.docId}')">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
                             <button class="btn-action btn-delete" onclick="deleteExpense('${e.docId}')">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
