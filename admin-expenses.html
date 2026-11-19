@@ -66,15 +66,16 @@
         .voucher-modal-footer { padding: 14px 22px; background: #f1f5f9; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
 
         #voucher-preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.7); z-index: 100000; justify-content: center; align-items: center; padding: 15px; }
-        #printable-expense-voucher { background: #fff; width: 100%; max-width: 760px; padding: 30px; border-radius: 12px; position: relative; max-height: 94vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.3); color: #0f172a; }
+        #printable-expense-voucher { background: #fff; width: 100%; max-width: 760px; padding: 24px 28px; border-radius: 12px; position: relative; max-height: 94vh; overflow-y: auto; box-shadow: 0 15px 35px rgba(0,0,0,0.3); color: #0f172a; }
 
         @media print {
-            @page { size: A4 portrait; margin: 10mm 14mm; }
-            html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; font-size: 11pt !important; color: #000 !important; }
+            @page { size: A4 portrait; margin: 8mm 12mm; }
+            html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; width: 100% !important; height: auto !important; font-size: 10pt !important; color: #000 !important; }
             body * { visibility: hidden !important; }
-            #voucher-preview-modal { position: static !important; display: block !important; width: 100% !important; height: auto !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+            #voucher-preview-modal { position: static !important; display: block !important; width: 100% !important; height: auto !important; max-height: none !important; overflow: visible !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
             #printable-expense-voucher, #printable-expense-voucher * { visibility: visible !important; }
-            #printable-expense-voucher { position: relative !important; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; }
+            #printable-expense-voucher { position: relative !important; left: auto !important; top: auto !important; transform: none !important; width: 100% !important; max-width: 100% !important; max-height: none !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+            #expense-voucher-bill-body > div { page-break-inside: avoid !important; break-inside: avoid !important; }
             .no-print-slip { display: none !important; }
         }
 
@@ -279,7 +280,7 @@
         <div id="printable-expense-voucher">
             <span onclick="closeVoucherPreviewModal()" class="no-print-slip" style="position:absolute; top:14px; right:18px; font-size:26px; cursor:pointer; font-weight:bold; color:#64748b;">&times;</span>
             <div id="expense-voucher-bill-body"></div>
-            <div class="no-print-slip" style="text-align:center; margin-top:22px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <div class="no-print-slip" style="text-align:center; margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                 <button type="button" onclick="downloadCurrentVoucherPDF()" style="background:#dc2626; color:#fff; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:13px;">
                     <i class="fas fa-file-pdf"></i> Save PDF
                 </button>
@@ -418,79 +419,79 @@
             let formattedAmt = "Rs." + Number(e.amount || 0).toLocaleString('en-IN');
             let savedStamp = localStorage.getItem('cz_central_stamp_sign');
             let stampHtml = savedStamp
-                ? `<img src="${savedStamp}" style="max-height:60px; object-fit:contain;" alt="Stamp & Sign">`
+                ? `<img src="${savedStamp}" style="max-height:52px; object-fit:contain;" alt="Stamp & Sign">`
                 : `<span style="border:1.5px dashed #cbd5e1; width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:600; border-radius:4px;">[ STAMP & SIGN ]</span>`;
 
             return `
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1e293b; padding-bottom:14px; margin-bottom:16px;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <img src="assets/images/logo.png" style="width:56px; height:56px; object-fit:contain; border-radius:8px; border:1px solid #e2e8f0;" alt="Custom Zone Logo">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1e293b; padding-bottom:10px; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="assets/images/logo.png" style="width:48px; height:48px; object-fit:contain; border-radius:8px; border:1px solid #e2e8f0;" alt="Custom Zone Logo">
                         <div>
-                            <h2 style="margin:0; font-size:21px; font-weight:800; color:#0f172a;">CUSTOM ZONE</h2>
-                            <p style="margin:2px 0 0 0; font-size:11.5px; color:#475569; font-weight:600;">You Imagine. We Customize.</p>
-                            <p style="margin:2px 0 0 0; font-size:10.5px; color:#64748b;">Liluah Chakpara, Howrah, West Bengal</p>
+                            <h2 style="margin:0; font-size:19px; font-weight:800; color:#0f172a;">CUSTOM ZONE</h2>
+                            <p style="margin:1px 0 0 0; font-size:11px; color:#475569; font-weight:600;">You Imagine. We Customize.</p>
+                            <p style="margin:1px 0 0 0; font-size:10px; color:#64748b;">Liluah Chakpara, Howrah, West Bengal</p>
                         </div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="background:#1e293b; color:#fff; font-size:11px; font-weight:800; padding:4px 12px; border-radius:4px; display:inline-block; margin-bottom:6px; letter-spacing:0.4px;">
+                        <div style="background:#1e293b; color:#fff; font-size:10.5px; font-weight:800; padding:3px 10px; border-radius:4px; display:inline-block; margin-bottom:4px; letter-spacing:0.4px;">
                             PAYMENT / EXPENSE VOUCHER
                         </div>
-                        <div style="font-size:12px; color:#334155; line-height:1.5;">
+                        <div style="font-size:11.5px; color:#334155; line-height:1.4;">
                             <div><strong>Voucher No:</strong> <span style="color:#28469E; font-weight:800;">${e.voucherNo}</span></div>
                             <div><strong>Voucher Date:</strong> ${e.date}</div>
                         </div>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:12.5px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:12px;">
                     <div>
-                        <span style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:3px;">Paid To (Payee / Vendor):</span>
-                        <strong style="color:#0f172a; font-size:13.5px;">${e.payee}</strong>
+                        <span style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:2px;">Paid To (Payee / Vendor):</span>
+                        <strong style="color:#0f172a; font-size:13px;">${e.payee}</strong>
                     </div>
                     <div>
-                        <span style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:3px;">Ledger Account & Entry By:</span>
+                        <span style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:2px;">Ledger Account & Entry By:</span>
                         <strong style="color:#28469E;">${e.category}</strong>
-                        <div style="font-size:11px; color:#64748b; margin-top:2px;">Posted By: ${e.addedBy || 'Admin'}</div>
+                        <div style="font-size:10.5px; color:#64748b; margin-top:1px;">Posted By: ${e.addedBy || 'Admin'}</div>
                     </div>
                 </div>
 
-                <table style="width:100%; border-collapse:collapse; margin-bottom:16px;">
+                <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
                     <thead>
-                        <tr style="background:#f1f5f9; border-bottom:2px solid #1e293b; font-size:11px; text-transform:uppercase; color:#334155;">
-                            <th style="padding:9px 12px; text-align:left;">Ledger Head / Category</th>
-                            <th style="padding:9px 12px; text-align:left;">Particulars / Narration</th>
-                            <th style="padding:9px 12px; text-align:right;">Debit Amount</th>
+                        <tr style="background:#f1f5f9; border-bottom:2px solid #1e293b; font-size:10.5px; text-transform:uppercase; color:#334155;">
+                            <th style="padding:7px 10px; text-align:left;">Ledger Head / Category</th>
+                            <th style="padding:7px 10px; text-align:left;">Particulars / Narration</th>
+                            <th style="padding:7px 10px; text-align:right;">Debit Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td style="padding:12px; border-bottom:1px solid #e2e8f0; font-size:12.5px; font-weight:700; color:#0f172a;">${e.category}</td>
-                            <td style="padding:12px; border-bottom:1px solid #e2e8f0; font-size:12px; color:#334155;">${e.notes || 'Business expense entry'}</td>
-                            <td style="padding:12px; border-bottom:1px solid #e2e8f0; font-size:13.5px; font-weight:800; color:#dc2626; text-align:right; white-space:nowrap;">${formattedAmt}</td>
+                            <td style="padding:10px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:700; color:#0f172a;">${e.category}</td>
+                            <td style="padding:10px; border-bottom:1px solid #e2e8f0; font-size:11.5px; color:#334155;">${e.notes || 'Business expense entry'}</td>
+                            <td style="padding:10px; border-bottom:1px solid #e2e8f0; font-size:13px; font-weight:800; color:#dc2626; text-align:right; white-space:nowrap;">${formattedAmt}</td>
                         </tr>
                     </tbody>
                 </table>
 
-                <div style="display:flex; justify-content:flex-end; border-top:2px solid #1e293b; padding-top:10px; margin-bottom:20px;">
-                    <div style="width:260px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:12.5px; font-weight:800; color:#7f1d1d;">Total Debited:</span>
-                        <span style="font-size:16px; font-weight:800; color:#dc2626;">${formattedAmt}</span>
+                <div style="display:flex; justify-content:flex-end; border-top:2px solid #1e293b; padding-top:8px; margin-bottom:14px;">
+                    <div style="width:240px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:12px; font-weight:800; color:#7f1d1d;">Total Debited:</span>
+                        <span style="font-size:15px; font-weight:800; color:#dc2626;">${formattedAmt}</span>
                     </div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:14px;">
-                    <div style="font-size:10.5px; color:#64748b;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #cbd5e1; padding-top:10px;">
+                    <div style="font-size:10px; color:#64748b;">
                         <p style="margin:0; font-weight:700; color:#0f172a;">Custom Zone Accounts & Ledger</p>
                         <p style="margin:2px 0 0 0;">Computer Generated Expense Ledger Voucher</p>
                     </div>
 
-                    <div style="text-align:center; min-width:170px;">
-                        <div style="height:64px; display:flex; align-items:center; justify-content:center; margin-bottom:4px;">
+                    <div style="text-align:center; min-width:160px;">
+                        <div style="height:54px; display:flex; align-items:center; justify-content:center; margin-bottom:3px;">
                             ${stampHtml}
                         </div>
-                        <div style="border-top:1.5px solid #1e293b; padding-top:3px;">
-                            <strong style="font-size:11px; color:#0f172a; display:block;">Authorized Signatory</strong>
-                            <span style="font-size:10px; color:#64748b;">Custom Zone Liluah</span>
+                        <div style="border-top:1.5px solid #1e293b; padding-top:2px;">
+                            <strong style="font-size:10.5px; color:#0f172a; display:block;">Authorized Signatory</strong>
+                            <span style="font-size:9.5px; color:#64748b;">Custom Zone Liluah</span>
                         </div>
                     </div>
                 </div>
