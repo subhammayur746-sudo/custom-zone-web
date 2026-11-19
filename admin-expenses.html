@@ -52,8 +52,17 @@
         .btn-pdf { background: #dc2626; color: #fff; border: none; padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
         .btn-primary-cz { background: #28469E; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12.5px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 
-        .custom-admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
-        .custom-admin-modal-content { background: #fff; width: 100%; max-width: 480px; padding: 25px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .custom-admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.65); z-index: 99999; justify-content: center; align-items: center; padding: 15px; }
+        .custom-admin-modal-content { background: #fff; width: 100%; max-width: 520px; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.28); border: 1px solid #e2e8f0; }
+        .voucher-modal-header { background: #1e293b; color: #fff; padding: 15px 22px; display: flex; justify-content: space-between; align-items: center; }
+        .voucher-badge { background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.4px; }
+        .voucher-modal-body { padding: 20px 22px; background: #fcfcfd; }
+        .voucher-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .voucher-field { margin-bottom: 12px; }
+        .voucher-field label { display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.3px; }
+        .voucher-field input, .voucher-field select, .voucher-field textarea { width: 100%; padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; color: #0f172a; }
+        .voucher-amount-box input { font-weight: 800; color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+        .voucher-modal-footer { padding: 14px 22px; background: #f1f5f9; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -61,6 +70,7 @@
             .sidebar-close-btn { display: block; }
             .mobile-admin-bar { display: flex; }
             .main-content { margin-left: 0; width: 100%; padding: 12px; }
+            .voucher-row-2 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -181,42 +191,71 @@
         </div>
     </div>
 
-    <!-- Add New Expense Modal -->
+    <!-- Add New Expense Ledger Voucher Modal -->
     <div id="add-expense-modal" class="custom-admin-modal">
         <div class="custom-admin-modal-content">
-            <h3 style="margin-top:0; color:#0f172a; font-size:18px; margin-bottom:15px;"><i class="fas fa-wallet" style="color:#28469E;"></i> Record New Expense</h3>
-            
-            <div style="margin-bottom:12px;">
-                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Expense Category *</label>
-                <select id="modal-expense-category" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px; background:#fff;">
-                    <option value="Material Cost">Material Cost</option>
-                    <option value="Rent">Rent</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Packaging">Packaging</option>
-                    <option value="Delivery">Delivery / Shipping</option>
-                    <option value="Salary">Salary / Wages</option>
-                    <option value="Other">Other Overhead</option>
-                </select>
+            <div class="voucher-modal-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-file-invoice" style="color:#fbbf24; font-size:16px;"></i>
+                    <div>
+                        <h3 style="margin:0; font-size:16px; font-weight:700;">Expense Ledger Entry</h3>
+                        <small style="color:#cbd5e1; font-size:11px;">Debit / Payment Voucher Record</small>
+                    </div>
+                </div>
+                <span class="voucher-badge" id="next-voucher-preview">EXP-0001</span>
             </div>
 
-            <div style="margin-bottom:12px;">
-                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Amount (₹) *</label>
-                <input type="number" id="modal-expense-amount" placeholder="e.g. 1500" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;" min="1" required>
+            <div class="voucher-modal-body">
+                <div class="voucher-row-2">
+                    <div class="voucher-field" style="margin-bottom:0;">
+                        <label>Ledger Account / Category *</label>
+                        <select id="modal-expense-category">
+                            <option value="Material Cost">Material Cost</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Delivery">Delivery / Shipping</option>
+                            <option value="Salary">Salary / Wages</option>
+                            <option value="Other">Other Overhead</option>
+                        </select>
+                    </div>
+
+                    <div class="voucher-field" style="margin-bottom:0;">
+                        <label>Payment Mode</label>
+                        <select id="modal-expense-mode">
+                            <option value="UPI">UPI</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="voucher-row-2">
+                    <div class="voucher-field voucher-amount-box" style="margin-bottom:0;">
+                        <label>Debit Amount (₹) *</label>
+                        <input type="number" id="modal-expense-amount" placeholder="e.g. 1500" min="1" required>
+                    </div>
+
+                    <div class="voucher-field" style="margin-bottom:0;">
+                        <label>Voucher Date</label>
+                        <input type="text" id="modal-expense-date" readonly style="background:#f1f5f9; color:#475569; font-weight:600;">
+                    </div>
+                </div>
+
+                <div class="voucher-field">
+                    <label>Paid To / Payee Name *</label>
+                    <input type="text" id="modal-expense-payee" placeholder="e.g. Local Paper Supplier, Landlord..." required>
+                </div>
+
+                <div class="voucher-field" style="margin-bottom:0;">
+                    <label>Ledger Narration / Particulars</label>
+                    <textarea id="modal-expense-notes" rows="2" placeholder="Bill ref, item details, or purpose of payment..."></textarea>
+                </div>
             </div>
 
-            <div style="margin-bottom:12px;">
-                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Paid To / Payee Name *</label>
-                <input type="text" id="modal-expense-payee" placeholder="e.g. Local Paper Supplier, Landlord..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13.5px;" required>
-            </div>
-
-            <div style="margin-bottom:18px;">
-                <label style="display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:4px;">Notes / Description (Optional)</label>
-                <textarea id="modal-expense-notes" rows="3" placeholder="Enter details regarding this expense..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; resize:vertical;"></textarea>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; gap:8px;">
-                <button type="button" onclick="closeAddExpenseModal()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:12.5px;">Cancel</button>
-                <button type="button" onclick="submitNewExpense()" style="background:#28469E; color:#fff; border:none; padding:8px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12.5px;">Save Expense</button>
+            <div class="voucher-modal-footer">
+                <button type="button" onclick="closeAddExpenseModal()" style="background:#fff; color:#475569; border:1px solid #cbd5e1; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; font-size:12.5px;">Cancel</button>
+                <button type="button" onclick="submitNewExpense()" style="background:#28469E; color:#fff; border:none; padding:8px 20px; border-radius:6px; cursor:pointer; font-weight:700; font-size:12.5px;"><i class="fas fa-check"></i> Post to Ledger</button>
             </div>
         </div>
     </div>
@@ -259,11 +298,22 @@
             }
         }
 
-        function openAddExpenseModal() {
+        async function openAddExpenseModal() {
             document.getElementById('modal-expense-amount').value = '';
             document.getElementById('modal-expense-payee').value = '';
             document.getElementById('modal-expense-notes').value = '';
+            document.getElementById('modal-expense-mode').value = 'UPI';
+            document.getElementById('modal-expense-date').value = new Date().toLocaleDateString('en-GB');
+            document.getElementById('next-voucher-preview').innerText = 'EXP-...';
             document.getElementById('add-expense-modal').style.display = 'flex';
+
+            try {
+                const counterDoc = await db.collection("settings").doc("expense_counter").get();
+                let nextNum = (counterDoc.exists && counterDoc.data().count) ? counterDoc.data().count : 1;
+                document.getElementById('next-voucher-preview').innerText = "EXP-" + String(nextNum).padStart(4, '0');
+            } catch(e) {
+                document.getElementById('next-voucher-preview').innerText = "EXP-NEW";
+            }
         }
 
         function closeAddExpenseModal() {
@@ -272,9 +322,11 @@
 
         async function submitNewExpense() {
             let category = document.getElementById('modal-expense-category').value;
+            let paymentMode = document.getElementById('modal-expense-mode').value || 'UPI';
             let amount = parseFloat(document.getElementById('modal-expense-amount').value);
             let payee = document.getElementById('modal-expense-payee').value.trim();
-            let notes = document.getElementById('modal-expense-notes').value.trim();
+            let rawNotes = document.getElementById('modal-expense-notes').value.trim();
+            let notes = rawNotes ? `[${paymentMode}] ${rawNotes}` : `[${paymentMode}]`;
 
             if (isNaN(amount) || amount <= 0) {
                 alert("Please enter a valid expense amount.");
@@ -286,7 +338,6 @@
             }
 
             try {
-                // Generate sequential Voucher Series EXP-0001
                 const counterRef = db.collection("settings").doc("expense_counter");
                 let counterDoc = await counterRef.get();
                 let currentCount = 1;
