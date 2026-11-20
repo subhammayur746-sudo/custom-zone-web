@@ -22,13 +22,16 @@ let currentHomeFilteredProducts = [];
 const SEASONAL_FX_CONFIG = {
     snow:    { glyph: '❄', anim: 'czFallSnow',   count: 14, sizeMin: 12, sizeMax: 18 },
     cracker: { glyph: '✦', anim: 'czCrackerPop', count: 14, sizeMin: 13, sizeMax: 20 },
-    hearts:  { glyph: '♥', anim: 'czFloatHeart', count: 12, sizeMin: 12, sizeMax: 17 }
+    hearts:  { glyph: '♥', anim: 'czFloatHeart', count: 12, sizeMin: 12, sizeMax: 17 },
+    diya:    { glyph: '🪔', anim: 'czFloatHeart', count: 10, sizeMin: 13, sizeMax: 18 },
+    holi:    { glyph: '✿', anim: 'czCrackerPop', count: 14, sizeMin: 12, sizeMax: 19 }
 };
 
 // Extensible SVG Alpona / Kolka border motif (add new motif keys here anytime)
 const ALP_KOLKA_MOTIFS = {
     alpona: `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="14" viewBox="0 0 44 14"><path d="M0,7 Q5.5,0 11,7 T22,7 T33,7 T44,7" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.6"/><circle cx="11" cy="7" r="2" fill="#fde047"/><circle cx="33" cy="7" r="2" fill="#fde047"/></svg>`,
-    kolka: `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="14" viewBox="0 0 38 14"><path d="M2,12 C2,4 12,2 16,7 C20,12 12,13 10,8 C8,4 18,2 24,7 C30,12 36,6 36,3" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.6"/><circle cx="24" cy="7" r="1.8" fill="#fef08a"/></svg>`
+    kolka: `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="14" viewBox="0 0 38 14"><path d="M2,12 C2,4 12,2 16,7 C20,12 12,13 10,8 C8,4 18,2 24,7 C30,12 36,6 36,3" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.6"/><circle cx="24" cy="7" r="1.8" fill="#fef08a"/></svg>`,
+    padma: `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="14" viewBox="0 0 40 14"><polygon points="20,1 25,7 20,13 15,7" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/><circle cx="20" cy="7" r="2" fill="#fde047"/></svg>`
 };
 
 async function checkSiteMaintenanceMode() {
@@ -104,7 +107,7 @@ async function checkAndRenderSeasonalTheme() {
 
         let alponaUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.alpona)}")`;
         let kolkaUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.kolka)}")`;
-
+        let padmaUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.padma)}")`;
         container.innerHTML = `
             <style>
                 .cz-wave-season-section {
@@ -159,6 +162,15 @@ async function checkAndRenderSeasonalTheme() {
                     background-position: top center, bottom center;
                     background-size: 38px 12px, 38px 12px;
                 }
+
+                .cz-season-card.border-padma-style {
+                    border: 2px solid var(--b-color);
+                    box-shadow: inset 0 0 0 8px rgba(255,255,255,0.08);
+                    background-image: ${padmaUri}, ${padmaUri};
+                    background-repeat: repeat-x, repeat-x;
+                    background-position: top center, bottom center;
+                    background-size: 40px 12px, 40px 12px;
+                }
                 .cz-s-content { position: relative; z-index: 2; flex: 1; }
                 .cz-s-tag {
                     display: inline-block; background: #fef3c7; color: #78350f;
@@ -198,6 +210,11 @@ async function checkAndRenderSeasonalTheme() {
                     50%  { opacity: 0.9; }
                     100% { transform: translateY(-10px) scale(1.05); opacity: 0; }
                 }
+                @keyframes czSpinSpark {
+                    0%   { transform: translateY(110px) rotate(0deg) scale(0.6); opacity: 0; }
+                    50%  { opacity: 1; }
+                    100% { transform: translateY(0px) rotate(180deg) scale(1.1); opacity: 0; }
+                }    
 
                 @media (max-width: 768px) {
                     .cz-season-card { flex-direction: column; align-items: flex-start; padding: 14px 15px; gap: 10px; }
