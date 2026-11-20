@@ -40,6 +40,13 @@
         .form-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 13px; background: #f8fafc; }
 
+        .quick-preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .quick-preset-btn {
+            background: #ffffff; color: #831843; border: 1px solid #f472b6;
+            padding: 6px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+        }
+        .quick-preset-btn:hover { background: #be185d; color: #ffffff; border-color: #be185d; }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -80,10 +87,18 @@
     <div class="main-content">
         <h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px;">Store Settings & Maintenance Mode</h2>
 
-        <!-- Seasonal / Occasional Wave Gradient Theme Settings (NEW) -->
+        <!-- Seasonal / Occasional Wave Gradient Theme Settings -->
         <div class="admin-card" style="background:#fdf2f8; border:1px solid #fbcfe8;">
             <h3 style="color:#be185d; border-bottom-color:#fbcfe8;"><i class="fas fa-snowflake"></i> Seasonal / Occasional Wave Gradient Theme</h3>
-            <p style="font-size:12.5px; color:#9d174d; margin-bottom:14px;">Customize seasonal & festive top section with wave transition, gradient colors, border motif, and event animation.</p>
+            <p style="font-size:12.5px; color:#9d174d; margin-bottom:10px;">1-click festival preset load korun, then nijer moto color/border/animation/text edit kore save korun.</p>
+
+            <div class="quick-preset-row">
+                <button type="button" class="quick-preset-btn" onclick="applyFestivalPreset('puja_diwali')">Puja / Diwali</button>
+                <button type="button" class="quick-preset-btn" onclick="applyFestivalPreset('winter_xmas')">Winter & Christmas</button>
+                <button type="button" class="quick-preset-btn" onclick="applyFestivalPreset('valentine')">Valentine & Gifting</button>
+                <button type="button" class="quick-preset-btn" onclick="applyFestivalPreset('holi_spring')">Holi & Spring</button>
+                <button type="button" class="quick-preset-btn" onclick="applyFestivalPreset('wedding')">Wedding & Anniversary</button>
+            </div>
 
             <div class="form-grid-row">
                 <div class="form-group">
@@ -102,6 +117,11 @@
                         <option value="hearts">Occasion Hearts</option>
                         <option value="diya">Diwali / Puja Diya</option>
                         <option value="holi">Festive Flower / Holi</option>
+                        <option value="sparkles">Golden Sparkles</option>
+                        <option value="confetti">Celebration Confetti</option>
+                        <option value="petals">Rose Petals</option>
+                        <option value="stars">Twinkling Stars</option>
+                        <option value="bells">Festive Bells</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -110,10 +130,13 @@
                         <option value="border-stitch-style">Festive Stitch</option>
                         <option value="border-alpona-style">Alpona Motif</option>
                         <option value="border-kolka-style">Kolka Motif</option>
+                        <option value="border-padma-style">Padma / Diamond Motif</option>
+                        <option value="border-mandala-style">Mandala Wave Motif</option>
+                        <option value="border-zigzag-style">Zigzag Motif</option>
+                        <option value="border-dots-style">Dot Garland Motif</option>
                         <option value="border-dashed-style">Dashed</option>
                         <option value="border-double-style">Double</option>
                         <option value="border-solid-glow">Solid Glow</option>
-                        <option value="border-padma-style">Padma / Diamond Motif</option>
                     </select>
                 </div>
             </div>
@@ -357,6 +380,66 @@
         let loggedInAdmin = JSON.parse(localStorage.getItem('cz_logged_in_user'));
         if (!loggedInAdmin) {
             window.location.href = "admin-login.html";
+        }
+
+        const FESTIVAL_PRESETS = {
+            puja_diwali: {
+                fx: 'diya', border: 'border-alpona-style',
+                c1: '#7f1d1d', c2: '#ea580c', bColor: '#fde047',
+                tag: 'FESTIVE & PUJA SPECIAL', title: 'Festive Gifting Dhamaka',
+                offer: 'Flat Rs.100 Off',
+                sub: 'Handcrafted hampers, diyas & personalized gifts for celebrations',
+                pills: 'Personalized Gifts, Gift Combos, Custom Names', btn: 'Shop Festive >'
+            },
+            winter_xmas: {
+                fx: 'snow', border: 'border-stitch-style',
+                c1: '#0f294a', c2: '#38bdf8', bColor: '#e0f2fe',
+                tag: 'WINTER SEASON EDIT', title: 'Winter Sale Special',
+                offer: 'Up to 40% OFF',
+                sub: 'Warm & customized keepsakes crafted for winter gifting',
+                pills: 'Crochet Keepsakes, Custom Mugs, Winter Combos', btn: 'Explore Winter >'
+            },
+            valentine: {
+                fx: 'hearts', border: 'border-kolka-style',
+                c1: '#be185d', c2: '#fb7185', bColor: '#fecdd3',
+                tag: 'LOVE & GIFTING EDIT', title: 'Special Gifting Collection',
+                offer: 'Save Up to 35%',
+                sub: 'Couple sets, custom frames & heartfelt handwritten notes',
+                pills: 'Couple Gifts, Photo Frames, Custom Notes', btn: 'Shop Gifts >'
+            },
+            holi_spring: {
+                fx: 'holi', border: 'border-padma-style',
+                c1: '#6d28d9', c2: '#ec4899', bColor: '#fde047',
+                tag: 'SPRING & COLOR EDIT', title: 'Vibrant Custom Picks',
+                offer: 'Combo Offers Live',
+                sub: 'Colorful handmade accessories & personalized gift boxes',
+                pills: 'Handmade Picks, Combo Savers, Fast Dispatch', btn: 'Explore Now >'
+            },
+            wedding: {
+                fx: 'sparkles', border: 'border-mandala-style',
+                c1: '#78350f', c2: '#d97706', bColor: '#fef08a',
+                tag: 'WEDDING & OCCASION', title: 'Signature Gift Hampers',
+                offer: 'Bulk & Gift Deals',
+                sub: 'Curated custom keepsakes for weddings & special milestones',
+                pills: 'Gift Hampers, Custom Keepsakes, Bulk Orders', btn: 'View Collection >'
+            }
+        };
+
+        function applyFestivalPreset(key) {
+            const p = FESTIVAL_PRESETS[key];
+            if (!p) return;
+            document.getElementById('season-status-select').value = 'true';
+            document.getElementById('season-fx-select').value = p.fx;
+            document.getElementById('season-border-style').value = p.border;
+            document.getElementById('season-grad-start').value = p.c1;
+            document.getElementById('season-grad-end').value = p.c2;
+            document.getElementById('season-border-color').value = p.bColor;
+            document.getElementById('season-tag-text').value = p.tag;
+            document.getElementById('season-title-text').value = p.title;
+            document.getElementById('season-offer-text').value = p.offer;
+            document.getElementById('season-sub-text').value = p.sub;
+            document.getElementById('season-pills-text').value = p.pills;
+            document.getElementById('season-btn-text').value = p.btn;
         }
 
         function toggleSidebarMenu() {
