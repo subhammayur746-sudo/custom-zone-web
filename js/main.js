@@ -18,6 +18,19 @@ const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
 
+// Extensible event animation config (add new event keys here anytime)
+const SEASONAL_FX_CONFIG = {
+    snow:    { glyph: '❄', anim: 'czFallSnow',   count: 14, sizeMin: 12, sizeMax: 18 },
+    cracker: { glyph: '✦', anim: 'czCrackerPop', count: 14, sizeMin: 13, sizeMax: 20 },
+    hearts:  { glyph: '♥', anim: 'czFloatHeart', count: 12, sizeMin: 12, sizeMax: 17 }
+};
+
+// Extensible SVG Alpona / Kolka border motif (add new motif keys here anytime)
+const ALP_KOLKA_MOTIFS = {
+    alpona: `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="14" viewBox="0 0 44 14"><path d="M0,7 Q5.5,0 11,7 T22,7 T33,7 T44,7" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.6"/><circle cx="11" cy="7" r="2" fill="#fde047"/><circle cx="33" cy="7" r="2" fill="#fde047"/></svg>`,
+    kolka: `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="14" viewBox="0 0 38 14"><path d="M2,12 C2,4 12,2 16,7 C20,12 12,13 10,8 C8,4 18,2 24,7 C30,12 36,6 36,3" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.6"/><circle cx="24" cy="7" r="1.8" fill="#fef08a"/></svg>`
+};
+
 async function checkSiteMaintenanceMode() {
     try {
         let doc = await db.collection("settings").doc("maintenance").get();
@@ -53,6 +66,193 @@ async function checkAndRenderTicker() {
             }
         }
     } catch(e) {}
+}
+
+// Seasonal / Occasional Wave Gradient Theme Renderer
+async function checkAndRenderSeasonalTheme() {
+    const container = document.getElementById('seasonal-theme-container');
+    if (!container) return;
+
+    try {
+        let doc = await db.collection("settings").doc("seasonal_theme").get();
+        if (!doc.exists) {
+            container.style.display = "none";
+            return;
+        }
+
+        let data = doc.data();
+        if (data.enabled !== true) {
+            container.style.display = "none";
+            return;
+        }
+
+        let c1 = data.gradStart || "#db2777";
+        let c2 = data.gradEnd || "#fb7185";
+        let bStyle = data.borderStyle || "border-stitch-style";
+        let bColor = data.borderColor || "#fde047";
+        let fxType = data.fxType || "none";
+        let tagText = data.tagText || "SEASONAL COLLECTION";
+        let titleText = data.titleText || "Festive & Seasonal Sale";
+        let subText = data.subText || "Handcrafted & customized gifts made fresh for special occasions";
+        let pillsRaw = data.pillsText || "Personalized Gifts, Custom Hampers, Gift Combos";
+        let offerText = data.offerText || "Special Offer";
+        let btnText = data.btnText || "Shop Now >";
+        let btnLink = data.btnLink || "#product-list";
+
+        let pillsList = pillsRaw.split(",").map(s => s.trim()).filter(Boolean);
+        let pillsHtml = pillsList.map(p => `<span class="cz-s-pill">${p}</span>`).join("");
+
+        let alponaUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.alpona)}")`;
+        let kolkaUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.kolka)}")`;
+
+        container.innerHTML = `
+            <style>
+                .cz-wave-season-section {
+                    position: relative;
+                    padding: 0 14px 30px;
+                    color: #ffffff;
+                    background: linear-gradient(180deg, ${c1} 0%, ${c2} 78%, #f8fafc 100%);
+                }
+                .cz-top-wave-svg {
+                    display: block;
+                    width: calc(100% + 28px);
+                    margin-left: -14px;
+                    height: 26px;
+                    margin-bottom: 10px;
+                }
+                .cz-season-card {
+                    position: relative;
+                    max-width: 960px;
+                    margin: 0 auto;
+                    background: rgba(15, 23, 42, 0.22);
+                    backdrop-filter: blur(6px);
+                    border-radius: 16px;
+                    padding: 16px 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 14px;
+                    overflow: hidden;
+                    --b-color: ${bColor};
+                }
+                .cz-season-card.border-dashed-style { border: 2px dashed var(--b-color); }
+                .cz-season-card.border-double-style { border: 4px double var(--b-color); }
+                .cz-season-card.border-solid-glow   { border: 2px solid var(--b-color); box-shadow: 0 0 18px rgba(255,255,255,0.28); }
+                .cz-season-card.border-stitch-style {
+                    border: 2px solid var(--b-color);
+                    outline: 2px dashed rgba(255,255,255,0.65);
+                    outline-offset: -6px;
+                }
+                .cz-season-card.border-alpona-style {
+                    border: 2px solid var(--b-color);
+                    box-shadow: inset 0 0 0 8px rgba(255,255,255,0.08);
+                    background-image: ${alponaUri}, ${alponaUri};
+                    background-repeat: repeat-x, repeat-x;
+                    background-position: top center, bottom center;
+                    background-size: 44px 12px, 44px 12px;
+                }
+                .cz-season-card.border-kolka-style {
+                    border: 2px solid var(--b-color);
+                    box-shadow: inset 0 0 0 8px rgba(255,255,255,0.08);
+                    background-image: ${kolkaUri}, ${kolkaUri};
+                    background-repeat: repeat-x, repeat-x;
+                    background-position: top center, bottom center;
+                    background-size: 38px 12px, 38px 12px;
+                }
+                .cz-s-content { position: relative; z-index: 2; flex: 1; }
+                .cz-s-tag {
+                    display: inline-block; background: #fef3c7; color: #78350f;
+                    font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; margin-bottom: 6px;
+                }
+                .cz-s-title { font-size: 22px; font-weight: 900; line-height: 1.15; margin-bottom: 4px; }
+                .cz-s-sub { font-size: 12.5px; opacity: 0.95; margin-bottom: 10px; }
+                .cz-s-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+                .cz-s-pill {
+                    background: #ffffff; color: #0f172a; font-size: 11.5px; font-weight: 700;
+                    padding: 4px 10px; border-radius: 999px;
+                }
+                .cz-s-right {
+                    position: relative; z-index: 2; text-align: right;
+                    display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;
+                }
+                .cz-s-offer { font-size: 18px; font-weight: 900; color: #fef08a; }
+                .cz-s-btn {
+                    display: inline-block; background: #ffffff; color: #0f172a;
+                    padding: 8px 15px; border-radius: 9px; font-size: 12px; font-weight: 800; text-decoration: none;
+                }
+                .cz-fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+                .cz-fx-particle { position: absolute; top: -16px; user-select: none; }
+
+                @keyframes czFallSnow {
+                    0%   { transform: translateY(-14px) translateX(0px); opacity: 0.9; }
+                    50%  { transform: translateY(65px) translateX(10px); opacity: 1; }
+                    100% { transform: translateY(155px) translateX(-8px); opacity: 0; }
+                }
+                @keyframes czCrackerPop {
+                    0%   { transform: translateY(120px) scale(0.4); opacity: 0; }
+                    45%  { transform: translateY(35px) scale(1.25); opacity: 1; }
+                    100% { transform: translateY(5px) scale(0.7); opacity: 0; }
+                }
+                @keyframes czFloatHeart {
+                    0%   { transform: translateY(130px) scale(0.75); opacity: 0; }
+                    50%  { opacity: 0.9; }
+                    100% { transform: translateY(-10px) scale(1.05); opacity: 0; }
+                }
+
+                @media (max-width: 768px) {
+                    .cz-season-card { flex-direction: column; align-items: flex-start; padding: 14px 15px; gap: 10px; }
+                    .cz-s-title { font-size: 19px; }
+                    .cz-s-right {
+                        width: 100%; flex-direction: row; align-items: center;
+                        justify-content: space-between; text-align: left; padding-top: 4px;
+                    }
+                    .cz-s-offer { font-size: 15.5px; }
+                }
+            </style>
+
+            <section class="cz-wave-season-section">
+                <svg class="cz-top-wave-svg" viewBox="0 0 1200 60" preserveAspectRatio="none">
+                    <path d="M0,0 L1200,0 L1200,22 C960,54 720,4 480,34 C240,60 100,18 0,32 Z" fill="#f8fafc"></path>
+                </svg>
+
+                <div class="cz-season-card ${bStyle}">
+                    <div class="cz-fx-layer" id="cz-seasonal-fx-layer"></div>
+                    <div class="cz-s-content">
+                        <span class="cz-s-tag">${tagText}</span>
+                        <div class="cz-s-title">${titleText}</div>
+                        <p class="cz-s-sub">${subText}</p>
+                        <div class="cz-s-pills">${pillsHtml}</div>
+                    </div>
+                    <div class="cz-s-right">
+                        <div class="cz-s-offer">${offerText}</div>
+                        <a href="${btnLink}" class="cz-s-btn">${btnText}</a>
+                    </div>
+                </div>
+            </section>
+        `;
+        container.style.display = "block";
+
+        const fxLayer = document.getElementById('cz-seasonal-fx-layer');
+        const cfg = SEASONAL_FX_CONFIG[fxType];
+        if (fxLayer && cfg) {
+            for (let i = 0; i < cfg.count; i++) {
+                const el = document.createElement('span');
+                el.className = 'cz-fx-particle';
+                el.innerText = cfg.glyph;
+                const leftPct = Math.round((i * 100) / cfg.count) + (i % 3) * 2;
+                const dur = (2.6 + (i % 5) * 0.45).toFixed(2) + 's';
+                const delay = ((i % 6) * 0.35).toFixed(2) + 's';
+                const fontSize = (cfg.sizeMin + (i % (cfg.sizeMax - cfg.sizeMin + 1))) + 'px';
+                el.style.left = `${Math.min(94, leftPct)}%`;
+                el.style.fontSize = fontSize;
+                el.style.color = fxType === 'cracker' ? (i % 2 === 0 ? '#fde047' : '#fb7185') : '#ffffff';
+                el.style.animation = `${cfg.anim} ${dur} linear ${delay} infinite`;
+                fxLayer.appendChild(el);
+            }
+        }
+    } catch (e) {
+        container.style.display = "none";
+    }
 }
 
 // Meesho-Style Responsive Flash Sale Banner (Optimized for Mobile & Desktop)
@@ -1349,5 +1549,6 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchLiveProducts();
     checkPromoPopup();
     checkAndRenderTicker();
+    checkAndRenderSeasonalTheme();
     checkAndRenderFlashSaleBanner(); // Render Meesho-style Flash Sale Banner
 });
