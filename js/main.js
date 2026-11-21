@@ -15,6 +15,7 @@ let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
 let activeSeasonalBlend = null;
+let prioritizeSeasonalPicks = false;
 
 const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
@@ -156,7 +157,7 @@ function updateResetFilterChip() {
     const budgetVal = document.getElementById('budget-filter')?.value || "all";
     const sortVal = document.getElementById('sort-by-select')?.value || "default";
 
-    const hasFilter = searchVal !== "" || budgetVal !== "all" || sortVal !== "default" || selectedMainCategory !== "all" || selectedSubCategory !== "all";
+    const hasFilter = searchVal !== "" || budgetVal !== "all" || sortVal !== "default" || selectedMainCategory !== "all" || selectedSubCategory !== "all" || prioritizeSeasonalPicks;
     if (!hasFilter) {
         slot.style.display = "none";
         slot.innerHTML = "";
@@ -170,6 +171,7 @@ function updateResetFilterChip() {
 function resetAllHomeFilters() {
     selectedMainCategory = "all";
     selectedSubCategory = "all";
+    prioritizeSeasonalPicks = false;
     const sInput = document.getElementById('home-search-input');
     const bSelect = document.getElementById('budget-filter');
     const oSelect = document.getElementById('sort-by-select');
@@ -178,6 +180,16 @@ function resetAllHomeFilters() {
     if (oSelect) oSelect.value = "default";
     renderCategoryPills();
     filterHomeProducts();
+}
+
+function handleSeasonalCtaClick(event, targetLink) {
+    if (targetLink && targetLink.startsWith("#")) {
+        event.preventDefault();
+        prioritizeSeasonalPicks = true;
+        filterHomeProducts();
+        const targetEl = document.querySelector(targetLink) || document.getElementById('product-list');
+        if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 async function checkSiteMaintenanceMode() {
@@ -448,7 +460,7 @@ async function checkAndRenderSeasonalTheme() {
                         </div>
                         <div class="cz-s-right">
                             <div class="cz-s-offer">${offerText}</div>
-                            <a href="${btnLink}" class="cz-s-btn">${btnText}</a>
+                            <a href="${btnLink}" class="cz-s-btn" onclick="handleSeasonalCtaClick(event, '${btnLink}')">${btnText}</a>
                         </div>
                     </div>
                 </div>
@@ -996,7 +1008,17 @@ function filterHomeProducts() {
         return matchName && matchMainCat && matchSubCat && matchBudget;
     });
 
+    const priorityIds = (prioritizeSeasonalPicks && activeSeasonalBlend && Array.isArray(activeSeasonalBlend.selectedProductIds))
+        ? activeSeasonalBlend.selectedProductIds
+        : [];
+
     filtered.sort((a, b) => {
+        if (priorityIds.length > 0) {
+            const rankA = priorityIds.includes(a.id) ? 0 : 1;
+            const rankB = priorityIds.includes(b.id) ? 0 : 1;
+            if (rankA !== rankB) return rankA - rankB;
+        }
+
         let priceA = parseInt(a.discountPrice || a.price) || 0;
         let priceB = parseInt(b.discountPrice || b.price) || 0;
         if (a.hasVariants && a.variants && a.variants.length > 0) priceA = parseInt(a.variants[0].price) || priceA;
