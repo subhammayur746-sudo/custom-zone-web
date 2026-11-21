@@ -50,15 +50,25 @@
         .season-product-picker {
             background: #ffffff; border: 1px solid #fbcfe8; border-radius: 8px; padding: 12px; margin-bottom: 16px;
         }
+        .season-filter-bar {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 6px;
+        }
         .season-product-checklist {
-            max-height: 190px; overflow-y: auto; margin-top: 8px;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px;
+            max-height: 210px; overflow-y: auto; margin-top: 8px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px;
         }
         .season-product-item {
             display: flex; align-items: center; gap: 8px; padding: 6px 8px;
             border: 1px solid #f1f5f9; border-radius: 5px; font-size: 12px; color: #1e293b; background: #fdf2f8; cursor: pointer;
         }
-        .season-product-item input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
+        .season-product-item input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; flex-shrink: 0; }
+        .season-product-thumb {
+            width: 34px; height: 34px; border-radius: 5px; object-fit: cover;
+            border: 1px solid #e2e8f0; background: #ffffff; flex-shrink: 0;
+        }
+        .season-product-meta { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+        .season-product-title { font-weight: 600; color: #0f172a; word-break: break-word; }
+        .season-product-group { font-size: 10.5px; color: #64748b; margin-top: 2px; }
 
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
@@ -210,7 +220,15 @@
                 <label style="display:block; font-size:12px; font-weight:700; color:#831843; margin-bottom:6px;">
                     Select Products for Event Badge (<span id="season-selected-count">0</span> selected)
                 </label>
-                <input type="text" id="season-product-search-input" onkeyup="filterSeasonProductChecklist()" placeholder="Search product name to tick..." style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:12.5px; background:#f8fafc;">
+                <div class="season-filter-bar">
+                    <input type="text" id="season-product-search-input" onkeyup="filterSeasonProductChecklist()" placeholder="Search product name to tick..." style="padding:8px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:12.5px; background:#f8fafc;">
+                    <select id="season-main-group-filter" onchange="onSeasonMainGroupChange()" style="padding:8px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:12.5px; background:#f8fafc;">
+                        <option value="all">All Main Groups</option>
+                    </select>
+                    <select id="season-sub-group-filter" onchange="filterSeasonProductChecklist()" style="padding:8px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:12.5px; background:#f8fafc;">
+                        <option value="all">All Sub Groups</option>
+                    </select>
+                </div>
                 <div class="season-product-checklist" id="season-product-checklist">
                     <span style="font-size:12px; color:#64748b;">Loading products...</span>
                 </div>
@@ -486,12 +504,64 @@
             if (el) el.innerText = selectedSeasonProductIds.size;
         }
 
-        function renderSeasonProductChecklist(query = "") {
+        function populateSeasonGroupFilters() {
+            const mainSel = document.getElementById('season-main-group-filter');
+            if (!mainSel) return;
+
+            const mainGroups = new Set();
+            adminAllProducts.forEach(p => {
+                if (p.mainGroup) mainGroups.add(p.mainGroup);
+            });
+
+            const sortedMain = Array.from(mainGroups).sort((a, b) => a.localeCompare(b));
+            mainSel.innerHTML = '<option value="all">All Main Groups</option>';
+            sortedMain.forEach(g => {
+                mainSel.innerHTML += `<option value="${g}">${g}</option>`;
+            });
+
+            populateSeasonSubGroupFilter("all");
+        }
+
+        function populateSeasonSubGroupFilter(selectedMain) {
+            const subSel = document.getElementById('season-sub-group-filter');
+            if (!subSel) return;
+
+            const subGroups = new Set();
+            adminAllProducts.forEach(p => {
+                if (!p.subGroup) return;
+                if (selectedMain === "all" || p.mainGroup === selectedMain) {
+                    subGroups.add(p.subGroup);
+                }
+            });
+
+            const sortedSub = Array.from(subGroups).sort((a, b) => a.localeCompare(b));
+            subSel.innerHTML = '<option value="all">All Sub Groups</option>';
+            sortedSub.forEach(sg => {
+                subSel.innerHTML += `<option value="${sg}">${sg}</option>`;
+            });
+        }
+
+        function onSeasonMainGroupChange() {
+            const selectedMain = document.getElementById('season-main-group-filter')?.value || "all";
+            populateSeasonSubGroupFilter(selectedMain);
+            filterSeasonProductChecklist();
+        }
+
+        function renderSeasonProductChecklist() {
             const box = document.getElementById('season-product-checklist');
             if (!box) return;
 
-            const q = query.toLowerCase().trim();
-            const list = adminAllProducts.filter(p => (p.name || "").toLowerCase().includes(q));
+            const q = (document.getElementById('season-product-search-input')?.value || "").toLowerCase().trim();
+            const mainFilter = document.getElementById('season-main-group-filter')?.value || "all";
+            const subFilter = document.getElementById('season-sub-group-filter')?.value || "all";
+            const fallbackImg = "assets/images/logo.png";
+
+            const list = adminAllProducts.filter(p => {
+                const matchName = (p.name || "").toLowerCase().includes(q);
+                const matchMain = mainFilter === "all" || p.mainGroup === mainFilter;
+                const matchSub = subFilter === "all" || p.subGroup === subFilter;
+                return matchName && matchMain && matchSub;
+            });
 
             if (list.length === 0) {
                 box.innerHTML = "<span style='font-size:12px; color:#64748b;'>No matching products.</span>";
@@ -501,9 +571,17 @@
             box.innerHTML = "";
             list.forEach(prod => {
                 const checked = selectedSeasonProductIds.has(prod.id) ? "checked" : "";
+                const groupLabel = [prod.mainGroup, prod.subGroup].filter(Boolean).join(" • ");
                 const label = document.createElement('label');
                 label.className = 'season-product-item';
-                label.innerHTML = `<input type="checkbox" value="${prod.id}" ${checked}> <span>${prod.name}</span>`;
+                label.innerHTML = `
+                    <input type="checkbox" value="${prod.id}" ${checked}>
+                    <img src="${prod.thumb}" onerror="this.src='${fallbackImg}'" alt="${prod.name}" class="season-product-thumb">
+                    <span class="season-product-meta">
+                        <span class="season-product-title">${prod.name}</span>
+                        ${groupLabel ? `<span class="season-product-group">${groupLabel}</span>` : ""}
+                    </span>
+                `;
                 const cb = label.querySelector('input[type="checkbox"]');
                 cb.addEventListener('change', () => {
                     if (cb.checked) selectedSeasonProductIds.add(prod.id);
@@ -516,8 +594,7 @@
         }
 
         function filterSeasonProductChecklist() {
-            const q = document.getElementById('season-product-search-input')?.value || "";
-            renderSeasonProductChecklist(q);
+            renderSeasonProductChecklist();
         }
 
         async function loadSeasonProductsList() {
@@ -526,10 +603,22 @@
                 adminAllProducts = [];
                 snap.forEach(doc => {
                     const d = doc.data();
-                    adminAllProducts.push({ id: doc.id, name: d.name || doc.id });
+                    const mainCat = (d.mainCategory || (d.customType === "none" ? "Handmade" : "Customized")).trim();
+                    const formattedMain = mainCat ? (mainCat.charAt(0).toUpperCase() + mainCat.slice(1)) : "";
+                    const subCat = (d.subCategory || "").trim();
+                    const thumb = (Array.isArray(d.images) && d.images.length > 0 && d.images[0]) ? d.images[0] : "assets/images/logo.png";
+
+                    adminAllProducts.push({
+                        id: doc.id,
+                        name: d.name || doc.id,
+                        mainGroup: formattedMain,
+                        subGroup: subCat,
+                        thumb: thumb
+                    });
                 });
                 adminAllProducts.sort((a, b) => a.name.localeCompare(b.name));
-                renderSeasonProductChecklist(document.getElementById('season-product-search-input')?.value || "");
+                populateSeasonGroupFilters();
+                renderSeasonProductChecklist();
             } catch (e) {
                 const box = document.getElementById('season-product-checklist');
                 if (box) box.innerHTML = "<span style='font-size:12px; color:#dc2626;'>Could not load products.</span>";
