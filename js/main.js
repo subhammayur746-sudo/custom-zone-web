@@ -14,6 +14,8 @@ let currentApplicableVendorCost = 0;
 let selectedReviewStar = 5;
 let uploadedReviewBase64 = "";
 
+let activeSeasonalBlend = null;
+
 const HOME_PRODUCTS_PER_PAGE = 12;
 let currentHomePage = 1;
 let currentHomeFilteredProducts = [];
@@ -41,6 +43,142 @@ const ALP_KOLKA_MOTIFS = {
     zigzag: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="14" viewBox="0 0 36 14"><polyline points="0,11 9,3 18,11 27,3 36,11" fill="none" stroke="rgba(255,255,255,0.88)" stroke-width="1.6"/></svg>`,
     dots: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="14" viewBox="0 0 32 14"><circle cx="8" cy="7" r="2.4" fill="#fde047"/><circle cx="16" cy="7" r="1.6" fill="#ffffff"/><circle cx="24" cy="7" r="2.4" fill="#fde047"/></svg>`
 };
+
+// Subtle top/corner garland SVG by event type
+function getTopGarlandSvg(fxType, accentColor) {
+    if (fxType === 'diya' || fxType === 'holi' || fxType === 'cracker' || fxType === 'petals') {
+        return `<svg viewBox="0 0 400 22" preserveAspectRatio="none" style="width:100%; height:16px; display:block; opacity:0.72;">
+            <path d="M0,2 Q50,18 100,2 T200,2 T300,2 T400,2" fill="none" stroke="${accentColor}" stroke-width="1.6"/>
+            <circle cx="50" cy="10" r="3.5" fill="#fbbf24"/>
+            <circle cx="150" cy="10" r="3.5" fill="#fb7185"/>
+            <circle cx="250" cy="10" r="3.5" fill="#fbbf24"/>
+            <circle cx="350" cy="10" r="3.5" fill="#fb7185"/>
+        </svg>`;
+    }
+    if (fxType === 'snow' || fxType === 'bells' || fxType === 'stars' || fxType === 'sparkles') {
+        return `<svg viewBox="0 0 400 22" preserveAspectRatio="none" style="width:100%; height:16px; display:block; opacity:0.72;">
+            <path d="M0,2 Q66,14 133,2 T266,2 T400,2" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.4"/>
+            <circle cx="66" cy="8" r="2.6" fill="#ffffff"/>
+            <circle cx="200" cy="8" r="3" fill="${accentColor}"/>
+            <circle cx="333" cy="8" r="2.6" fill="#ffffff"/>
+        </svg>`;
+    }
+    return `<svg viewBox="0 0 400 18" preserveAspectRatio="none" style="width:100%; height:13px; display:block; opacity:0.55;">
+        <path d="M0,2 Q100,12 200,2 T400,2" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1.3"/>
+    </svg>`;
+}
+
+function applyThemeBlendStyles() {
+    let styleEl = document.getElementById('cz-seasonal-blend-style');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'cz-seasonal-blend-style';
+        document.head.appendChild(styleEl);
+    }
+
+    if (!activeSeasonalBlend) {
+        styleEl.innerHTML = "";
+        return;
+    }
+
+    const { c1, c2, bColor, badgeLabel } = activeSeasonalBlend;
+    styleEl.innerHTML = `
+        #cz-trending-heading {
+            position: relative;
+            display: inline-block;
+            padding-bottom: 6px;
+        }
+        #cz-trending-heading::after {
+            content: "";
+            display: block;
+            height: 3px;
+            width: 65%;
+            margin: 6px auto 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, ${c1}, ${c2});
+        }
+        .category-subnav .cat-pill-btn.active {
+            background: linear-gradient(135deg, ${c1}, ${c2}) !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+        }
+        .product-card.cz-season-card-blend {
+            border-color: rgba(15, 23, 42, 0.14);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .product-card.cz-season-card-blend:hover {
+            border-color: ${c1};
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08), 0 0 0 1px ${bColor}55;
+        }
+        .cz-occasion-mini-pill {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: ${c1}14;
+            color: ${c1};
+            border: 1px solid ${c1}35;
+            margin-bottom: 6px;
+        }
+        .cz-reset-chip-btn {
+            background: #ffffff;
+            color: ${c1};
+            border: 1px solid ${c1};
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .cz-reset-chip-btn:hover {
+            background: ${c1};
+            color: #ffffff;
+        }
+        .cz-modal-gift-hint {
+            margin-top: 8px;
+            font-size: 11.5px;
+            color: ${c1};
+            background: ${c1}0f;
+            border-left: 3px solid ${c1};
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+    `;
+}
+
+function updateResetFilterChip() {
+    const slot = document.getElementById('cz-reset-filter-slot');
+    if (!slot) return;
+
+    const searchVal = document.getElementById('home-search-input')?.value.trim() || "";
+    const budgetVal = document.getElementById('budget-filter')?.value || "all";
+    const sortVal = document.getElementById('sort-by-select')?.value || "default";
+
+    const hasFilter = searchVal !== "" || budgetVal !== "all" || sortVal !== "default" || selectedMainCategory !== "all" || selectedSubCategory !== "all";
+    if (!hasFilter) {
+        slot.style.display = "none";
+        slot.innerHTML = "";
+        return;
+    }
+
+    slot.innerHTML = `<button type="button" class="cz-reset-chip-btn" onclick="resetAllHomeFilters()">✕ Reset Filters</button>`;
+    slot.style.display = "inline-block";
+}
+
+function resetAllHomeFilters() {
+    selectedMainCategory = "all";
+    selectedSubCategory = "all";
+    const sInput = document.getElementById('home-search-input');
+    const bSelect = document.getElementById('budget-filter');
+    const oSelect = document.getElementById('sort-by-select');
+    if (sInput) sInput.value = "";
+    if (bSelect) bSelect.value = "all";
+    if (oSelect) oSelect.value = "default";
+    renderCategoryPills();
+    filterHomeProducts();
+}
 
 async function checkSiteMaintenanceMode() {
     try {
@@ -87,12 +225,16 @@ async function checkAndRenderSeasonalTheme() {
     try {
         let doc = await db.collection("settings").doc("seasonal_theme").get();
         if (!doc.exists) {
+            activeSeasonalBlend = null;
+            applyThemeBlendStyles();
             container.style.display = "none";
             return;
         }
 
         let data = doc.data();
         if (data.enabled !== true) {
+            activeSeasonalBlend = null;
+            applyThemeBlendStyles();
             container.style.display = "none";
             return;
         }
@@ -110,6 +252,14 @@ async function checkAndRenderSeasonalTheme() {
         let btnText = data.btnText || "Shop Now >";
         let btnLink = data.btnLink || "#product-list";
 
+        activeSeasonalBlend = {
+            c1,
+            c2,
+            bColor,
+            badgeLabel: tagText.split(" ")[0] ? (tagText.charAt(0).toUpperCase() + tagText.slice(1).toLowerCase().split(" ")[0] + " Pick") : "Seasonal Pick"
+        };
+        applyThemeBlendStyles();
+
         let pillsList = pillsRaw.split(",").map(s => s.trim()).filter(Boolean);
         let pillsHtml = pillsList.map(p => `<span class="cz-s-pill">${p}</span>`).join("");
 
@@ -119,6 +269,7 @@ async function checkAndRenderSeasonalTheme() {
         let mandalaUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.mandala)}")`;
         let zigzagUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.zigzag)}")`;
         let dotsUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(ALP_KOLKA_MOTIFS.dots)}")`;
+        let garlandSvg = getTopGarlandSvg(fxType, bColor);
 
         container.innerHTML = `
             <style>
@@ -142,13 +293,26 @@ async function checkAndRenderSeasonalTheme() {
                     background: rgba(15, 23, 42, 0.22);
                     backdrop-filter: blur(6px);
                     border-radius: 16px;
-                    padding: 16px 20px;
+                    padding: 12px 20px 16px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    overflow: hidden;
+                    --b-color: ${bColor};
+                }
+                .cz-season-garland-top {
+                    position: relative;
+                    z-index: 2;
+                    margin: -2px -6px 2px;
+                    pointer-events: none;
+                }
+                .cz-season-card-inner {
+                    position: relative;
+                    z-index: 2;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     gap: 14px;
-                    overflow: hidden;
-                    --b-color: ${bColor};
                 }
                 .cz-season-card.border-dashed-style { border: 2px dashed var(--b-color); }
                 .cz-season-card.border-double-style { border: 4px double var(--b-color); }
@@ -252,7 +416,8 @@ async function checkAndRenderSeasonalTheme() {
                 }    
 
                 @media (max-width: 768px) {
-                    .cz-season-card { flex-direction: column; align-items: flex-start; padding: 14px 15px; gap: 10px; }
+                    .cz-season-card { padding: 10px 15px 14px; gap: 6px; }
+                    .cz-season-card-inner { flex-direction: column; align-items: flex-start; gap: 10px; }
                     .cz-s-title { font-size: 19px; }
                     .cz-s-right {
                         width: 100%; flex-direction: row; align-items: center;
@@ -269,15 +434,18 @@ async function checkAndRenderSeasonalTheme() {
 
                 <div class="cz-season-card ${bStyle}">
                     <div class="cz-fx-layer" id="cz-seasonal-fx-layer"></div>
-                    <div class="cz-s-content">
-                        <span class="cz-s-tag">${tagText}</span>
-                        <div class="cz-s-title">${titleText}</div>
-                        <p class="cz-s-sub">${subText}</p>
-                        <div class="cz-s-pills">${pillsHtml}</div>
-                    </div>
-                    <div class="cz-s-right">
-                        <div class="cz-s-offer">${offerText}</div>
-                        <a href="${btnLink}" class="cz-s-btn">${btnText}</a>
+                    <div class="cz-season-garland-top">${garlandSvg}</div>
+                    <div class="cz-season-card-inner">
+                        <div class="cz-s-content">
+                            <span class="cz-s-tag">${tagText}</span>
+                            <div class="cz-s-title">${titleText}</div>
+                            <p class="cz-s-sub">${subText}</p>
+                            <div class="cz-s-pills">${pillsHtml}</div>
+                        </div>
+                        <div class="cz-s-right">
+                            <div class="cz-s-offer">${offerText}</div>
+                            <a href="${btnLink}" class="cz-s-btn">${btnText}</a>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -301,6 +469,10 @@ async function checkAndRenderSeasonalTheme() {
                 el.style.animation = `${cfg.anim} ${dur} linear ${delay} infinite`;
                 fxLayer.appendChild(el);
             }
+        }
+
+        if (liveProducts.length > 0) {
+            renderHomeProducts(currentHomeFilteredProducts.length > 0 ? currentHomeFilteredProducts : liveProducts);
         }
     } catch (e) {
         container.style.display = "none";
@@ -543,6 +715,7 @@ async function fetchLiveProducts() {
         currentHomeFilteredProducts = [...liveProducts];
         currentHomePage = 1;
         renderHomeProducts(currentHomeFilteredProducts);
+        updateResetFilterChip();
         renderRecentlyViewedHome();
         checkUrlProductParam();
 
@@ -719,11 +892,17 @@ function renderHomeProducts(products) {
             ? '<span style="position:absolute; top:10px; left:10px; background:#dc2626; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px; z-index:5; box-shadow:0 2px 6px rgba(0,0,0,0.15);">OUT OF STOCK</span>' 
             : '';
 
+        let occasionPillHtml = activeSeasonalBlend
+            ? '<span class="cz-occasion-mini-pill">' + activeSeasonalBlend.badgeLabel + '</span><br>'
+            : '';
+
+        let cardClass = activeSeasonalBlend ? 'product-card cz-season-card-blend' : 'product-card';
+
         let btnHtml = isOutOfStock
             ? '<button class="btn-cart-action" style="background:#94a3b8 !important; cursor:not-allowed;" disabled>Out of Stock</button>'
             : '<button class="btn-cart-action" onclick="event.stopPropagation(); handleAddToCart(\'' + prod.id + '\')"><i class="fas fa-shopping-cart"></i> Add to Cart</button>';
 
-        container.innerHTML += '<div class="product-card" style="' + (isOutOfStock ? 'opacity:0.85; position:relative;' : 'position:relative;') + '" onclick="openProductDetailsModal(\'' + prod.id + '\')">' + stockBadgeHtml + '<div class="card-top-actions"><button class="action-btn-circle" onclick="event.stopPropagation(); shareDirectProduct(\'' + prod.id + '\', event)" title="Share Product"><i class="fas fa-share-alt"></i></button><button class="action-btn-circle wishlist-btn-heart ' + (isWishlisted ? 'active' : '') + '" onclick="event.stopPropagation(); toggleWishlistCloud(\'' + prod.id + '\')" title="Wishlist"><i class="fas fa-heart"></i></button></div><div class="product-card-img-wrap" onclick="event.stopPropagation(); directImageZoom(\'' + mainImg + '\')" title="Click to Zoom Image"><img src="' + mainImg + '" onerror="this.src=\'' + fallbackImg + '\'" alt="' + prod.name + '"></div><h3 style="cursor:pointer;" onclick="openProductDetailsModal(\'' + prod.id + '\')">' + prod.name + '</h3><div class="card-rating-row"><span>★ ' + ratingVal + '</span><span style="color:#595959; font-size:11px;">(' + reviewNum + ' ' + (reviewNum === 1 ? 'review' : 'reviews') + ')</span></div>' + priceHtml + btnHtml + '</div>';
+        container.innerHTML += '<div class="' + cardClass + '" style="' + (isOutOfStock ? 'opacity:0.85; position:relative;' : 'position:relative;') + '" onclick="openProductDetailsModal(\'' + prod.id + '\')">' + stockBadgeHtml + '<div class="card-top-actions"><button class="action-btn-circle" onclick="event.stopPropagation(); shareDirectProduct(\'' + prod.id + '\', event)" title="Share Product"><i class="fas fa-share-alt"></i></button><button class="action-btn-circle wishlist-btn-heart ' + (isWishlisted ? 'active' : '') + '" onclick="event.stopPropagation(); toggleWishlistCloud(\'' + prod.id + '\')" title="Wishlist"><i class="fas fa-heart"></i></button></div><div class="product-card-img-wrap" onclick="event.stopPropagation(); directImageZoom(\'' + mainImg + '\')" title="Click to Zoom Image"><img src="' + mainImg + '" onerror="this.src=\'' + fallbackImg + '\'" alt="' + prod.name + '"></div><h3 style="cursor:pointer;" onclick="openProductDetailsModal(\'' + prod.id + '\')">' + prod.name + '</h3>' + occasionPillHtml + '<div class="card-rating-row"><span>★ ' + ratingVal + '</span><span style="color:#595959; font-size:11px;">(' + reviewNum + ' ' + (reviewNum === 1 ? 'review' : 'reviews') + ')</span></div>' + priceHtml + btnHtml + '</div>';
     });
 
     renderHomePaginationBar(totalItems);
@@ -829,6 +1008,7 @@ function filterHomeProducts() {
 
     currentHomePage = 1;
     renderHomeProducts(filtered);
+    updateResetFilterChip();
 }
 
 function shareDirectProduct(productId, event) {
@@ -982,6 +1162,10 @@ function openProductDetailsModal(productId) {
         customContainer.innerHTML += '<div style="margin-top:10px;"><label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px; color:var(--blue-primary);">Customize Text / Name to Print:</label><input type="text" id="pdm-custom-input" placeholder="Enter name or text to customize" style="width:100%; padding:9px; border:1px solid var(--card-border); border-radius:4px; box-sizing:border-box; background:#fff; color:var(--text-primary);"></div>';
     } else if (product.customType === "pic") {
         customContainer.innerHTML += '<div style="margin-top:10px;"><p style="font-size:12px; color:var(--blue-primary); background:var(--blue-light); padding:8px; border-radius:4px; border:1px dashed var(--blue-primary);">📷 Photo Customization: Share your photo on WhatsApp after checkout!</p></div>';
+    }
+
+    if (activeSeasonalBlend) {
+        customContainer.innerHTML += '<div class="cz-modal-gift-hint">🎁 ' + activeSeasonalBlend.badgeLabel + ' — Gift note & special care available on order.</div>';
     }
 
     recalculateLinkedPrice(product);
