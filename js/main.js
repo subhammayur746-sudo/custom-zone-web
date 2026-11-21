@@ -81,7 +81,7 @@ function applyThemeBlendStyles() {
         return;
     }
 
-    const { c1, c2, bColor, badgeLabel } = activeSeasonalBlend;
+    const { c1, c2, bColor } = activeSeasonalBlend;
     styleEl.innerHTML = `
         #cz-trending-heading {
             position: relative;
@@ -251,12 +251,16 @@ async function checkAndRenderSeasonalTheme() {
         let offerText = data.offerText || "Special Offer";
         let btnText = data.btnText || "Shop Now >";
         let btnLink = data.btnLink || "#product-list";
+        let manualBadge = (data.cardBadgeText || "").trim();
+        let fallbackBadge = tagText.split(" ")[0] ? (tagText.charAt(0).toUpperCase() + tagText.slice(1).toLowerCase().split(" ")[0] + " Pick") : "Seasonal Pick";
+        let selectedIds = Array.isArray(data.selectedProductIds) ? data.selectedProductIds : [];
 
         activeSeasonalBlend = {
             c1,
             c2,
             bColor,
-            badgeLabel: tagText.split(" ")[0] ? (tagText.charAt(0).toUpperCase() + tagText.slice(1).toLowerCase().split(" ")[0] + " Pick") : "Seasonal Pick"
+            badgeLabel: manualBadge || fallbackBadge,
+            selectedProductIds: selectedIds
         };
         applyThemeBlendStyles();
 
@@ -892,7 +896,8 @@ function renderHomeProducts(products) {
             ? '<span style="position:absolute; top:10px; left:10px; background:#dc2626; color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px; z-index:5; box-shadow:0 2px 6px rgba(0,0,0,0.15);">OUT OF STOCK</span>' 
             : '';
 
-        let occasionPillHtml = activeSeasonalBlend
+        let showSeasonBadge = activeSeasonalBlend && Array.isArray(activeSeasonalBlend.selectedProductIds) && activeSeasonalBlend.selectedProductIds.includes(prod.id);
+        let occasionPillHtml = showSeasonBadge
             ? '<span class="cz-occasion-mini-pill">' + activeSeasonalBlend.badgeLabel + '</span><br>'
             : '';
 

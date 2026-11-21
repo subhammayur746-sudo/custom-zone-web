@@ -47,6 +47,19 @@
         }
         .quick-preset-btn:hover { background: #be185d; color: #ffffff; border-color: #be185d; }
 
+        .season-product-picker {
+            background: #ffffff; border: 1px solid #fbcfe8; border-radius: 8px; padding: 12px; margin-bottom: 16px;
+        }
+        .season-product-checklist {
+            max-height: 190px; overflow-y: auto; margin-top: 8px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px;
+        }
+        .season-product-item {
+            display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+            border: 1px solid #f1f5f9; border-radius: 5px; font-size: 12px; color: #1e293b; background: #fdf2f8; cursor: pointer;
+        }
+        .season-product-item input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
+
         @media (max-width: 768px) {
             .sidebar { left: -260px; width: 250px; }
             .sidebar.open { left: 0; }
@@ -183,6 +196,23 @@
                 <div class="form-group">
                     <label>CTA Button Text</label>
                     <input type="text" id="season-btn-text" value="Shop Now >">
+                </div>
+            </div>
+
+            <div class="form-grid-row">
+                <div class="form-group">
+                    <label>Product Card Badge Text (Manual)</label>
+                    <input type="text" id="season-card-badge-text" placeholder="e.g. Winter Pick, Puja Special">
+                </div>
+            </div>
+
+            <div class="season-product-picker">
+                <label style="display:block; font-size:12px; font-weight:700; color:#831843; margin-bottom:6px;">
+                    Select Products for Event Badge (<span id="season-selected-count">0</span> selected)
+                </label>
+                <input type="text" id="season-product-search-input" onkeyup="filterSeasonProductChecklist()" placeholder="Search product name to tick..." style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:5px; font-size:12.5px; background:#f8fafc;">
+                <div class="season-product-checklist" id="season-product-checklist">
+                    <span style="font-size:12px; color:#64748b;">Loading products...</span>
                 </div>
             </div>
 
@@ -382,6 +412,9 @@
             window.location.href = "admin-login.html";
         }
 
+        let adminAllProducts = [];
+        let selectedSeasonProductIds = new Set();
+
         const FESTIVAL_PRESETS = {
             puja_diwali: {
                 fx: 'diya', border: 'border-alpona-style',
@@ -389,7 +422,8 @@
                 tag: 'FESTIVE & PUJA SPECIAL', title: 'Festive Gifting Dhamaka',
                 offer: 'Flat Rs.100 Off',
                 sub: 'Handcrafted hampers, diyas & personalized gifts for celebrations',
-                pills: 'Personalized Gifts, Gift Combos, Custom Names', btn: 'Shop Festive >'
+                pills: 'Personalized Gifts, Gift Combos, Custom Names', btn: 'Shop Festive >',
+                badge: 'Puja Pick'
             },
             winter_xmas: {
                 fx: 'snow', border: 'border-stitch-style',
@@ -397,7 +431,8 @@
                 tag: 'WINTER SEASON EDIT', title: 'Winter Sale Special',
                 offer: 'Up to 40% OFF',
                 sub: 'Warm & customized keepsakes crafted for winter gifting',
-                pills: 'Crochet Keepsakes, Custom Mugs, Winter Combos', btn: 'Explore Winter >'
+                pills: 'Crochet Keepsakes, Custom Mugs, Winter Combos', btn: 'Explore Winter >',
+                badge: 'Winter Pick'
             },
             valentine: {
                 fx: 'hearts', border: 'border-kolka-style',
@@ -405,7 +440,8 @@
                 tag: 'LOVE & GIFTING EDIT', title: 'Special Gifting Collection',
                 offer: 'Save Up to 35%',
                 sub: 'Couple sets, custom frames & heartfelt handwritten notes',
-                pills: 'Couple Gifts, Photo Frames, Custom Notes', btn: 'Shop Gifts >'
+                pills: 'Couple Gifts, Photo Frames, Custom Notes', btn: 'Shop Gifts >',
+                badge: 'Gift Pick'
             },
             holi_spring: {
                 fx: 'holi', border: 'border-padma-style',
@@ -413,7 +449,8 @@
                 tag: 'SPRING & COLOR EDIT', title: 'Vibrant Custom Picks',
                 offer: 'Combo Offers Live',
                 sub: 'Colorful handmade accessories & personalized gift boxes',
-                pills: 'Handmade Picks, Combo Savers, Fast Dispatch', btn: 'Explore Now >'
+                pills: 'Handmade Picks, Combo Savers, Fast Dispatch', btn: 'Explore Now >',
+                badge: 'Spring Pick'
             },
             wedding: {
                 fx: 'sparkles', border: 'border-mandala-style',
@@ -421,7 +458,8 @@
                 tag: 'WEDDING & OCCASION', title: 'Signature Gift Hampers',
                 offer: 'Bulk & Gift Deals',
                 sub: 'Curated custom keepsakes for weddings & special milestones',
-                pills: 'Gift Hampers, Custom Keepsakes, Bulk Orders', btn: 'View Collection >'
+                pills: 'Gift Hampers, Custom Keepsakes, Bulk Orders', btn: 'View Collection >',
+                badge: 'Special Pick'
             }
         };
 
@@ -440,6 +478,62 @@
             document.getElementById('season-sub-text').value = p.sub;
             document.getElementById('season-pills-text').value = p.pills;
             document.getElementById('season-btn-text').value = p.btn;
+            document.getElementById('season-card-badge-text').value = p.badge;
+        }
+
+        function updateSeasonSelectedCount() {
+            const el = document.getElementById('season-selected-count');
+            if (el) el.innerText = selectedSeasonProductIds.size;
+        }
+
+        function renderSeasonProductChecklist(query = "") {
+            const box = document.getElementById('season-product-checklist');
+            if (!box) return;
+
+            const q = query.toLowerCase().trim();
+            const list = adminAllProducts.filter(p => (p.name || "").toLowerCase().includes(q));
+
+            if (list.length === 0) {
+                box.innerHTML = "<span style='font-size:12px; color:#64748b;'>No matching products.</span>";
+                return;
+            }
+
+            box.innerHTML = "";
+            list.forEach(prod => {
+                const checked = selectedSeasonProductIds.has(prod.id) ? "checked" : "";
+                const label = document.createElement('label');
+                label.className = 'season-product-item';
+                label.innerHTML = `<input type="checkbox" value="${prod.id}" ${checked}> <span>${prod.name}</span>`;
+                const cb = label.querySelector('input[type="checkbox"]');
+                cb.addEventListener('change', () => {
+                    if (cb.checked) selectedSeasonProductIds.add(prod.id);
+                    else selectedSeasonProductIds.delete(prod.id);
+                    updateSeasonSelectedCount();
+                });
+                box.appendChild(label);
+            });
+            updateSeasonSelectedCount();
+        }
+
+        function filterSeasonProductChecklist() {
+            const q = document.getElementById('season-product-search-input')?.value || "";
+            renderSeasonProductChecklist(q);
+        }
+
+        async function loadSeasonProductsList() {
+            try {
+                const snap = await db.collection("products").get();
+                adminAllProducts = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    adminAllProducts.push({ id: doc.id, name: d.name || doc.id });
+                });
+                adminAllProducts.sort((a, b) => a.name.localeCompare(b.name));
+                renderSeasonProductChecklist(document.getElementById('season-product-search-input')?.value || "");
+            } catch (e) {
+                const box = document.getElementById('season-product-checklist');
+                if (box) box.innerHTML = "<span style='font-size:12px; color:#dc2626;'>Could not load products.</span>";
+            }
         }
 
         function toggleSidebarMenu() {
@@ -501,7 +595,11 @@
                     document.getElementById('season-sub-text').value = st.subText || "";
                     document.getElementById('season-pills-text').value = st.pillsText || "";
                     document.getElementById('season-btn-text').value = st.btnText || "Shop Now >";
+                    document.getElementById('season-card-badge-text').value = st.cardBadgeText || "";
+                    selectedSeasonProductIds = new Set(Array.isArray(st.selectedProductIds) ? st.selectedProductIds : []);
                 }
+
+                await loadSeasonProductsList();
 
                 const maintDoc = await db.collection("settings").doc("maintenance").get();
                 if (maintDoc.exists) {
@@ -574,6 +672,8 @@
             const subText = document.getElementById('season-sub-text').value.trim();
             const pillsText = document.getElementById('season-pills-text').value.trim();
             const btnText = document.getElementById('season-btn-text').value.trim() || "Shop Now >";
+            const cardBadgeText = document.getElementById('season-card-badge-text').value.trim();
+            const selectedProductIds = Array.from(selectedSeasonProductIds);
             const btn = document.getElementById('btn-save-seasonal');
 
             btn.disabled = true;
@@ -593,7 +693,9 @@
                     subText: subText,
                     pillsText: pillsText,
                     btnText: btnText,
-                    btnLink: "#product-list"
+                    btnLink: "#product-list",
+                    cardBadgeText: cardBadgeText,
+                    selectedProductIds: selectedProductIds
                 });
                 alert("✅ Seasonal Theme settings saved successfully!");
             } catch(e) {
